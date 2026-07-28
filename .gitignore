@@ -1,0 +1,24 @@
+# Virtual Environment
+.venv/
+
+# Environment Variables
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Pytest
+.pytest_cache/
+
+# VS Code
+.vscode/
+
+# Memory / Outputs
+.validation_memory/
+outputs/
+
+# OS
+.DS_Store
+Thumbs.db

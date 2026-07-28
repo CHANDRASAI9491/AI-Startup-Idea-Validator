@@ -1,0 +1,23 @@
+[
+  {
+    "idea_text": "AI-powered personalized nutrition planner that syncs with continuous glucose monitors and wearble fitness trackers.",
+    "target_industry": "HealthTech",
+    "target_audience": "Health-conscious professionals & diabetics",
+    "budget": "Seed ($100k)",
+    "timeline": "3 Months"
+  },
+  {
+    "idea_text": "Automated code documentation and refactoring assistant for legacy enterprise COBOL and Java codebases.",
+    "target_industry": "Developer Tools",
+    "target_audience": "Enterprise CTOs and Engineering Managers",
+    "budget": "Bootstrap ($25k)",
+    "timeline": "1 Month"
+  },
+  {
+    "idea_text": "B2B SaaS platform providing real-time AI startup idea validation, market sizing, and competitive teardowns.",
+    "target_industry": "Technology / SaaS",
+    "target_audience": "Founders, Accelerators, and VC Analysts",
+    "budget": "Bootstrap ($10k)",
+    "timeline": "3 Months"
+  }
+]
