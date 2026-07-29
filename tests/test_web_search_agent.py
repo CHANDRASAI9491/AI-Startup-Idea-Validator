@@ -1,18 +1,14 @@
+import pytest
 from agents.web_search_agent import WebSearchAgent
-from state.schema import StartupIdea
+from state.schema import StartupState, StartupIdea
 
-agent = WebSearchAgent()
 
-idea = StartupIdea(idea_text="AI Startup Validator")
-results = agent.run(idea)
-
-for category, items in results.model_dump().items():
-    print("\n" + "=" * 60)
-    print(category.upper())
-    print("=" * 60)
-
-    for item in items:
-        print(item["title"])
-        print(item["url"])
-        print(item["snippet"])
-        print()
+def test_web_search_agent():
+    agent = WebSearchAgent()
+    state = StartupState(idea=StartupIdea(idea_text="AI Startup Validator", target_industry="Technology"))
+    
+    updated_state = agent.run(state)
+    
+    assert updated_state.search_results is not None
+    assert hasattr(updated_state.search_results, "market_trends")
+    assert isinstance(updated_state.search_results.market_trends, list)

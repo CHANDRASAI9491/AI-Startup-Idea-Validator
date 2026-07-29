@@ -56,10 +56,11 @@ def read_root():
     return {
         "service": "AI Startup Idea Validator",
         "status": "online",
-        "endpoints": ["/api/validate", "/api/history", "/api/report/{session_id}", "/api/advisor/chat"]
+        "endpoints": ["/validate", "/report/{session_id}", "/advisor", "/api/validate", "/api/history"]
     }
 
 
+@app.post("/validate")
 @app.post("/api/validate")
 def validate_idea_endpoint(req: ValidateRequest):
     try:
@@ -89,6 +90,7 @@ def get_history():
     return {"sessions": orchestrator.list_all_sessions()}
 
 
+@app.get("/report/{session_id}")
 @app.get("/api/report/{session_id}")
 def get_report(session_id: str):
     state = orchestrator.get_session_history(session_id)
@@ -97,6 +99,8 @@ def get_report(session_id: str):
     return state
 
 
+@app.post("/advisor")
+@app.post("/api/advisor")
 @app.post("/api/advisor/chat")
 def chat_with_advisor(req: ChatRequest):
     answer = orchestrator.ask_advisor(req.session_id, req.question, req.chat_history or [])

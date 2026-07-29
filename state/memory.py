@@ -1,34 +1,43 @@
 import os
 import json
+import logging
 from typing import Dict, Any, Optional, List
-from state.schema import AgentState
+from state.schema import StartupState, AgentState
+
+logger = logging.getLogger(__name__)
 
 
 class MemoryStore:
-    """In-memory and file-backed storage for agent states and past validation reports."""
+    """In-memory and file-backed storage for StartupState and past validation reports."""
 
     def __init__(self, storage_dir: str = ".validation_memory"):
         self.storage_dir = storage_dir
         os.makedirs(self.storage_dir, exist_ok=True)
-        self._memory_cache: Dict[str, AgentState] = {}
+        self._memory_cache: Dict[str, StartupState] = {}
 
-    def save_state(self, session_id: str, state: AgentState) -> None:
+    def save_state(self, session_id: str, state: StartupState) -> None:
         self._memory_cache[session_id] = state
         filepath = os.path.join(self.storage_dir, f"{session_id}.json")
-        with open(filepath, "w", encoding="utf-8") as f:
-            f.write(state.model_dump_json(indent=2))
+        try:
+            with open(filepath, "w", encoding="utf-8") as f:
+                f.write(state.model_dump_json(indent=2))
+        except Exception as e:
+            logger.error(f"Failed to save state to disk for session {session_id}: {e}")
 
-    def get_state(self, session_id: str) -> Optional[AgentState]:
+    def get_state(self, session_id: str) -> Optional[StartupState]:
         if session_id in self._memory_cache:
             return self._memory_cache[session_id]
-        
+
         filepath = os.path.join(self.storage_dir, f"{session_id}.json")
         if os.path.exists(filepath):
-            with open(filepath, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                state = AgentState.model_validate(data)
-                self._memory_cache[session_id] = state
-                return state
+            try:
+                with open(filepath, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    state = StartupState.model_validate(data)
+                    self._memory_cache[session_id] = state
+                    return state
+            except Exception as e:
+                logger.error(f"Failed to load state from disk for session {session_id}: {e}")
         return None
 
     def list_sessions(self) -> List[Dict[str, Any]]:

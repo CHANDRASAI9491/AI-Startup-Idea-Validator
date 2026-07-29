@@ -1,24 +1,12 @@
+import pytest
 from tools.duckduckgo_tool import DuckDuckGoTool
 
-tool = DuckDuckGoTool()
 
-results = tool.search(
-    "AI Startup Validator market trends",
-    max_results=5
-)
-
-for index, item in enumerate(results):
-
-    print()
-
-    print("=" * 60)
-
-    print("Result", index + 1)
-
-    print("=" * 60)
-
-    print("Title :", item["title"])
-
-    print("URL   :", item["url"])
-
-    print("Snippet :", item["snippet"])
+def test_duckduckgo_search():
+    tool = DuckDuckGoTool()
+    results = tool.search("AI Startup Validator market trends", max_results=3)
+    assert results is not None
+    assert len(results) > 0
+    assert "title" in results[0]
+    assert "url" in results[0]
+    assert "snippet" in results[0]

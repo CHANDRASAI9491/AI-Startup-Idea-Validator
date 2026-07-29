@@ -1,6 +1,7 @@
 import logging
 from typing import Callable, Optional
-from state.schema import AgentState, StartupIdea
+from langgraph.graph import StateGraph, START, END
+from state.schema import StartupState, StartupIdea, AgentState
 from agents.web_search_agent import WebSearchAgent
 from agents.market_analysis_agent import MarketAnalysisAgent
 from agents.competitor_agent import CompetitorAgent
@@ -8,13 +9,12 @@ from agents.swot_risk_agent import SWOTRiskAgent
 from agents.mvp_recommendation_agent import MVPRecommendationAgent
 from agents.gtm_strategy_agent import GTMStrategyAgent
 from agents.report_agent import ReportAgent
-from pipeline.context_passer import ContextPasser
 
 logger = logging.getLogger(__name__)
 
 
 class ValidationGraph:
-    """DAG Pipeline Orchestrator for multi-agent validation."""
+    """LangGraph Multi-Agent StateGraph Orchestrator for startup validation."""
 
     def __init__(self):
         self.web_search_agent = WebSearchAgent()
@@ -25,54 +25,73 @@ class ValidationGraph:
         self.gtm_agent = GTMStrategyAgent()
         self.report_agent = ReportAgent()
 
-    def run(self, idea: StartupIdea, progress_callback: Optional[Callable[[str, str], None]] = None) -> AgentState:
-        state = ContextPasser.initialize_state(idea)
+        self._compiled_graph = self._build_graph()
+
+    def _build_graph(self):
+        workflow = StateGraph(StartupState)
+
+        # Define nodes for each agent step
+        workflow.add_node("web_search", self.web_search_agent.run)
+        workflow.add_node("market_analysis", self.market_agent.run)
+        workflow.add_node("competitor_analysis", self.competitor_agent.run)
+        workflow.add_node("swot_risk", self.swot_agent.run)
+        workflow.add_node("mvp_recommendation", self.mvp_agent.run)
+        workflow.add_node("gtm_strategy", self.gtm_agent.run)
+        workflow.add_node("report", self.report_agent.run)
+
+        # Define edge transitions
+        workflow.add_edge(START, "web_search")
+        workflow.add_edge("web_search", "market_analysis")
+        workflow.add_edge("market_analysis", "competitor_analysis")
+        workflow.add_edge("competitor_analysis", "swot_risk")
+        workflow.add_edge("swot_risk", "mvp_recommendation")
+        workflow.add_edge("mvp_recommendation", "gtm_strategy")
+        workflow.add_edge("gtm_strategy", "report")
+        workflow.add_edge("report", END)
+
+        return workflow.compile()
+
+    def run(self, idea: StartupIdea, progress_callback: Optional[Callable[[str, str], None]] = None) -> StartupState:
+        initial_state = StartupState(idea=idea, status="initialized")
 
         def notify(step: str, status: str):
             if progress_callback:
                 progress_callback(step, status)
-            logger.info(f"Graph Pipeline [{step}] -> {status}")
+            logger.info(f"LangGraph Pipeline Step [{step}] -> {status}")
 
         try:
-            # Step 1: Web Research
             notify("web_search", "in_progress")
-            search_results = self.web_search_agent.run(idea)
-            state = ContextPasser.update_search_results(state, search_results)
+            state = self.web_search_agent.run(initial_state)
             notify("web_search", "completed")
 
-            # Step 2: Parallel / Sequential Domain Analysis
             notify("market_analysis", "in_progress")
-            market = self.market_agent.run(idea, search_results)
+            state = self.market_agent.run(state)
             notify("market_analysis", "completed")
 
             notify("competitor_analysis", "in_progress")
-            competitors = self.competitor_agent.run(idea, search_results)
+            state = self.competitor_agent.run(state)
             notify("competitor_analysis", "completed")
 
             notify("swot_risk", "in_progress")
-            swot = self.swot_agent.run(idea, search_results)
+            state = self.swot_agent.run(state)
             notify("swot_risk", "completed")
 
             notify("mvp_recommendation", "in_progress")
-            mvp = self.mvp_agent.run(idea)
+            state = self.mvp_agent.run(state)
             notify("mvp_recommendation", "completed")
 
             notify("gtm_strategy", "in_progress")
-            gtm = self.gtm_agent.run(idea)
+            state = self.gtm_agent.run(state)
             notify("gtm_strategy", "completed")
 
-            state = ContextPasser.update_analyses(state, market, competitors, swot, mvp, gtm)
-
-            # Step 3: Synthesis & Report Generation
-            notify("final_report", "in_progress")
-            report = self.report_agent.run(idea, market, competitors, swot, mvp, gtm)
-            state = ContextPasser.set_final_report(state, report)
-            notify("final_report", "completed")
+            notify("report", "in_progress")
+            state = self.report_agent.run(state)
+            notify("report", "completed")
 
             return state
 
         except Exception as e:
-            logger.exception(f"Pipeline execution failed: {e}")
-            state.status = "error"
-            state.error = str(e)
-            return state
+            logger.exception(f"LangGraph execution failed: {e}")
+            initial_state.status = "error"
+            initial_state.error = str(e)
+            return initial_state

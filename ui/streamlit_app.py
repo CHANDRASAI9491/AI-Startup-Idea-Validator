@@ -1,13 +1,20 @@
-import streamlit as st
-import json
 import os
 import sys
+import json
 
-# Add project root directory to sys.path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+# Ensure project root directory is at head of sys.path
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if sys.path[0] != root_dir:
+    if root_dir in sys.path:
+        sys.path.remove(root_dir)
+    sys.path.insert(0, root_dir)
 
+import streamlit as st
+import plotly.graph_objects as go
 from app.orchestrator import ApplicationOrchestrator
-from state.schema import AgentState
+from state.schema import StartupState, AgentState
+from tools.file_tools import FileTools
+from app.config import config
 
 # Page configuration
 st.set_page_config(
@@ -22,13 +29,14 @@ st.markdown("""
 <style>
     /* Main container styling */
     .stApp {
-        background-color: #0e1117;
-        font-family: 'Inter', sans-serif;
+        background-color: #0F172A;
+        color: #F8FAFC;
+        font-family: 'Inter', system-ui, sans-serif;
     }
 
-    /* Glassmorphism metric cards */
+    /* Metric Card Styling */
     .metric-card {
-        background: rgba(255, 255, 255, 0.05);
+        background: rgba(30, 41, 59, 0.7);
         border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 12px;
         padding: 20px;
@@ -37,33 +45,36 @@ st.markdown("""
         margin-bottom: 15px;
     }
 
-    /* Verdict Badge */
+    /* Verdict Badges */
     .verdict-proceed {
         background: linear-gradient(135deg, #10B981, #059669);
         color: white;
-        padding: 8px 18px;
-        border-radius: 20px;
-        font-weight: 700;
-        font-size: 1.2rem;
+        padding: 8px 20px;
+        border-radius: 24px;
+        font-weight: 800;
+        font-size: 1.25rem;
         display: inline-block;
+        box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
     }
     .verdict-pivot {
         background: linear-gradient(135deg, #F59E0B, #D97706);
         color: white;
-        padding: 8px 18px;
-        border-radius: 20px;
-        font-weight: 700;
-        font-size: 1.2rem;
+        padding: 8px 20px;
+        border-radius: 24px;
+        font-weight: 800;
+        font-size: 1.25rem;
         display: inline-block;
+        box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);
     }
     .verdict-caution {
         background: linear-gradient(135deg, #EF4444, #DC2626);
         color: white;
-        padding: 8px 18px;
-        border-radius: 20px;
-        font-weight: 700;
-        font-size: 1.2rem;
+        padding: 8px 20px;
+        border-radius: 24px;
+        font-weight: 800;
+        font-size: 1.25rem;
         display: inline-block;
+        box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
     }
 
     /* Custom Headers */
@@ -71,13 +82,14 @@ st.markdown("""
         background: linear-gradient(90deg, #6366F1, #A855F7, #EC4899);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        font-size: 2.5rem;
-        font-weight: 800;
+        font-size: 2.75rem;
+        font-weight: 900;
+        letter-spacing: -0.02em;
     }
 
     .sub-header {
-        color: #9CA3AF;
-        font-size: 1.1rem;
+        color: #94A3B8;
+        font-size: 1.15rem;
         margin-bottom: 25px;
     }
 </style>
@@ -101,16 +113,26 @@ if "chat_history" not in st.session_state:
 
 # Sidebar Navigation
 st.sidebar.markdown("### ⚡ AI Startup Validator")
-st.sidebar.markdown("Validate startup concepts with real-time multi-agent market research.")
+st.sidebar.markdown("Validate startup concepts with real-time LangGraph multi-agent market research.")
 
 selected_page = st.sidebar.radio(
     "Navigation",
-    ["🚀 Validate Idea", "📊 Executive Summary", "📈 Market Analysis", "⚔️ Competitors", "🛡️ SWOT & Risk", "🛠️ MVP & Tech", "🎯 GTM Strategy", "💬 AI Advisor Chat", "📜 History & Export"]
+    [
+        "🚀 Validate Idea",
+        "📊 Executive Summary",
+        "📈 Market Analysis",
+        "⚔️ Competitors",
+        "🛡️ SWOT & Risk",
+        "🛠️ MVP & Tech",
+        "🎯 GTM Strategy",
+        "💬 AI Advisor Chat",
+        "📜 History & Export"
+    ]
 )
 
-# Header
+# Header Banner
 st.markdown('<h1 class="gradient-header">AI Startup Idea Validator</h1>', unsafe_allow_html=True)
-st.markdown('<p class="sub-header">Multi-agent AI platform evaluating TAM/SAM/SOM, competition, risk, MVP scope, and GTM strategy in seconds.</p>', unsafe_allow_html=True)
+st.markdown('<p class="sub-header">LangGraph Multi-Agent Platform evaluating TAM/SAM/SOM, competitors, SWOT risks, MVP roadmap, and GTM strategy.</p>', unsafe_allow_html=True)
 
 # PAGE 1: VALIDATE IDEA
 if selected_page == "🚀 Validate Idea":
@@ -133,11 +155,11 @@ if selected_page == "🚀 Validate Idea":
 
         col_b1, col_b2 = st.columns(2)
         with col_b1:
-            budget = st.selectbox("Estimated Budget", ["Bootstrap ($5k - $20k)", "Seed ($50k - $250k)", "Series A ($1M+)"])
+            budget = st.selectbox("Estimated Budget", ["Bootstrap ($5k - $50k)", "Seed ($50k - $250k)", "Series A ($1M+)"])
         with col_b2:
             timeline = st.selectbox("Launch Timeline", ["1 Month", "3 Months", "6 Months"])
 
-        submit_btn = st.form_submit_button("⚡ Validate Idea Now", type="primary")
+        submit_btn = st.form_submit_button("⚡ Validate Idea Now", type="primary", use_container_width=True)
 
     if submit_btn and idea_text:
         progress_bar = st.progress(0)
@@ -145,39 +167,42 @@ if selected_page == "🚀 Validate Idea":
 
         def update_progress(step_id, status):
             step_map = {
-                "web_search": (20, "🔍 Conducting Real-Time Web Research..."),
-                "market_analysis": (40, "📈 Evaluating TAM/SAM/SOM & Market Size..."),
-                "competitor_analysis": (55, "⚔️ Analyzing Competitor Matrix & Moats..."),
-                "swot_risk": (70, "🛡️ Assessing SWOT & Calculating Risk Scores..."),
-                "mvp_recommendation": (85, "🛠️ Scoping MVP Features & Tech Stack..."),
-                "gtm_strategy": (92, "🎯 Formulating Go-To-Market Strategy..."),
-                "final_report": (100, "🎯 Synthesizing Executive Report...")
+                "web_search": (15, "🔍 Conducting Real-Time DuckDuckGo Web Research..."),
+                "market_analysis": (35, "📈 Evaluating TAM/SAM/SOM & Market Growth..."),
+                "competitor_analysis": (50, "⚔️ Analyzing Competitor Matrix & Moats..."),
+                "swot_risk": (65, "🛡️ Assessing SWOT & Risk Scores..."),
+                "mvp_recommendation": (80, "🛠️ Scoping MVP Roadmap & Tech Stack..."),
+                "gtm_strategy": (90, "🎯 Formulating Go-To-Market Strategy..."),
+                "report": (100, "🎯 Synthesizing Executive Validation Report..."),
+                "final_report": (100, "🎯 Synthesizing Executive Validation Report...")
             }
             if step_id in step_map:
                 pct, msg = step_map[step_id]
                 progress_bar.progress(pct)
                 status_text.info(f"{msg} ({status.upper()})")
 
-        with st.spinner("Executing Multi-Agent Validation Pipeline..."):
+        with st.spinner("Executing LangGraph Multi-Agent Pipeline..."):
+            sess_id = st.session_state.session_id or None
             state = orchestrator.validate_idea(
                 idea_text=idea_text,
                 target_industry=target_industry,
                 target_audience=target_audience,
                 budget=budget,
                 timeline=timeline,
+                session_id=sess_id,
                 progress_callback=update_progress
             )
             st.session_state.current_state = state
-            st.session_state.session_id = state.idea.idea_text[:10]
+            st.session_state.session_id = sess_id or idea_text[:10].replace(" ", "_")
             st.session_state.chat_history = []
 
-        st.success("✅ Validation Complete! Select tabs on the left to view detailed analyses.")
+        st.success("✅ Validation Complete! Select navigation tabs on the left to inspect detailed reports.")
 
 # DISPLAY REPORT IF AVAILABLE
-state: AgentState = st.session_state.current_state
+state: StartupState = st.session_state.current_state
 
 if not state or not state.final_report:
-    if selected_page != "🚀 Validate Idea" and selected_page != "📜 History & Export":
+    if selected_page not in ["🚀 Validate Idea", "📜 History & Export"]:
         st.info("👈 Please enter a startup idea in the '🚀 Validate Idea' tab to generate a validation report.")
 
 else:
@@ -196,11 +221,11 @@ else:
         with col1:
             st.metric("Overall Viability Index", f"{report.overall_viability_score}/100")
         with col2:
-            st.markdown(f"**Verdict:**")
-            verdict_cls = "verdict-proceed" if report.verdict == "PROCEED" else ("verdict-pivot" if report.verdict == "PIVOT" else "verdict-caution")
+            st.markdown("**Verdict:**")
+            verdict_cls = "verdict-proceed" if report.verdict == "PROCEED" else ("verdict-pivot" if report.verdict in ["PIVOT", "CAUTION"] else "verdict-caution")
             st.markdown(f'<div class="{verdict_cls}">{report.verdict}</div>', unsafe_allow_html=True)
         with col3:
-            st.markdown(f"**Idea:** {state.idea.idea_text}")
+            st.markdown(f"**Concept:** {state.idea.idea_text}")
             st.markdown(f"**Industry:** `{state.idea.target_industry}` | **Audience:** `{state.idea.target_audience}`")
 
         st.markdown("---")
@@ -208,12 +233,27 @@ else:
         st.write(report.executive_summary)
 
         st.markdown("---")
-        m_col1, m_col2, m_col3, m_col4, m_col5 = st.columns(5)
-        m_col1.metric("Market Score", f"{report.market_score}/100")
-        m_col2.metric("Competitor Score", f"{report.competitor_score}/100")
-        m_col3.metric("Risk Resilience", f"{report.risk_score}/100")
-        m_col4.metric("MVP Feasibility", f"{report.mvp_score}/100")
-        m_col5.metric("GTM Potential", f"{report.gtm_score}/100")
+        # Sub-score Bar Chart
+        categories = ["Market Readiness", "Competitor Position", "Risk Resilience", "MVP Feasibility", "GTM Potential"]
+        scores = [report.market_score, report.competitor_score, report.risk_score, report.mvp_score, report.gtm_score]
+
+        fig_scores = go.Figure(data=[
+            go.Bar(
+                x=categories,
+                y=scores,
+                marker_color=['#6366F1', '#A855F7', '#EC4899', '#10B981', '#F59E0B'],
+                text=[f"{s}/100" for s in scores],
+                textposition='auto'
+            )
+        ])
+        fig_scores.update_layout(
+            title="Validation Score Breakdown across Key Dimensions",
+            template="plotly_dark",
+            yaxis=dict(range=[0, 100]),
+            height=350,
+            margin=dict(l=20, r=20, t=40, b=20)
+        )
+        st.plotly_chart(fig_scores, use_container_width=True)
 
         st.markdown("---")
         col_t1, col_t2 = st.columns(2)
@@ -236,12 +276,32 @@ else:
         col4.metric("Market CAGR %", f"{market.cagr_percentage}%")
 
         st.markdown("---")
+        
+        # Plotly Market Sizing Chart
+        fig_market = go.Figure(data=[
+            go.Bar(
+                name='Market Size ($B)',
+                x=['TAM (Total Addressable)', 'SAM (Serviceable)', 'SOM (Obtainable)'],
+                y=[market.tam_billions, market.sam_billions, market.som_billions],
+                marker_color=['#3B82F6', '#8B5CF6', '#EC4899'],
+                text=[f"${market.tam_billions}B", f"${market.sam_billions}B", f"${market.som_billions}B"],
+                textposition='auto'
+            )
+        ])
+        fig_market.update_layout(
+            title="TAM / SAM / SOM Market Breakdown",
+            template="plotly_dark",
+            height=350,
+            margin=dict(l=20, r=20, t=40, b=20)
+        )
+        st.plotly_chart(fig_market, use_container_width=True)
+
         st.markdown("### 📜 Market Scope Summary")
         st.write(market.market_size_summary)
 
         col_g1, col_g2 = st.columns(2)
         with col_g1:
-            st.markdown("### 🚀 Growth Drivers")
+            st.markdown("### 🚀 Key Growth Drivers")
             for d in market.key_growth_drivers:
                 st.markdown(f"- 📈 {d}")
 
@@ -254,12 +314,12 @@ else:
 
     # PAGE 4: COMPETITORS
     elif selected_page == "⚔️ Competitors" and comp:
-        st.markdown("## ⚔️ Competitor Analysis & Moat Assessment")
+        st.markdown("## ⚔️ Competitor Analysis & Strategic Moat")
         st.markdown(f"**Market Positioning:** {comp.market_positioning_summary}")
         st.markdown(f"**Competitive Moat:** {comp.moat_assessment}")
 
         st.markdown("---")
-        st.markdown("### 🎯 Direct Competitors")
+        st.markdown("### 🏢 Direct Competitors")
         for competitor in comp.direct_competitors:
             with st.expander(f"🏢 {competitor.name} ({competitor.pricing_model})", expanded=True):
                 st.write(competitor.description)
@@ -271,9 +331,15 @@ else:
                 with col_c2:
                     st.markdown("**Weaknesses:** " + ", ".join(competitor.weaknesses))
 
+        if comp.indirect_competitors:
+            st.markdown("---")
+            st.markdown("### 🔄 Indirect Competitors & Workarounds")
+            for ind in comp.indirect_competitors:
+                st.markdown(f"- **{ind.name}**: {ind.description}")
+
     # PAGE 5: SWOT & RISK
     elif selected_page == "🛡️ SWOT & Risk" and swot:
-        st.markdown("## 🛡️ SWOT & Risk Matrix")
+        st.markdown("## 🛡️ SWOT Analysis & Risk Metrics")
 
         col1, col2, col3, col4 = st.columns(4)
         col1.metric("Financial Risk", f"{swot.financial_risk}/10")
@@ -308,7 +374,7 @@ else:
 
     # PAGE 6: MVP & TECH
     elif selected_page == "🛠️ MVP & Tech" and mvp:
-        st.markdown("## 🛠️ MVP Feature Scope & Recommended Tech Stack")
+        st.markdown("## 🛠️ MVP Feature Scope & Tech Stack")
         st.info(f"**Core Value Proposition:** {mvp.core_value_proposition}")
 
         col1, col2, col3, col4 = st.columns(4)
@@ -346,13 +412,13 @@ else:
     # PAGE 8: CHAT ADVISOR
     elif selected_page == "💬 AI Advisor Chat":
         st.markdown("## 💬 Interactive AI Startup Advisor")
-        st.markdown("Ask follow-up questions to your AI Advisor grounded in your validation report findings.")
+        st.markdown("Ask follow-up strategic questions to your AI Advisor grounded in your validation report findings.")
 
         for msg in st.session_state.chat_history:
             with st.chat_message(msg["role"]):
                 st.write(msg["content"])
 
-        user_q = st.chat_input("Ask a question about your startup strategy, market, or MVP...")
+        user_q = st.chat_input("Ask a question about your startup strategy, market size, or MVP roadmap...")
         if user_q:
             st.session_state.chat_history.append({"role": "user", "content": user_q})
             with st.chat_message("user"):
@@ -367,7 +433,7 @@ else:
 
 # PAGE 9: HISTORY & EXPORT
 if selected_page == "📜 History & Export":
-    st.markdown("## 📜 Past Validation History & Reports Export")
+    st.markdown("## 📜 Past Validation History & Report Export")
 
     sessions = orchestrator.list_all_sessions()
     if not sessions:
@@ -379,17 +445,59 @@ if selected_page == "📜 History & Export":
             col2.write(f"**Score:** {s['score'] if s['score'] else 'N/A'}/100")
             col3.write(f"**Verdict:** {s['verdict'] if s['verdict'] else 'N/A'}")
             if col4.button("Load Report", key=s['session_id']):
-                st.session_state.current_state = orchestrator.get_session_history(s['session_id'])
+                loaded_state = orchestrator.get_session_history(s['session_id'])
+                st.session_state.current_state = loaded_state
                 st.session_state.session_id = s['session_id']
                 st.success(f"Loaded session {s['session_id']}! Switch tabs to view.")
 
     if state and state.final_report:
         st.markdown("---")
-        st.markdown("### 📥 Download Current Report")
-        report_md = json.dumps(state.model_dump(), indent=2)
-        st.download_button(
-            label="Download JSON State Report",
-            data=report_md,
-            file_name=f"validation_report_{st.session_state.session_id}.json",
-            mime="application/json"
+        st.markdown("### 📥 Download Validation Reports")
+        
+        col_d1, col_d2, col_d3 = st.columns(3)
+
+        # Markdown Export
+        md_content = FileTools.export_report_markdown(state, os.path.join(config.REPORTS_DIR, "temp_report.md"))
+        col_d1.download_button(
+            label="📄 Download Markdown Report",
+            data=md_content,
+            file_name=f"validation_report_{st.session_state.session_id}.md",
+            mime="text/markdown",
+            use_container_width=True
         )
+
+        # JSON Export
+        json_content = state.model_dump_json(indent=2)
+        col_d2.download_button(
+            label="📊 Download JSON State",
+            data=json_content,
+            file_name=f"validation_report_{st.session_state.session_id}.json",
+            mime="application/json",
+            use_container_width=True
+        )
+
+        # PDF Export
+        pdf_path = os.path.join(config.REPORTS_DIR, f"report_{st.session_state.session_id}.pdf")
+        if os.path.exists(pdf_path):
+            with open(pdf_path, "rb") as f:
+                pdf_bytes = f.read()
+            col_d3.download_button(
+                label="📕 Download PDF Report",
+                data=pdf_bytes,
+                file_name=f"validation_report_{st.session_state.session_id}.pdf",
+                mime="application/pdf",
+                use_container_width=True
+            )
+        else:
+            # Generate on the fly
+            gen_pdf = FileTools.export_report_pdf(state, pdf_path)
+            if gen_pdf and os.path.exists(pdf_path):
+                with open(pdf_path, "rb") as f:
+                    pdf_bytes = f.read()
+                col_d3.download_button(
+                    label="📕 Download PDF Report",
+                    data=pdf_bytes,
+                    file_name=f"validation_report_{st.session_state.session_id}.pdf",
+                    mime="application/pdf",
+                    use_container_width=True
+                )

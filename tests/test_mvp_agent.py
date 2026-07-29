@@ -1,13 +1,13 @@
 import pytest
-from state.schema import StartupIdea
+from state.schema import StartupState, StartupIdea
 from agents.mvp_recommendation_agent import MVPRecommendationAgent
 
 
 def test_mvp_recommendation_agent():
     agent = MVPRecommendationAgent()
-    idea = StartupIdea(idea_text="AI Fitness Planner")
-    result = agent.run(idea)
-    assert result is not None
-    assert result.core_value_proposition != ""
-    assert len(result.features) > 0
-    assert len(result.four_week_roadmap) > 0
+    state = StartupState(idea=StartupIdea(idea_text="AI Fitness Planner"))
+    updated_state = agent.run(state)
+    assert updated_state.mvp_recommendation is not None
+    assert updated_state.mvp_recommendation.core_value_proposition != ""
+    assert len(updated_state.mvp_recommendation.features) > 0
+    assert len(updated_state.mvp_recommendation.four_week_roadmap) > 0

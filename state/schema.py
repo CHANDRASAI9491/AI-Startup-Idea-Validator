@@ -27,8 +27,8 @@ class WebSearchResults(BaseModel):
 
 class TargetPersona(BaseModel):
     role: str
-    pain_points: List[str]
-    willingness_to_pay: str
+    pain_points: List[str] = Field(default_factory=list)
+    willingness_to_pay: str = "Medium"
 
 
 class MarketAnalysis(BaseModel):
@@ -81,10 +81,10 @@ class MVPFeature(BaseModel):
 
 class MVPRecommendation(BaseModel):
     core_value_proposition: str = ""
-    tech_stack_frontend: str = "React / Next.js"
+    tech_stack_frontend: str = "React / Next.js / Streamlit"
     tech_stack_backend: str = "FastAPI (Python)"
     tech_stack_database: str = "PostgreSQL"
-    tech_stack_ai: str = "Google Gemini API"
+    tech_stack_ai: str = "Google Gemini 2.5 Flash"
     features: List[MVPFeature] = Field(default_factory=list)
     four_week_roadmap: Dict[str, str] = Field(default_factory=dict)
     key_metrics_kpis: List[str] = Field(default_factory=list)
@@ -112,7 +112,7 @@ class ValidationReport(BaseModel):
     timestamp: str = Field(default_factory=lambda: datetime.now().isoformat())
 
 
-class AgentState(BaseModel):
+class StartupState(BaseModel):
     idea: StartupIdea
     search_results: Optional[WebSearchResults] = None
     market_analysis: Optional[MarketAnalysis] = None
@@ -123,3 +123,7 @@ class AgentState(BaseModel):
     final_report: Optional[ValidationReport] = None
     status: str = "initialized"
     error: Optional[str] = None
+
+
+# Alias for backward compatibility
+AgentState = StartupState

@@ -1,7 +1,7 @@
 import logging
-from typing import List, Dict
+from typing import List, Dict, Optional
 from agents.base_agent import BaseAgent
-from state.schema import AgentState
+from state.schema import StartupState
 
 logger = logging.getLogger(__name__)
 
@@ -9,7 +9,13 @@ logger = logging.getLogger(__name__)
 class ConversationalAdvisor(BaseAgent):
     """Interactive AI Startup Advisor grounded in the completed validation report."""
 
-    def answer_question(self, user_question: str, state: AgentState, chat_history: List[Dict[str, str]]) -> str:
+    def run(self, state: StartupState) -> StartupState:
+        """Implements standard agent execution contract."""
+        logger.info("ConversationalAdvisor initialized for state interaction.")
+        return state
+
+    def answer_question(self, user_question: str, state: StartupState, chat_history: Optional[List[Dict[str, str]]] = None) -> str:
+        chat_history = chat_history or []
         report = state.final_report
         idea = state.idea
         market = state.market_analysis
@@ -25,7 +31,7 @@ Overall Risk Score: {swot.overall_risk_score if swot else '5'}/10
 Executive Summary: {report.executive_summary if report else ''}
 """
 
-        formatted_history = "\n".join([f"{msg['role'].upper()}: {msg['content']}" for msg in chat_history[-5:]])
+        formatted_history = "\n".join([f"{msg.get('role', 'user').upper()}: {msg.get('content', '')}" for msg in chat_history[-5:]])
 
         prompt = f"""
 You are a senior Startup Advisor & Venture Capital mentor providing advice grounded in the validation report context.
@@ -45,5 +51,7 @@ Provide a direct, practical, encouraging, and actionable response for the startu
         if response_text and response_text.strip():
             return response_text.strip()
 
-        # Heuristic answer fallback
-        return f"Regarding your question '{user_question}': Based on our analysis for '{idea.idea_text}', we recommend focusing on your core value proposition and validating early demand with key users in {idea.target_industry}. Your overall viability score is {report.overall_viability_score if report else 80}/100 with a verdict of {report.verdict if report else 'PROCEED'}."
+        # Heuristic answer fallback if LLM output unavailable
+        score = report.overall_viability_score if report else 80
+        verdict = report.verdict if report else 'PROCEED'
+        return f"Regarding your question '{user_question}': Based on our validation analysis for '{idea.idea_text}', we recommend focusing on your core value proposition and validating early demand with key users in {idea.target_industry}. Your overall viability score is {score}/100 with a verdict of {verdict}."

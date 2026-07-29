@@ -1,19 +1,22 @@
 import logging
 from agents.base_agent import BaseAgent
-from state.schema import StartupIdea, GTMStrategy
+from state.schema import StartupState, GTMStrategy
 
 logger = logging.getLogger(__name__)
 
 
 class GTMStrategyAgent(BaseAgent):
+    """Go-To-Market Strategy Agent specifying channels, pricing, launch tactics, and positioning."""
 
-    def run(self, idea: StartupIdea) -> GTMStrategy:
-        prompt = f"""
+    def run(self, state: StartupState) -> StartupState:
+        logger.info(f"GTMStrategyAgent running for idea: {state.idea.idea_text}")
+        try:
+            prompt = f"""
 Formulate a Go-To-Market (GTM) strategy for this startup concept.
 
-Startup Idea: {idea.idea_text}
-Target Industry: {idea.target_industry}
-Target Audience: {idea.target_audience}
+Startup Idea: {state.idea.idea_text}
+Target Industry: {state.idea.target_industry}
+Target Audience: {state.idea.target_audience}
 
 Respond ONLY with a JSON object matching this structure:
 {{
@@ -32,27 +35,32 @@ Respond ONLY with a JSON object matching this structure:
   "estimated_cac_summary": "Estimated initial CAC is low ($20-$50) by leveraging organic content and viral referral loops."
 }}
 """
-        json_data = self.generate_json(prompt, system_instruction="You are a startup Growth Marketer.")
+            json_data = self.generate_json(prompt, system_instruction="You are a startup Growth Marketer.")
 
-        if json_data:
-            try:
-                return GTMStrategy.model_validate(json_data)
-            except Exception as e:
-                logger.warning(f"GTMStrategy parsing error: {e}")
+            if json_data:
+                try:
+                    state.gtm_strategy = GTMStrategy.model_validate(json_data)
+                    return state
+                except Exception as e:
+                    logger.warning(f"GTMStrategy parsing error: {e}")
 
-        # Fallback GTM strategy
-        return GTMStrategy(
-            primary_acquisition_channels=[
-                "Organic Content & SEO Marketing",
-                f"Community outreach on Reddit, IndieHackers & Twitter/X in {idea.target_industry}",
-                "Product-led onboarding with shareable report links"
-            ],
-            pricing_strategy="Freemium model: 1 free validation report, $29/mo for unlimited reports and export features.",
-            positioning_statement=f"For {idea.target_audience} seeking rapid feedback on early-stage concepts, our platform provides instant, data-backed validation reports in seconds.",
-            launch_tactics=[
-                "Launch Show HN post on Hacker News",
-                "Product Hunt submission with video demo",
-                "Direct outreach to 50 target customer leads for feedback"
-            ],
-            estimated_cac_summary="Estimated initial CAC ($15 - $35) focusing on inbound organic community build."
-        )
+            # Fallback GTM strategy if LLM output is unavailable or invalid
+            state.gtm_strategy = GTMStrategy(
+                primary_acquisition_channels=[
+                    "Organic Search & Technical Content SEO",
+                    f"Niche community engagement on Twitter/X, LinkedIn & Reddit within {state.idea.target_industry}",
+                    "Product-led viral growth via shareable validation reports"
+                ],
+                pricing_strategy="Freemium model: 1 free validation, $29/mo for unlimited validation & export access.",
+                positioning_statement=f"For {state.idea.target_audience} looking to validate startup ideas fast, our AI platform delivers comprehensive market research in minutes.",
+                launch_tactics=[
+                    "Launch Product Hunt campaign with interactive video demo",
+                    "Post Show HN on Hacker News featuring live demo links",
+                    "Direct outreach to 50 target customer leads for structured feedback"
+                ],
+                estimated_cac_summary="Estimated low initial CAC ($15 - $35) driven by organic community build and inbound content."
+            )
+        except Exception as e:
+            logger.error(f"Error in GTMStrategyAgent: {e}")
+            state.error = f"GTMStrategyAgent error: {str(e)}"
+        return state
