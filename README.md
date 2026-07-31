@@ -1,184 +1,181 @@
-# 🚀 AI Startup Idea Validator
+# AI Startup Idea Validator
 
-An AI-powered, multi-agent startup validation platform that analyzes startup ideas and generates a comprehensive business validation report using Google Gemini, LangGraph, FastAPI, and Streamlit.
+An enterprise-grade, hybrid AI decision support platform that analyzes startup concepts and produces evidence-driven validation reports using Google Gemini 2.5 Flash, DeepAgents Planner, LangGraph StateGraph, and Streamlit.
 
-The system performs market research, competitor analysis, SWOT analysis, MVP planning, go-to-market strategy generation, and produces a final startup viability score with actionable recommendations.
-
----
-
-## 📌 Overview
-
-The **AI Startup Idea Validator** helps entrepreneurs and innovators evaluate startup ideas before investing time and resources.
-
-Instead of manually researching the market, competitors, customer segments, and business risks, this application automates the entire validation process using multiple AI agents working together.
+The system performs deep market research, TAM/SAM/SOM sizing, competitive intelligence, SWOT matrix mapping, risk probability & impact calculation, MVP scoping, and go-to-market strategy formulation. It calculates a deterministic 8-dimension weighted viability score (out of 100) and investor readiness metrics instead of relying on random LLM guesses.
 
 ---
 
-## ✨ Features
+## Overview
 
-- 🤖 Multi-Agent AI Architecture
-- 🔍 Live Web Search using DuckDuckGo
-- 📊 Market Analysis
-- ⚔️ Competitor Analysis
-- 🛡 SWOT & Risk Assessment
-- 🛠 MVP Feature Recommendation
-- 🎯 Go-To-Market Strategy
-- 📈 Startup Viability Score (0–100)
-- 📄 AI-Generated Validation Report
-- 💬 Conversational AI Advisor
-- 🌐 Streamlit Web Interface
-- ⚡ FastAPI REST API
-- ✅ Automated Test Suite using Pytest
+The **AI Startup Idea Validator** assists entrepreneurs, venture capital analysts, and product managers in evaluating startup concepts before allocating capital and development resources.
+
+Instead of generic AI text generation or manual web searches, this platform combines a **Deterministic Hybrid Scoring Engine** with live DuckDuckGo market search and a multi-agent LangGraph workflow to produce explainable, evidence-backed evaluation reports.
 
 ---
 
-# 🧠 Multi-Agent Workflow
+## Key Features
+
+- **Multi-Agent Orchestration**: DeepAgents Strategic Planner + 8 LangGraph Agent Nodes.
+- **Deterministic Scoring Engine**: 8-dimension weighted score matrix (out of 100) with explainable reasoning ("WHY").
+- **Investor Decision Metrics**: Investor Readiness Score, Funding Probability %, Product-Market Fit Score, Innovation Index, and Complexity Indices.
+- **Live Web Research**: Deduplicated, source-ranked search using DuckDuckGo.
+- **Quantitative Market Sizing**: TAM, SAM, SOM volume calculations and 5-year CAGR growth projections.
+- **Risk Severity Matrix**: Categorized risk assessment evaluating Probability (1-5) x Impact (1-5).
+- **MVP & GTM Blueprints**: Feature prioritization (Must/Should/Nice to Have), 4-week development roadmap, and customer acquisition channels.
+- **Rich Plotly Visualizations**: Viability Gauge, 8-Dimension Matrix Bar Chart, 5-Year Market Line Chart, SWOT Radar, and Risk Pie Chart.
+- **Multi-Format Exports**: PDF (ReportLab), Markdown, and JSON state file downloads.
+- **Conversational AI Advisor**: Grounded Q&A chatbot answering follow-up questions exclusively from report context.
+- **Pure Streamlit Architecture**: Pure in-memory invocation without REST API overhead.
+
+---
+
+## Multi-Agent Workflow
 
 ```text
-User Startup Idea
+User Startup Concept Description
         │
         ▼
-Web Search Agent
+DeepAgents Strategic Planner
         │
         ▼
-Market Analysis Agent
+Web Search Agent (DuckDuckGo Snippets)
         │
         ▼
-Competitor Analysis Agent
+Market Analysis Agent (TAM / SAM / SOM & CAGR)
         │
         ▼
-SWOT & Risk Agent
+Competitor Analysis Agent (Matrix & Moat Mapping)
         │
         ▼
-MVP Recommendation Agent
+SWOT & Risk Agent (Probability x Impact Severity Matrix)
         │
         ▼
-Go-To-Market Agent
+MVP Recommendation Agent (Roadmap & Tech Stack)
         │
         ▼
-Validation Report Agent
+Go-To-Market Agent (Channels & Pricing Strategy)
         │
         ▼
-Conversational AI Advisor
+Deterministic Hybrid Scoring Engine (8-Dimension Matrix)
         │
         ▼
-Final Startup Validation Report
+Report Agent (Investor Synthesis)
+        │
+        ▼
+Interactive AI Advisor (Grounded Q&A)
+        │
+        ▼
+Final Validation Report (PDF / MD / JSON)
 ```
 
 ---
 
-# 🛠 Technology Stack
+## Technology Stack
 
-## Programming Language
-
-- Python 3.11+
-
-## AI Framework
-
-- LangChain
-- LangGraph
-- Google Gemini 2.5 Flash
-
-## Backend
-
-- FastAPI
-- Uvicorn
-
-## Frontend
-
-- Streamlit
-
-## Search Engine
-
-- DuckDuckGo Search
-
-## Data Validation
-
-- Pydantic
-
-## Testing
-
-- Pytest
+- **Core Engine**: Python 3.11+
+- **AI Framework**: LangChain, LangGraph, DeepAgents Planner
+- **LLM Engine**: Google Gemini 2.5 Flash
+- **Web Search**: DuckDuckGo Search API
+- **State & Schema Validation**: Pydantic 2.0+
+- **User Interface**: Streamlit with custom CSS gradient styling
+- **Data Visualizations**: Plotly (Gauge, Bar, Line, Radar, Pie)
+- **Document Generation**: ReportLab (PDF) & Markdown
+- **Automated Testing**: Pytest
 
 ---
 
-# 📁 Project Structure
+## Project Structure
 
 ```text
 AI-Startup-Idea-Validator/
 
-├── app/
-├── agents/
-├── services/
-├── tools/
-├── pipeline/
-├── state/
-├── ui/
-├── tests/
-├── docs/
-├── reports/
+├── agents/                 # Multi-agent implementations
+│   ├── base_agent.py
+│   ├── web_search_agent.py
+│   ├── market_analysis_agent.py
+│   ├── competitor_agent.py
+│   ├── swot_risk_agent.py
+│   ├── mvp_recommendation_agent.py
+│   ├── gtm_strategy_agent.py
+│   ├── report_agent.py
+│   └── conversational_advisor.py
+├── app/                    # Configuration and Application Orchestrator
+│   ├── config.py
+│   ├── main.py
+│   └── orchestrator.py
+├── pipeline/               # LangGraph StateGraph workflow definition
+│   └── graph.py
+├── services/               # Deterministic Hybrid Scoring Engine & Gemini LLM service
+│   ├── llm_service.py
+│   └── scoring_engine.py
+├── state/                  # Pydantic schemas and in-memory state store
+│   ├── memory.py
+│   └── schema.py
+├── tools/                  # Search, planning, and PDF/Markdown file export tools
+│   ├── file_tools.py
+│   ├── planning_tool.py
+│   └── search_tool.py
+├── ui/                     # Modular Streamlit UI components
+│   ├── streamlit_app.py
+│   └── components/
+│       ├── advisor.py
+│       ├── cards.py
+│       ├── charts.py
+│       ├── footer.py
+│       ├── forms.py
+│       ├── header.py
+│       ├── navbar.py
+│       ├── progress.py
+│       ├── report.py
+│       ├── sidebar.py
+│       ├── styles.py
+│       └── theme.py
+├── tests/                  # Pytest unit and end-to-end test suite
+├── reports/                # Generated validation output files
 ├── requirements.txt
-├── README.md
-└── .env.example
+└── README.md
 ```
 
 ---
 
-# ⚙ Installation
+## Installation & Setup
 
-Clone the repository
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/CHANDRASAI9491/AI-Startup-Idea-Validator.git
+   cd AI-Startup-Idea-Validator
+   ```
 
-```bash
-git clone https://github.com/CHANDRASAI9491/AI-Startup-Idea-Validator.git
-```
+2. **Create and Activate Virtual Environment**:
+   ```bash
+   python -m venv .venv
+   # Windows
+   .venv\Scripts\activate
+   # macOS/Linux
+   source .venv/bin/activate
+   ```
 
-Move into the project
+3. **Install Dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-```bash
-cd AI-Startup-Idea-Validator
-```
-
-Create Virtual Environment
-
-### Windows
-
-```bash
-python -m venv .venv
-```
-
-Activate Environment
-
-```bash
-.venv\Scripts\activate
-```
-
-Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
+4. **Configure Environment Variables**:
+   Create a `.env` file in the project root:
+   ```env
+   GOOGLE_API_KEY=YOUR_GEMINI_API_KEY
+   MODEL_NAME=gemini-2.5-flash
+   ENABLE_WEB_SEARCH=true
+   MAX_SEARCH_RESULTS=5
+   EXPORT_DIR=reports
+   ```
 
 ---
 
-# 🔑 Environment Variables
+## Running the Application
 
-Create a `.env` file in the project root.
-
-Example:
-
-```env
-GOOGLE_API_KEY=YOUR_GEMINI_API_KEY
-MODEL_NAME=gemini-2.5-flash
-ENABLE_WEB_SEARCH=true
-MAX_SEARCH_RESULTS=5
-EXPORT_DIR=reports
-```
-
----
-
-# ▶ Running the Project
-
-## Streamlit UI
+Launch the Streamlit web application:
 
 ```bash
 streamlit run ui/streamlit_app.py
@@ -186,21 +183,9 @@ streamlit run ui/streamlit_app.py
 
 ---
 
-## FastAPI Server
+## Running Automated Tests
 
-```bash
-uvicorn app.main:app --reload
-```
-
-API Documentation
-
-```
-http://localhost:8000/docs
-```
-
----
-
-## Run Tests
+Run the full Pytest test suite:
 
 ```bash
 pytest tests -v
@@ -208,57 +193,6 @@ pytest tests -v
 
 ---
 
-# 📊 Generated Report Includes
-
-- Executive Summary
-- Market Analysis
-- Industry Trends
-- Competitor Analysis
-- SWOT Analysis
-- Risk Assessment
-- MVP Recommendations
-- Go-To-Market Strategy
-- Startup Viability Score
-- Final Recommendation
-
----
-
-# 🎯 Project Goals
-
-- Reduce startup validation time
-- Automate market research
-- Help founders make data-driven decisions
-- Demonstrate practical multi-agent AI architecture
-- Showcase LangGraph-based AI orchestration
-
----
-
-# 🚀 Future Enhancements
-
-- PDF Report Generation
-- User Authentication
-- Dashboard Analytics
-- Docker Deployment
-- Cloud Deployment
-- Vector Database Integration
-- Multi-LLM Support
-- Startup History Dashboard
-
----
-
-# 👥 Contributors
-
-- **Pothuri Chandra Sai**
-- Team Members
-
----
-
-# 📄 License
+## License
 
 This project is licensed under the MIT License.
-
----
-
-## ⭐ Support
-
-If you find this project useful, consider giving it a **⭐ Star** on GitHub.
