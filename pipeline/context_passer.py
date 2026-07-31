@@ -1,44 +1,44 @@
+import logging
 from typing import Dict, Any, Optional
-from state.schema import StartupState, StartupIdea, AgentState
+from state.schema import StartupState, StartupIdea
+
+logger = logging.getLogger(__name__)
 
 
 class ContextPasser:
-    """Manages state mutations and data propagation between pipeline steps."""
+    """Helper utility for passing, validating, and formatting state context between LangGraph agent nodes."""
 
     @staticmethod
-    def initialize_state(idea: StartupIdea) -> StartupState:
-        return StartupState(idea=idea, status="initialized")
+    def extract_summary(state: StartupState) -> str:
+        """Extracts a structured text context summary of the state for agent consumption."""
+        idea = state.idea
+        summary_lines = [
+            f"Startup Concept Description: {idea.idea_text}",
+            f"Industry Sector: {idea.target_industry}",
+            f"Target Customer Segment: {idea.target_audience}",
+            f"Business Model: {idea.business_model}",
+            f"Initial Budget: {idea.budget}",
+            f"Target Launch Timeline: {idea.timeline}"
+        ]
+
+        if state.market_analysis:
+            m = state.market_analysis
+            summary_lines.append(f"Market Sizing: TAM=${m.tam_billions}B, SAM=${m.sam_billions}B, SOM=${m.som_billions}B, CAGR={m.cagr_percentage}%")
+
+        if state.competitor_analysis:
+            c = state.competitor_analysis
+            summary_lines.append(f"Competitive Moat: {c.moat_assessment}")
+
+        if state.swot_analysis:
+            s = state.swot_analysis
+            summary_lines.append(f"Risk Profile: Overall Risk={s.overall_risk_score}/10, Tech Risk={s.technical_risk}/10")
+
+        return "\n".join(summary_lines)
 
     @staticmethod
-    def update_search_results(state: StartupState, search_results: Any) -> StartupState:
-        state.search_results = search_results
-        state.status = "search_completed"
-        return state
-
-    @staticmethod
-    def update_analyses(
-        state: StartupState,
-        market: Any = None,
-        competitors: Any = None,
-        swot: Any = None,
-        mvp: Any = None,
-        gtm: Any = None
-    ) -> StartupState:
-        if market:
-            state.market_analysis = market
-        if competitors:
-            state.competitor_analysis = competitors
-        if swot:
-            state.swot_analysis = swot
-        if mvp:
-            state.mvp_recommendation = mvp
-        if gtm:
-            state.gtm_strategy = gtm
-        state.status = "analyses_completed"
-        return state
-
-    @staticmethod
-    def set_final_report(state: StartupState, report: Any) -> StartupState:
-        state.final_report = report
-        state.status = "completed"
-        return state
+    def validate_state_integrity(state: StartupState) -> bool:
+        """Verifies that StartupState retains idea text and valid status."""
+        if not state.idea or not state.idea.idea_text:
+            logger.error("State integrity check failed: Missing idea_text description.")
+            return False
+        return True

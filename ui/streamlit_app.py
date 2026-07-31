@@ -17,9 +17,9 @@ from ui.components.styles import inject_custom_css
 from ui.components.header import render_header
 from ui.components.sidebar import render_sidebar
 from ui.components.navbar import render_navbar
-from ui.components.forms import render_startup_input_form
+from ui.components.idea_input import render_idea_input_form
 from ui.components.progress import ValidationProgressMonitor
-from ui.components.cards import render_report_cards
+from ui.components.report_viewer import render_report_viewer
 from ui.components.advisor import render_advisor_chat
 from ui.components.footer import render_footer
 
@@ -86,19 +86,19 @@ if selected_page == "Validate Startup":
             st.rerun()
 
     # Render Startup Input Form
-    render_startup_input_form(on_form_submit)
+    render_idea_input_form(on_form_submit)
 
     # If active validation report exists, render results below form on Validation Page
     current_state = st.session_state.current_state
     if current_state and current_state.final_report:
         st.markdown("<br/>", unsafe_allow_html=True)
-        render_report_cards(current_state, st.session_state.session_id)
+        render_report_viewer(current_state, st.session_state.session_id)
 
 elif selected_page == "Reports":
     if not state or not state.final_report:
         st.info("No active validation report found. Please input a startup concept on the Validate Startup page.")
     else:
-        render_report_cards(state, st.session_state.session_id)
+        render_report_viewer(state, st.session_state.session_id)
 
 elif selected_page == "AI Advisor":
     render_advisor_chat(orchestrator, state)

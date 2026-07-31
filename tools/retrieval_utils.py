@@ -1,59 +1,87 @@
 import re
 import json
 import logging
-from typing import Dict, Any, Optional
+from typing import List, Dict, Any, Optional
+from state.schema import SearchResultItem, WebSearchResults
 
 logger = logging.getLogger(__name__)
 
 
 def extract_json_from_text(text: str) -> Optional[Dict[str, Any]]:
-    """Extracts JSON object from a string that might contain markdown backticks or conversational wrapper text."""
+    """Extracts and parses JSON object or array from LLM response text."""
     if not text:
         return None
-
-    # Try direct parse
     try:
-        return json.loads(text.strip())
-    except json.JSONDecodeError:
+        return json.loads(text)
+    except Exception:
         pass
 
-    # Regex search for ```json ... ```
-    match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
+    match = re.search(r"```(?:json)?\s*(\{.*\}|\[.*\])\s*```", text, re.DOTALL)
     if match:
         try:
-            return json.loads(match.group(1).strip())
-        except json.JSONDecodeError:
+            return json.loads(match.group(1))
+        except Exception:
             pass
 
-    # Search for first { to last }
     start = text.find("{")
     end = text.rfind("}")
     if start != -1 and end != -1 and end > start:
         try:
-            return json.loads(text[start:end + 1])
-        except json.JSONDecodeError:
+            return json.loads(text[start : end + 1])
+        except Exception:
             pass
 
     return None
 
 
-def format_search_results_summary(search_results: Any) -> str:
-    """Formats WebSearchResults into a structured markdown text string for LLM prompting."""
-    if not search_results:
-        return "No web search data available."
+def format_search_results_summary(results: Optional[WebSearchResults], max_items: int = 5) -> str:
+    """Formats WebSearchResults into a clean text summary for agent prompts."""
+    if not results:
+        return "No web search results available."
 
-    sections = []
-    
-    dict_data = search_results.model_dump() if hasattr(search_results, "model_dump") else search_results
-    
-    for category, items in dict_data.items():
-        sections.append(f"### Category: {category.upper().replace('_', ' ')}")
-        if isinstance(items, list):
-            for i, item in enumerate(items, 1):
-                title = item.get("title", "")
-                url = item.get("url", "")
-                snippet = item.get("snippet", "")
-                sections.append(f"{i}. [{title}]({url})\n   Snippet: {snippet}")
-        sections.append("")
+    lines = []
+    if results.market_trends:
+        lines.append("Market Trends & Industry Insights:")
+        for item in results.market_trends[:max_items]:
+            lines.append(f"- {item.title}: {item.snippet}")
 
-    return "\n".join(sections)
+    if results.competitors:
+        lines.append("\nCompetitor Information:")
+        for item in results.competitors[:max_items]:
+            lines.append(f"- {item.title}: {item.snippet}")
+
+    if results.customer_pain_points:
+        lines.append("\nCustomer Pain Points & Feedback:")
+        for item in results.customer_pain_points[:max_items]:
+            lines.append(f"- {item.title}: {item.snippet}")
+
+    return "\n".join(lines) if lines else "No relevant search snippets found."
+
+
+class RetrievalUtils:
+    """Helper utilities for web search snippet deduplication, relevance scoring, and query formatting."""
+
+    @staticmethod
+    def deduplicate_results(results: List[SearchResultItem]) -> List[SearchResultItem]:
+        seen_urls = set()
+        unique = []
+        for item in results:
+            if item.url not in seen_urls and len(item.snippet) > 20:
+                seen_urls.add(item.url)
+                unique.append(item)
+        return unique
+
+    @staticmethod
+    def rank_snippets(results: List[SearchResultItem], keywords: List[str]) -> List[SearchResultItem]:
+        def score(item: SearchResultItem) -> int:
+            text = (item.title + " " + item.snippet).lower()
+            return sum(1 for kw in keywords if kw.lower() in text)
+
+        return sorted(results, key=score, reverse=True)
+
+    @staticmethod
+    def format_search_summary(results: List[SearchResultItem], max_items: int = 5) -> str:
+        summary_lines = []
+        for i, item in enumerate(results[:max_items], 1):
+            summary_lines.append(f"{i}. [{item.title}]({item.url}): {item.snippet}")
+        return "\n".join(summary_lines)

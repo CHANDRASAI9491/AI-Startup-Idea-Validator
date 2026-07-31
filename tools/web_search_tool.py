@@ -1,40 +1,37 @@
-from typing import Dict, Any, List
-from tools.duckduckgo_tool import DuckDuckGoTool
+import logging
+from typing import List, Dict, Any
 from state.schema import SearchResultItem, WebSearchResults
+from tools.duckduckgo_tool import DuckDuckGoTool
+from tools.retrieval_utils import RetrievalUtils
+
+logger = logging.getLogger(__name__)
 
 
 class WebSearchTool:
+    """Search Tool wrapper utilizing DuckDuckGo search and RetrievalUtils deduplication."""
 
     def __init__(self):
-        self.ddg = DuckDuckGoTool()
+        self.search_tool = DuckDuckGoTool()
 
-    def run_multi_query_search(self, startup_idea: str, max_results: int = 5) -> WebSearchResults:
-        categories = {
-            "market_trends": f"{startup_idea} market trends growth report",
-            "competitors": f"{startup_idea} main competitors alternatives startups",
-            "customer_pain_points": f"{startup_idea} customer pain points challenges reviews",
-            "industry_news": f"{startup_idea} industry news analysis",
-            "funding": f"{startup_idea} startup funding venture capital investments"
-        }
+    def search_market_data(self, query: str, max_results: int = 5) -> List[SearchResultItem]:
+        raw_items = self.search_tool.search(query, max_results=max_results)
+        items = [SearchResultItem(**item) for item in raw_items]
+        return RetrievalUtils.deduplicate_results(items)
 
-        results_dict: Dict[str, List[SearchResultItem]] = {}
+    def run_multi_query_search(self, idea_text: str, industry: str = "Technology", max_results: int = 3) -> WebSearchResults:
+        """Executes multi-category queries across trends, competitors, pain points, news, and funding."""
+        query_base = f"{idea_text[:60]} {industry}"
 
-        for category, query in categories.items():
-            raw_items = self.ddg.search(query, max_results=max_results)
-            parsed_items = [
-                SearchResultItem(
-                    title=item.get("title", ""),
-                    url=item.get("url", ""),
-                    snippet=item.get("snippet", "")
-                )
-                for item in raw_items
-            ]
-            results_dict[category] = parsed_items
+        trends = self.search_market_data(f"{query_base} market trends growth", max_results=max_results)
+        competitors = self.search_market_data(f"{query_base} competitors market landscape", max_results=max_results)
+        pain_points = self.search_market_data(f"{query_base} customer pain points demand", max_results=max_results)
+        news = self.search_market_data(f"{query_base} industry news technology", max_results=max_results)
+        funding = self.search_market_data(f"{query_base} funding startup investment", max_results=max_results)
 
         return WebSearchResults(
-            market_trends=results_dict.get("market_trends", []),
-            competitors=results_dict.get("competitors", []),
-            customer_pain_points=results_dict.get("customer_pain_points", []),
-            industry_news=results_dict.get("industry_news", []),
-            funding=results_dict.get("funding", [])
+            market_trends=trends,
+            competitors=competitors,
+            customer_pain_points=pain_points,
+            industry_news=news,
+            funding=funding
         )
