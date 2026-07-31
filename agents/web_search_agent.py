@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 class WebSearchAgent(BaseAgent):
-    """Web Search Agent that uses WebSearchTool to populate state.search_results."""
+    """Web Search Agent using WebSearchTool to populate state.search_results."""
 
     def __init__(self, model_name: str = None):
         super().__init__(model_name=model_name)

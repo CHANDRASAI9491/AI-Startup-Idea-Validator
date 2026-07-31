@@ -20,6 +20,10 @@ class BaseAgent:
     def generate_json(self, prompt: str, system_instruction: Optional[str] = None) -> Optional[Dict[str, Any]]:
         return self.llm_service.generate_json(prompt, system_instruction)
 
+    def execute(self, state: StartupState) -> StartupState:
+        """Abstract execution method."""
+        raise NotImplementedError("Derived agent must implement execute(state) or run(state)")
+
     def run(self, state: StartupState) -> StartupState:
-        """Abstract execution method. Each derived agent overrides this."""
-        raise NotImplementedError("Derived agent must implement run(state)")
+        """Standard execution entrypoint for graph and unit tests."""
+        return self.execute(state)

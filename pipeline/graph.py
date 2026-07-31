@@ -1,7 +1,8 @@
 import logging
 from typing import Callable, Optional
 from langgraph.graph import StateGraph, START, END
-from state.schema import StartupState, StartupIdea, AgentState
+from state.schema import StartupState, StartupIdea
+from tools.planning_tool import DeepAgentsPlanner
 from agents.web_search_agent import WebSearchAgent
 from agents.market_analysis_agent import MarketAnalysisAgent
 from agents.competitor_agent import CompetitorAgent
@@ -14,9 +15,10 @@ logger = logging.getLogger(__name__)
 
 
 class ValidationGraph:
-    """LangGraph Multi-Agent StateGraph Orchestrator for startup validation."""
+    """LangGraph Multi-Agent StateGraph Orchestrator integrated with DeepAgents Planner."""
 
     def __init__(self):
+        self.planner = DeepAgentsPlanner()
         self.web_search_agent = WebSearchAgent()
         self.market_agent = MarketAnalysisAgent()
         self.competitor_agent = CompetitorAgent()
@@ -30,7 +32,7 @@ class ValidationGraph:
     def _build_graph(self):
         workflow = StateGraph(StartupState)
 
-        # Define nodes for each agent step
+        # Add nodes for each agent step
         workflow.add_node("web_search", self.web_search_agent.run)
         workflow.add_node("market_analysis", self.market_agent.run)
         workflow.add_node("competitor_analysis", self.competitor_agent.run)
@@ -52,7 +54,7 @@ class ValidationGraph:
         return workflow.compile()
 
     def run(self, idea: StartupIdea, progress_callback: Optional[Callable[[str, str], None]] = None) -> StartupState:
-        initial_state = StartupState(idea=idea, status="initialized")
+        state = StartupState(idea=idea, status="initialized")
 
         def notify(step: str, status: str):
             if progress_callback:
@@ -60,38 +62,51 @@ class ValidationGraph:
             logger.info(f"LangGraph Pipeline Step [{step}] -> {status}")
 
         try:
+            # Step 0: DeepAgents Strategic Planner
+            notify("planner", "in_progress")
+            state.planning_output = self.planner.plan_validation(idea)
+            notify("planner", "completed")
+
+            # Step 1: Web Research Agent
             notify("web_search", "in_progress")
-            state = self.web_search_agent.run(initial_state)
+            state = self.web_search_agent.run(state)
             notify("web_search", "completed")
 
+            # Step 2: Market Analysis Agent
             notify("market_analysis", "in_progress")
             state = self.market_agent.run(state)
             notify("market_analysis", "completed")
 
+            # Step 3: Competitor Agent
             notify("competitor_analysis", "in_progress")
             state = self.competitor_agent.run(state)
             notify("competitor_analysis", "completed")
 
+            # Step 4: SWOT and Risk Agent
             notify("swot_risk", "in_progress")
             state = self.swot_agent.run(state)
             notify("swot_risk", "completed")
 
+            # Step 5: MVP Recommendation Agent
             notify("mvp_recommendation", "in_progress")
             state = self.mvp_agent.run(state)
             notify("mvp_recommendation", "completed")
 
+            # Step 6: Go-To-Market Strategy Agent
             notify("gtm_strategy", "in_progress")
             state = self.gtm_agent.run(state)
             notify("gtm_strategy", "completed")
 
+            # Step 7: Report Agent
             notify("report", "in_progress")
             state = self.report_agent.run(state)
             notify("report", "completed")
 
+            state.status = "completed"
             return state
 
         except Exception as e:
             logger.exception(f"LangGraph execution failed: {e}")
-            initial_state.status = "error"
-            initial_state.error = str(e)
-            return initial_state
+            state.status = "error"
+            state.error = str(e)
+            return state

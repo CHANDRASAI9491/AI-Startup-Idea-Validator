@@ -2,7 +2,7 @@ import uuid
 import os
 import logging
 from typing import Callable, Optional, Dict, Any, List
-from state.schema import StartupIdea, StartupState, AgentState
+from state.schema import StartupIdea, StartupState
 from state.memory import MemoryStore
 from pipeline.graph import ValidationGraph
 from tools.file_tools import FileTools
@@ -23,8 +23,9 @@ class ApplicationOrchestrator:
     def validate_idea(
         self,
         idea_text: str,
-        target_industry: str = "Technology",
+        target_industry: str = "Technology / SaaS",
         target_audience: str = "General Users / Businesses",
+        business_model: str = "B2B SaaS / Subscription",
         budget: str = "Bootstrap ($5k - $50k)",
         timeline: str = "3 Months",
         session_id: Optional[str] = None,
@@ -36,6 +37,7 @@ class ApplicationOrchestrator:
             idea_text=idea_text,
             target_industry=target_industry,
             target_audience=target_audience,
+            business_model=business_model,
             budget=budget,
             timeline=timeline
         )

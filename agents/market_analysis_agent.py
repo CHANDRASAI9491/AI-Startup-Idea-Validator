@@ -31,7 +31,7 @@ Respond ONLY with a JSON object matching this structure:
   "som_billions": 0.25,
   "market_size_summary": "High-growth market driven by rapid digital transformation...",
   "cagr_percentage": 15.4,
-  "key_growth_drivers": ["Cloud adoption", "AI workflow automation", "Mobile-first preference"],
+  "key_growth_drivers": ["Cloud adoption", "Workflow automation", "Mobile-first preference"],
   "target_personas": [
     {{
       "role": "Small Business Owner",

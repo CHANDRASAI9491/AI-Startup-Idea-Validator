@@ -31,16 +31,16 @@ Respond ONLY with a JSON object matching this structure:
       "feature_name": "User Idea Input & Configuration",
       "priority": "Must Have",
       "estimated_days": 3,
-      "description": "Simple form to specify startup title, domain, target market."
+      "description": "Form inputs capturing idea, industry, audience, budget, timeline."
     }},
     {{
       "feature_name": "Automated Research Execution Engine",
       "priority": "Must Have",
       "estimated_days": 5,
-      "description": "Multi-agent pipeline running market & competitor research."
+      "description": "Multi-agent pipeline running market and competitor research."
     }},
     {{
-      "feature_name": "Interactive Dashboard & PDF Export",
+      "feature_name": "Interactive Dashboard and Report Export",
       "priority": "Should Have",
       "estimated_days": 4,
       "description": "Visualizing charts, SWOT matrix, and downloadable reports."
@@ -48,9 +48,9 @@ Respond ONLY with a JSON object matching this structure:
   ],
   "four_week_roadmap": {{
     "Week 1": "Core architecture, API schemas, and data model setup",
-    "Week 2": "Multi-agent web search & LLM prompt integration",
-    "Week 3": "Frontend dashboard & state persistence implementation",
-    "Week 4": "End-to-end QA testing, beta user feedback & deployment"
+    "Week 2": "Multi-agent web search and LLM prompt integration",
+    "Week 3": "Frontend dashboard and state persistence implementation",
+    "Week 4": "End-to-end QA testing, beta user feedback and deployment"
   }},
   "key_metrics_kpis": [
     "MVP User Conversion Rate (>15%)",
@@ -77,7 +77,7 @@ Respond ONLY with a JSON object matching this structure:
                 tech_stack_ai="Google Gemini 2.5 Flash",
                 features=[
                     MVPFeature(
-                        feature_name="Core Idea Form & Parameters",
+                        feature_name="Core Idea Form and Parameters",
                         priority="Must Have",
                         estimated_days=2,
                         description="Input form capturing concept description, audience, and budget."
@@ -98,7 +98,7 @@ Respond ONLY with a JSON object matching this structure:
                 four_week_roadmap={
                     "Week 1": "Setup repository structure, Pydantic schemas, and API keys",
                     "Week 2": "Implement multi-agent research tools and LLM prompt templates",
-                    "Week 3": "Develop Streamlit UI & FastAPI server endpoints",
+                    "Week 3": "Develop Streamlit UI and backend orchestrator",
                     "Week 4": "Run user testing, refine scoring algorithms, and launch"
                 },
                 key_metrics_kpis=[

@@ -5,14 +5,16 @@ from app.orchestrator import ApplicationOrchestrator
 def test_end_to_end_validation_pipeline():
     orchestrator = ApplicationOrchestrator()
     state = orchestrator.validate_idea(
-        idea_text="AI-powered personalized meal planning app",
+        idea_text="AI-powered personalized meal planning app for busy working professionals",
         target_industry="HealthTech",
         target_audience="Busy professionals",
+        business_model="Freemium Subscription",
         session_id="test_e2e_session"
     )
 
     assert state is not None
     assert state.status == "completed"
+    assert state.idea.idea_text == "AI-powered personalized meal planning app for busy working professionals"
     assert state.final_report is not None
     assert 0 <= state.final_report.overall_viability_score <= 100
     assert state.final_report.verdict in ["PROCEED", "PIVOT", "CAUTION", "STOP"]

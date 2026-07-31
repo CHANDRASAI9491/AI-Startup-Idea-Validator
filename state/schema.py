@@ -1,14 +1,28 @@
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, Field
 from datetime import datetime
+from services.scoring_engine import ScoringBreakdown, RiskFactor
 
 
 class StartupIdea(BaseModel):
-    idea_text: str = Field(..., description="Description of the startup idea")
-    target_industry: Optional[str] = Field(default="Technology", description="Industry sector")
-    target_audience: Optional[str] = Field(default="General Users / Businesses", description="Target market")
+    idea_text: str = Field(..., description="Full description of the startup idea and customer workflow")
+    target_industry: Optional[str] = Field(default="Technology / SaaS", description="Industry sector")
+    target_audience: Optional[str] = Field(default="General Users / Businesses", description="Target market segment")
+    business_model: Optional[str] = Field(default="B2B SaaS / Subscription", description="Monetization business model")
     budget: Optional[str] = Field(default="Bootstrap ($5k - $50k)", description="Estimated initial budget")
     timeline: Optional[str] = Field(default="3 Months", description="Target launch timeline")
+
+
+class StructuredConcept(BaseModel):
+    problem: str = Field(default="", description="Core problem statement")
+    solution: str = Field(default="", description="Proposed solution mechanism")
+    target_customer: str = Field(default="", description="Ideal customer profile")
+    industry: str = Field(default="", description="Target domain/industry")
+    business_model: str = Field(default="", description="Monetization model")
+    revenue_model: str = Field(default="", description="Pricing & revenue structure")
+    technology: str = Field(default="", description="Underlying tech stack & AI")
+    unique_value_prop: str = Field(default="", description="Core UVP")
+    competitive_advantage: str = Field(default="", description="Defensible moat")
 
 
 class SearchResultItem(BaseModel):
@@ -60,6 +74,15 @@ class CompetitorAnalysis(BaseModel):
     moat_assessment: str = ""
 
 
+class RiskItem(BaseModel):
+    risk_name: str
+    category: str  # Financial, Technical, Market, Regulatory, Execution
+    probability: int = Field(default=3, ge=1, le=5, description="1-5")
+    impact: int = Field(default=3, ge=1, le=5, description="1-5")
+    severity_score: int = Field(default=9, description="Probability x Impact (1-25)")
+    mitigation_strategy: str = ""
+
+
 class SWOTAnalysis(BaseModel):
     strengths: List[str] = Field(default_factory=list)
     weaknesses: List[str] = Field(default_factory=list)
@@ -69,12 +92,13 @@ class SWOTAnalysis(BaseModel):
     technical_risk: int = Field(default=5, description="Risk level 1-10")
     regulatory_risk: int = Field(default=4, description="Risk level 1-10")
     overall_risk_score: int = Field(default=5, description="0-10 Overall Risk")
+    risk_matrix: List[RiskItem] = Field(default_factory=list)
     risk_mitigation_plan: List[str] = Field(default_factory=list)
 
 
 class MVPFeature(BaseModel):
     feature_name: str
-    priority: str = "Must Have"  # Must Have, Should Have, Could Have
+    priority: str = "Must Have"
     estimated_days: int = 5
     description: str = ""
 
@@ -82,7 +106,7 @@ class MVPFeature(BaseModel):
 class MVPRecommendation(BaseModel):
     core_value_proposition: str = ""
     tech_stack_frontend: str = "React / Next.js / Streamlit"
-    tech_stack_backend: str = "FastAPI (Python)"
+    tech_stack_backend: str = "FastAPI / Python 3.12+"
     tech_stack_database: str = "PostgreSQL"
     tech_stack_ai: str = "Google Gemini 2.5 Flash"
     features: List[MVPFeature] = Field(default_factory=list)
@@ -99,21 +123,35 @@ class GTMStrategy(BaseModel):
 
 
 class ValidationReport(BaseModel):
-    overall_viability_score: int = Field(..., description="0-100 overall score")
+    overall_viability_score: int = Field(..., description="0-100 overall score calculated deterministically")
     verdict: str = Field(..., description="PROCEED, PIVOT, CAUTION, or STOP")
     executive_summary: str
+    scoring_breakdown: Optional[ScoringBreakdown] = None
     market_score: int = 75
     competitor_score: int = 70
     risk_score: int = 80
     mvp_score: int = 85
     gtm_score: int = 75
+    investor_readiness_score: int = 75
+    funding_probability: int = 65
+    pmf_score: int = 70
+    confidence_score: int = 85
     key_takeaways: List[str] = Field(default_factory=list)
     recommended_next_steps: List[str] = Field(default_factory=list)
     timestamp: str = Field(default_factory=lambda: datetime.now().isoformat())
 
 
+class DeepAgentsPlan(BaseModel):
+    strategic_objective: str = ""
+    research_questions: List[str] = Field(default_factory=list)
+    agent_allocations: Dict[str, str] = Field(default_factory=dict)
+    timestamp: str = Field(default_factory=lambda: datetime.now().isoformat())
+
+
 class StartupState(BaseModel):
     idea: StartupIdea
+    structured_concept: Optional[StructuredConcept] = None
+    planning_output: Optional[DeepAgentsPlan] = None
     search_results: Optional[WebSearchResults] = None
     market_analysis: Optional[MarketAnalysis] = None
     competitor_analysis: Optional[CompetitorAnalysis] = None

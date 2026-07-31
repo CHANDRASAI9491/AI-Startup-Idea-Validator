@@ -79,13 +79,13 @@ Respond ONLY with a JSON object matching this structure:
                 ],
                 indirect_competitors=[
                     CompetitorItem(
-                        name="Manual & Spreadsheet Processes",
+                        name="Manual and Spreadsheet Processes",
                         url="",
                         description="Internal spreadsheets and manual team effort.",
                         key_features=["Custom flexibility"],
                         pricing_model="Internal labor cost",
                         strengths=["No upfront software licenses"],
-                        weaknesses=["Prone to errors, lacks AI automation"]
+                        weaknesses=["Prone to errors, lacks automation"]
                     )
                 ],
                 feature_comparison_matrix={

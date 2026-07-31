@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 class SWOTRiskAgent(BaseAgent):
-    """SWOT & Risk Agent conducting Strengths, Weaknesses, Opportunities, Threats, and Risk scores."""
+    """SWOT and Risk Agent conducting Strengths, Weaknesses, Opportunities, Threats, and Risk scores."""
 
     def run(self, state: StartupState) -> StartupState:
         logger.info(f"SWOTRiskAgent running for idea: {state.idea.idea_text}")

@@ -22,13 +22,13 @@ Respond ONLY with a JSON object matching this structure:
 {{
   "primary_acquisition_channels": [
     "Product-Led Growth (Free Trial)",
-    "Content Marketing & SEO",
+    "Content Marketing and SEO",
     "Targeted LinkedIn Outbound"
   ],
-  "pricing_strategy": "Freemium with $29/mo Starter & $99/mo Pro Tier",
+  "pricing_strategy": "Freemium with $29/mo Starter and $99/mo Pro Tier",
   "positioning_statement": "For target users who need efficient solutions, our product delivers speed and automation unmatched by legacy tools.",
   "launch_tactics": [
-    "Launch on Product Hunt & Hacker News (Show HN)",
+    "Launch on Product Hunt and Hacker News (Show HN)",
     "Distribute early access invites to 100 beta testers",
     "Publish case study teardowns on industry blogs"
   ],
@@ -47,11 +47,11 @@ Respond ONLY with a JSON object matching this structure:
             # Fallback GTM strategy if LLM output is unavailable or invalid
             state.gtm_strategy = GTMStrategy(
                 primary_acquisition_channels=[
-                    "Organic Search & Technical Content SEO",
-                    f"Niche community engagement on Twitter/X, LinkedIn & Reddit within {state.idea.target_industry}",
+                    "Organic Search and Technical Content SEO",
+                    f"Niche community engagement on Twitter/X, LinkedIn and Reddit within {state.idea.target_industry}",
                     "Product-led viral growth via shareable validation reports"
                 ],
-                pricing_strategy="Freemium model: 1 free validation, $29/mo for unlimited validation & export access.",
+                pricing_strategy="Freemium model: 1 free validation, $29/mo for unlimited validation and export access.",
                 positioning_statement=f"For {state.idea.target_audience} looking to validate startup ideas fast, our AI platform delivers comprehensive market research in minutes.",
                 launch_tactics=[
                     "Launch Product Hunt campaign with interactive video demo",

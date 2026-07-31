@@ -2,7 +2,7 @@ import os
 import json
 import logging
 from typing import Dict, Any, Optional
-from state.schema import StartupState, AgentState
+from state.schema import StartupState
 
 logger = logging.getLogger(__name__)
 
@@ -20,20 +20,43 @@ class FileTools:
         swot = state.swot_analysis
         mvp = state.mvp_recommendation
         gtm = state.gtm_strategy
+        plan = state.planning_output
+        scoring = report.scoring_breakdown if report else None
 
         lines = [
-            f"# Startup Idea Validation Report: {idea.idea_text}",
-            f"**Generated at:** {report.timestamp if report else 'N/A'}",
-            f"**Industry:** {idea.target_industry} | **Target Audience:** {idea.target_audience}",
+            f"# Executive Startup Validation & Decision Support Report",
+            f"**Concept Description:** {idea.idea_text}",
+            f"**Generated Date:** {report.timestamp if report else 'N/A'}",
+            f"**Industry Sector:** {idea.target_industry} | **Target Market:** {idea.target_audience} | **Business Model:** {idea.business_model}",
             "\n---",
-            "## Executive Summary",
+            "## Executive Summary & Investor Metrics",
             f"**Overall Viability Score:** {report.overall_viability_score}/100" if report else "",
-            f"**Verdict:** `{report.verdict}`" if report else "",
+            f"**Strategic Verdict:** {report.verdict}" if report else "",
+            f"**Investor Readiness Score:** {report.investor_readiness_score}/100" if report else "",
+            f"**Funding Probability:** {report.funding_probability}%" if report else "",
+            f"**Product-Market Fit Score:** {report.pmf_score}/100" if report else "",
             f"\n{report.executive_summary if report else ''}",
-            "\n### Key Takeaways",
         ]
 
+        if scoring:
+            lines.extend([
+                "\n### 8-Dimension Weighted Score Breakdown Matrix",
+                f"- **Market Opportunity:** {scoring.market_opportunity_score}/20",
+                f"- **Innovation & Differentiation:** {scoring.innovation_score}/15",
+                f"- **Competition & Defensible Moat:** {scoring.competition_score}/15",
+                f"- **Scalability Potential:** {scoring.scalability_score}/15",
+                f"- **Technical Feasibility:** {scoring.technical_feasibility_score}/10",
+                f"- **Revenue Model Viability:** {scoring.revenue_model_score}/10",
+                f"- **Execution & Risk Resilience:** {scoring.execution_risk_score}/10",
+                f"- **Market Timing:** {scoring.market_timing_score}/5",
+                f"\n**Total Viability Score:** {scoring.total_viability_score}/100",
+                "\n### Explainable Reasoning (WHY):"
+            ])
+            for r in scoring.reasoning_why:
+                lines.append(f"- {r}")
+
         if report:
+            lines.append("\n### Key Takeaways")
             for t in report.key_takeaways:
                 lines.append(f"- {t}")
 
@@ -41,17 +64,27 @@ class FileTools:
             for step in report.recommended_next_steps:
                 lines.append(f"1. {step}")
 
+        if plan:
+            lines.extend([
+                "\n---",
+                "## Strategic Execution Plan (DeepAgents)",
+                f"**Strategic Objective:** {plan.strategic_objective}",
+                "\n**Key Research Questions:**"
+            ])
+            for q in plan.research_questions:
+                lines.append(f"- {q}")
+
         if market:
             lines.extend([
                 "\n---",
-                "## 1. Market Analysis",
-                f"- **TAM (Total Addressable Market):** ${market.tam_billions}B",
-                f"- **SAM (Serviceable Addressable Market):** ${market.sam_billions}B",
-                f"- **SOM (Serviceable Obtainable Market):** ${market.som_billions}B",
-                f"- **CAGR:** {market.cagr_percentage}%",
+                "## 1. Market Sizing and Growth Analysis",
+                f"- **Total Addressable Market (TAM):** ${market.tam_billions}B",
+                f"- **Serviceable Addressable Market (SAM):** ${market.sam_billions}B",
+                f"- **Serviceable Obtainable Market (SOM):** ${market.som_billions}B",
+                f"- **Projected CAGR:** {market.cagr_percentage}%",
                 f"- **Market Readiness Score:** {market.market_readiness_score}/100",
-                f"\n**Summary:** {market.market_size_summary}",
-                "\n**Key Growth Drivers:**"
+                f"\n**Market Scope Summary:** {market.market_size_summary}",
+                "\n**Primary Growth Drivers:**"
             ])
             for driver in market.key_growth_drivers:
                 lines.append(f"- {driver}")
@@ -59,9 +92,9 @@ class FileTools:
         if comp:
             lines.extend([
                 "\n---",
-                "## 2. Competitor Analysis",
+                "## 2. Competitive Intelligence and Moat",
                 f"**Market Positioning:** {comp.market_positioning_summary}",
-                f"**Moat Assessment:** {comp.moat_assessment}",
+                f"**Competitive Moat:** {comp.moat_assessment}",
                 "\n### Direct Competitors:"
             ])
             for c in comp.direct_competitors:
@@ -70,11 +103,11 @@ class FileTools:
         if swot:
             lines.extend([
                 "\n---",
-                "## 3. SWOT & Risk Assessment",
-                f"- **Financial Risk:** {swot.financial_risk}/10",
-                f"- **Technical Risk:** {swot.technical_risk}/10",
-                f"- **Regulatory Risk:** {swot.regulatory_risk}/10",
-                f"- **Overall Risk Level:** {swot.overall_risk_score}/10",
+                "## 3. SWOT Analysis and Risk Evaluation",
+                f"- **Financial Risk Index:** {swot.financial_risk}/10",
+                f"- **Technical Risk Index:** {swot.technical_risk}/10",
+                f"- **Regulatory Risk Index:** {swot.regulatory_risk}/10",
+                f"- **Overall Risk Score:** {swot.overall_risk_score}/10",
                 "\n**Strengths:** " + ", ".join(swot.strengths),
                 "**Weaknesses:** " + ", ".join(swot.weaknesses),
                 "**Opportunities:** " + ", ".join(swot.opportunities),
@@ -84,10 +117,10 @@ class FileTools:
         if mvp:
             lines.extend([
                 "\n---",
-                "## 4. MVP Recommendation",
+                "## 4. Minimum Viable Product (MVP) Specifications",
                 f"**Core Value Proposition:** {mvp.core_value_proposition}",
-                f"**Recommended Tech Stack:** Frontend ({mvp.tech_stack_frontend}), Backend ({mvp.tech_stack_backend}), DB ({mvp.tech_stack_database}), AI ({mvp.tech_stack_ai})",
-                "\n### Key Features Scope:"
+                f"**Recommended Technology Stack:** Frontend ({mvp.tech_stack_frontend}), Backend ({mvp.tech_stack_backend}), Database ({mvp.tech_stack_database}), AI Engine ({mvp.tech_stack_ai})",
+                "\n### Core Feature Scope:"
             ])
             for feat in mvp.features:
                 lines.append(f"- [{feat.priority}] **{feat.feature_name}** ({feat.estimated_days} days): {feat.description}")
@@ -95,10 +128,10 @@ class FileTools:
         if gtm:
             lines.extend([
                 "\n---",
-                "## 5. Go-To-Market Strategy",
+                "## 5. Go-To-Market (GTM) Strategy",
                 f"**Positioning Statement:** {gtm.positioning_statement}",
-                f"**Pricing Strategy:** {gtm.pricing_strategy}",
-                "\n**Primary Channels:** " + ", ".join(gtm.primary_acquisition_channels),
+                f"**Pricing Architecture:** {gtm.pricing_strategy}",
+                "\n**Customer Acquisition Channels:** " + ", ".join(gtm.primary_acquisition_channels),
             ])
 
         content = "\n".join(lines)
@@ -115,7 +148,7 @@ class FileTools:
 
     @staticmethod
     def export_report_pdf(state: StartupState, output_path: str) -> Optional[str]:
-        """Generate a clean, styled PDF validation report using ReportLab."""
+        """Generate an enterprise PDF validation report using ReportLab with clean typography and zero emojis."""
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
         try:
@@ -138,35 +171,35 @@ class FileTools:
                 parent=styles['Heading1'],
                 fontSize=20,
                 leading=24,
-                textColor=colors.HexColor('#1E293B'),
-                spaceAfter=10
+                textColor=colors.HexColor('#0F172A'),
+                spaceAfter=8
             )
 
             subtitle_style = ParagraphStyle(
                 'DocSubTitle',
                 parent=normal,
                 fontSize=10,
-                textColor=colors.HexColor('#64748B'),
-                spaceAfter=15
+                textColor=colors.HexColor('#475569'),
+                spaceAfter=14
             )
 
             h2_style = ParagraphStyle(
                 'Heading2_Custom',
                 parent=styles['Heading2'],
-                fontSize=14,
-                leading=18,
-                textColor=colors.HexColor('#0F172A'),
-                spaceBefore=15,
-                spaceAfter=8
+                fontSize=13,
+                leading=17,
+                textColor=colors.HexColor('#1E293B'),
+                spaceBefore=14,
+                spaceAfter=6
             )
 
             body_style = ParagraphStyle(
                 'Body_Custom',
                 parent=normal,
-                fontSize=10,
-                leading=14,
+                fontSize=9.5,
+                leading=13.5,
                 textColor=colors.HexColor('#334155'),
-                spaceAfter=6
+                spaceAfter=5
             )
 
             story = []
@@ -175,21 +208,21 @@ class FileTools:
             report = state.final_report
 
             # Document Title
-            story.append(Paragraph("AI Startup Idea Validation Report", title_style))
-            story.append(Paragraph(f"<b>Concept:</b> {idea.idea_text}<br/><b>Industry:</b> {idea.target_industry} | <b>Audience:</b> {idea.target_audience}", subtitle_style))
-            story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#CBD5E1"), spaceAfter=15))
+            story.append(Paragraph("Enterprise AI Startup Validation & Decision Report", title_style))
+            story.append(Paragraph(f"<b>Concept Description:</b> {idea.idea_text}<br/><b>Industry Sector:</b> {idea.target_industry} | <b>Target Audience:</b> {idea.target_audience} | <b>Business Model:</b> {idea.business_model}", subtitle_style))
+            story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#CBD5E1"), spaceAfter=14))
 
             if report:
-                # Executive Summary Box
-                verdict_color = "#16A34A" if report.verdict == "PROCEED" else ("#CA8A04" if report.verdict in ["PIVOT", "CAUTION"] else "#DC2626")
+                # Score & Verdict Box
+                verdict_color = "#15803D" if report.verdict == "PROCEED" else ("#B45309" if report.verdict in ["PIVOT", "CAUTION"] else "#B91C1C")
                 
                 score_table_data = [
                     [
-                        Paragraph(f"<font size=16 color='{verdict_color}'><b>{report.overall_viability_score}/100</b></font><br/>Overall Score", body_style),
-                        Paragraph(f"<font size=14 color='{verdict_color}'><b>VERDICT: {report.verdict}</b></font>", body_style)
+                        Paragraph(f"<font size=15 color='{verdict_color}'><b>{report.overall_viability_score}/100</b></font><br/><font size=8 color='#64748B'>Viability Score</font>", body_style),
+                        Paragraph(f"<font size=13 color='{verdict_color}'><b>VERDICT: {report.verdict}</b></font><br/><font size=8 color='#64748B'>Investor Readiness: {report.investor_readiness_score}/100 | Funding Prob: {report.funding_probability}%</font>", body_style)
                     ]
                 ]
-                t = Table(score_table_data, colWidths=[150, 350])
+                t = Table(score_table_data, colWidths=[160, 340])
                 t.setStyle(TableStyle([
                     ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#F8FAFC')),
                     ('BOX', (0,0), (-1,-1), 1, colors.HexColor('#E2E8F0')),
@@ -197,37 +230,37 @@ class FileTools:
                     ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
                 ]))
                 story.append(t)
-                story.append(Spacer(1, 15))
+                story.append(Spacer(1, 14))
 
                 story.append(Paragraph("Executive Summary", h2_style))
                 story.append(Paragraph(report.executive_summary, body_style))
-                story.append(Spacer(1, 10))
+                story.append(Spacer(1, 8))
 
             # Market Analysis
             if state.market_analysis:
                 m = state.market_analysis
-                story.append(Paragraph("1. Market Analysis", h2_style))
-                story.append(Paragraph(f"<b>TAM:</b> ${m.tam_billions}B | <b>SAM:</b> ${m.sam_billions}B | <b>SOM:</b> ${m.som_billions}B | <b>CAGR:</b> {m.cagr_percentage}%", body_style))
+                story.append(Paragraph("1. Market Sizing and Growth Metrics", h2_style))
+                story.append(Paragraph(f"<b>TAM:</b> ${m.tam_billions}B | <b>SAM:</b> ${m.sam_billions}B | <b>SOM:</b> ${m.som_billions}B | <b>Projected CAGR:</b> {m.cagr_percentage}%", body_style))
                 story.append(Paragraph(m.market_size_summary, body_style))
-                story.append(Spacer(1, 10))
+                story.append(Spacer(1, 8))
 
             # Competitor Analysis
             if state.competitor_analysis:
                 c = state.competitor_analysis
-                story.append(Paragraph("2. Competitor Analysis & Moat", h2_style))
-                story.append(Paragraph(f"<b>Positioning:</b> {c.market_positioning_summary}", body_style))
+                story.append(Paragraph("2. Competitive Intelligence and Positioning", h2_style))
+                story.append(Paragraph(f"<b>Market Positioning:</b> {c.market_positioning_summary}", body_style))
                 story.append(Paragraph(f"<b>Competitive Moat:</b> {c.moat_assessment}", body_style))
-                story.append(Spacer(1, 10))
+                story.append(Spacer(1, 8))
 
             # SWOT
             if state.swot_analysis:
                 s = state.swot_analysis
-                story.append(Paragraph("3. SWOT & Risk Assessment", h2_style))
+                story.append(Paragraph("3. SWOT Analysis and Risk Evaluation", h2_style))
                 story.append(Paragraph(f"<b>Strengths:</b> {', '.join(s.strengths)}", body_style))
                 story.append(Paragraph(f"<b>Weaknesses:</b> {', '.join(s.weaknesses)}", body_style))
                 story.append(Paragraph(f"<b>Opportunities:</b> {', '.join(s.opportunities)}", body_style))
                 story.append(Paragraph(f"<b>Threats:</b> {', '.join(s.threats)}", body_style))
-                story.append(Spacer(1, 10))
+                story.append(Spacer(1, 8))
 
             doc.build(story)
             return output_path
