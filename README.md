@@ -1,100 +1,131 @@
-# 🚀 AI Startup Idea Validator
+# AI Startup Idea Validator
 
-An AI-powered, multi-agent startup validation platform that analyzes startup ideas and generates a comprehensive business validation report using Google Gemini, LangGraph, FastAPI, and Streamlit.
+## Overview
 
-The system performs market research, competitor analysis, SWOT analysis, MVP planning, go-to-market strategy generation, and produces a final startup viability score with actionable recommendations.
+AI Startup Idea Validator is a multi-agent AI platform that helps entrepreneurs evaluate startup ideas before investing time and resources. The application combines DeepAgents, LangGraph, Google Gemini, and live web search to generate an evidence-based startup validation report.
 
----
-
-## 📌 Overview
-
-The **AI Startup Idea Validator** helps entrepreneurs and innovators evaluate startup ideas before investing time and resources.
-
-Instead of manually researching the market, competitors, customer segments, and business risks, this application automates the entire validation process using multiple AI agents working together.
+The platform analyzes a startup idea from multiple perspectives, including market opportunity, competition, business feasibility, technical complexity, risks, and go-to-market strategy. Each specialized AI agent contributes to the final evaluation, producing a comprehensive report with explainable recommendations instead of generic AI-generated responses.
 
 ---
 
-## ✨ Features
+# Features
 
-- 🤖 Multi-Agent AI Architecture
-- 🔍 Live Web Search using DuckDuckGo
-- 📊 Market Analysis
-- ⚔️ Competitor Analysis
-- 🛡 SWOT & Risk Assessment
-- 🛠 MVP Feature Recommendation
-- 🎯 Go-To-Market Strategy
-- 📈 Startup Viability Score (0–100)
-- 📄 AI-Generated Validation Report
-- 💬 Conversational AI Advisor
-- 🌐 Streamlit Web Interface
-- ⚡ FastAPI REST API
-- ✅ Automated Test Suite using Pytest
+- Multi-agent AI architecture using DeepAgents
+- LangGraph workflow orchestration
+- Google Gemini integration
+- Live market research using DuckDuckGo Search
+- Market opportunity analysis
+- Competitor analysis
+- SWOT analysis
+- Risk assessment
+- MVP recommendation
+- Go-to-market strategy
+- Deterministic scoring engine
+- Startup viability score
+- AI conversational advisor
+- Professional Streamlit interface
+- Interactive charts and visualizations
+- Export validation reports
 
 ---
 
-# 🧠 Multi-Agent Workflow
+# Architecture
 
-```text
-User Startup Idea
+```
+User
+        │
+        ▼
+Streamlit Interface
+        │
+        ▼
+Application Orchestrator
+        │
+        ▼
+DeepAgents Planner
+        │
+        ▼
+LangGraph Workflow
         │
         ▼
 Web Search Agent
         │
-        ▼
 Market Analysis Agent
         │
-        ▼
 Competitor Analysis Agent
         │
-        ▼
 SWOT & Risk Agent
         │
-        ▼
 MVP Recommendation Agent
         │
-        ▼
 Go-To-Market Agent
         │
-        ▼
 Validation Report Agent
         │
-        ▼
-Conversational AI Advisor
+Conversational Advisor
         │
         ▼
-Final Startup Validation Report
+Google Gemini
+DuckDuckGo Search
+        │
+        ▼
+Startup Validation Report
 ```
 
 ---
 
-# 🛠 Technology Stack
+# Project Structure
+
+```
+AI-Startup-Idea-Validator/
+
+app/
+agents/
+pipeline/
+services/
+state/
+tools/
+ui/
+tests/
+docs/
+reports/
+requirements.txt
+README.md
+.env.example
+```
+
+---
+
+# Technology Stack
 
 ## Programming Language
 
 - Python 3.11+
 
-## AI Framework
+## AI Frameworks
 
-- LangChain
+- DeepAgents
 - LangGraph
+- LangChain
+
+## Large Language Model
+
 - Google Gemini 2.5 Flash
-
-## Backend
-
-- FastAPI
-- Uvicorn
 
 ## Frontend
 
 - Streamlit
 
-## Search Engine
+## Search
 
-- DuckDuckGo Search
+- DuckDuckGo Search (DDGS)
 
 ## Data Validation
 
 - Pydantic
+
+## Visualization
+
+- Plotly
 
 ## Testing
 
@@ -102,29 +133,62 @@ Final Startup Validation Report
 
 ---
 
-# 📁 Project Structure
+# Core Components
 
-```text
-AI-Startup-Idea-Validator/
+## Web Search Agent
 
-├── app/
-├── agents/
-├── services/
-├── tools/
-├── pipeline/
-├── state/
-├── ui/
-├── tests/
-├── docs/
-├── reports/
-├── requirements.txt
-├── README.md
-└── .env.example
-```
+Collects live market information, industry trends, competitors, and customer pain points.
+
+## Market Analysis Agent
+
+Evaluates market size, growth rate, customer segments, and business opportunity.
+
+## Competitor Analysis Agent
+
+Analyzes direct and indirect competitors, competitive advantages, and market gaps.
+
+## SWOT & Risk Agent
+
+Generates SWOT analysis and evaluates technical, market, financial, and execution risks.
+
+## MVP Recommendation Agent
+
+Suggests essential product features, development roadmap, and implementation priorities.
+
+## Go-To-Market Agent
+
+Creates pricing strategy, marketing channels, customer acquisition strategy, and launch roadmap.
+
+## Validation Report Agent
+
+Combines all agent outputs into a structured startup validation report.
+
+## Conversational Advisor
+
+Allows users to ask follow-up questions based on the generated report.
 
 ---
 
-# ⚙ Installation
+# Scoring Engine
+
+The project uses a deterministic scoring engine instead of relying entirely on LLM-generated scores.
+
+Evaluation dimensions include:
+
+- Market Opportunity
+- Innovation
+- Competition
+- Scalability
+- Technical Feasibility
+- Revenue Model
+- Execution Risk
+- Market Timing
+
+Each dimension contributes to the overall Startup Viability Score.
+
+---
+
+# Installation
 
 Clone the repository
 
@@ -138,21 +202,27 @@ Move into the project
 cd AI-Startup-Idea-Validator
 ```
 
-Create Virtual Environment
-
-### Windows
+Create a virtual environment
 
 ```bash
 python -m venv .venv
 ```
 
-Activate Environment
+Activate the environment
+
+Windows
 
 ```bash
 .venv\Scripts\activate
 ```
 
-Install Dependencies
+Linux / macOS
+
+```bash
+source .venv/bin/activate
+```
+
+Install dependencies
 
 ```bash
 pip install -r requirements.txt
@@ -160,7 +230,7 @@ pip install -r requirements.txt
 
 ---
 
-# 🔑 Environment Variables
+# Environment Variables
 
 Create a `.env` file in the project root.
 
@@ -176,9 +246,9 @@ EXPORT_DIR=reports
 
 ---
 
-# ▶ Running the Project
+# Running the Application
 
-## Streamlit UI
+Start the Streamlit application
 
 ```bash
 streamlit run ui/streamlit_app.py
@@ -186,21 +256,7 @@ streamlit run ui/streamlit_app.py
 
 ---
 
-## FastAPI Server
-
-```bash
-uvicorn app.main:app --reload
-```
-
-API Documentation
-
-```
-http://localhost:8000/docs
-```
-
----
-
-## Run Tests
+# Running Tests
 
 ```bash
 pytest tests -v
@@ -208,57 +264,46 @@ pytest tests -v
 
 ---
 
-# 📊 Generated Report Includes
+# Generated Report
+
+Each validation report includes:
 
 - Executive Summary
+- Problem Statement
+- Solution Overview
 - Market Analysis
-- Industry Trends
 - Competitor Analysis
 - SWOT Analysis
 - Risk Assessment
-- MVP Recommendations
+- MVP Roadmap
 - Go-To-Market Strategy
 - Startup Viability Score
 - Final Recommendation
 
 ---
 
-# 🎯 Project Goals
+# Future Enhancements
 
-- Reduce startup validation time
-- Automate market research
-- Help founders make data-driven decisions
-- Demonstrate practical multi-agent AI architecture
-- Showcase LangGraph-based AI orchestration
-
----
-
-# 🚀 Future Enhancements
-
-- PDF Report Generation
+- Investor Readiness Assessment
+- Product-Market Fit Analysis
+- Funding Probability Prediction
+- Multi-language Support
 - User Authentication
-- Dashboard Analytics
-- Docker Deployment
+- Project History
 - Cloud Deployment
-- Vector Database Integration
-- Multi-LLM Support
-- Startup History Dashboard
+- Docker Support
+- Team Collaboration
+- Advanced Analytics Dashboard
 
 ---
 
-# 👥 Contributors
+# Contributors
 
-- **Pothuri Chandra Sai**
+- Pothuri Chandra Sai
 - Team Members
 
 ---
 
-# 📄 License
+# License
 
 This project is licensed under the MIT License.
-
----
-
-## ⭐ Support
-
-If you find this project useful, consider giving it a **⭐ Star** on GitHub.
