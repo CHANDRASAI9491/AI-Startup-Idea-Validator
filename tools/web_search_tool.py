@@ -1,17 +1,17 @@
 import logging
 from typing import List, Dict, Any
 from state.schema import SearchResultItem, WebSearchResults
-from tools.duckduckgo_tool import DuckDuckGoTool
+from tools.tavily_tool import TavilySearchTool
 from tools.retrieval_utils import RetrievalUtils
 
 logger = logging.getLogger(__name__)
 
 
 class WebSearchTool:
-    """Search Tool wrapper utilizing DuckDuckGo search and RetrievalUtils deduplication."""
+    """Search Tool wrapper utilizing Tavily Search API and RetrievalUtils deduplication."""
 
     def __init__(self):
-        self.search_tool = DuckDuckGoTool()
+        self.search_tool = TavilySearchTool()
 
     def search_market_data(self, query: str, max_results: int = 5) -> List[SearchResultItem]:
         raw_items = self.search_tool.search(query, max_results=max_results)
@@ -19,7 +19,7 @@ class WebSearchTool:
         return RetrievalUtils.deduplicate_results(items)
 
     def run_multi_query_search(self, idea_text: str, industry: str = "Technology", max_results: int = 3) -> WebSearchResults:
-        """Executes multi-category queries across trends, competitors, pain points, news, and funding."""
+        """Executes multi-category Tavily queries across trends, competitors, pain points, news, and funding."""
         query_base = f"{idea_text[:60]} {industry}"
 
         trends = self.search_market_data(f"{query_base} market trends growth", max_results=max_results)
