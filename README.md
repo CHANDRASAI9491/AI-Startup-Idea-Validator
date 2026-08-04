@@ -2,239 +2,143 @@
 
 ## Overview
 
-AI Startup Idea Validator is a production-ready multi-agent AI platform that helps entrepreneurs evaluate startup ideas before investing time and resources.
+AI Startup Idea Validator is a multi-agent AI application that evaluates startup ideas using LangGraph, Google Gemini, Tavily Search, and a deterministic scoring engine. The system performs real-time market research, competitor analysis, SWOT analysis, MVP planning, Go-To-Market strategy generation, and produces a comprehensive startup validation report with an overall viability score.
 
-The system performs market research, competitor analysis, SWOT analysis, risk assessment, MVP planning, go-to-market strategy generation, and investor-oriented startup evaluation using a coordinated multi-agent workflow.
-
-Instead of generating generic AI responses, the platform combines real-time web intelligence with deterministic scoring and structured AI reasoning to produce an evidence-based startup validation report.
+The project is designed to help entrepreneurs, students, startup founders, incubators, and innovation teams validate business ideas before investing significant time and resources.
 
 ---
 
-# Key Features
+## Key Features
 
-- Multi-Agent AI Architecture
-- DeepAgents Orchestration
-- LangGraph Workflow Management
-- Google Gemini Integration
-- Tavily Search Integration
-- Real-Time Market Research
+- Multi-Agent AI Workflow using LangGraph
+- Real-Time Market Research using Tavily Search
+- Google Gemini Integration for AI Reasoning
+- Startup Planning Agent
+- Market Analysis
 - Competitor Analysis
-- SWOT Analysis
-- Risk Assessment
-- MVP Recommendation
-- Go-To-Market Strategy
-- Deterministic Startup Scoring
-- Investor Readiness Analysis
-- Startup Viability Score
-- AI Conversational Advisor
-- Interactive Streamlit Interface
-- Plotly Visualizations
-- Exportable Reports
+- SWOT & Risk Assessment
+- MVP Recommendation Generation
+- Go-To-Market Strategy Generation
+- Deterministic Startup Viability Scoring
+- Professional Interactive Streamlit Dashboard
+- Interactive AI Advisor
+- Export Reports in PDF, Markdown, and JSON formats
 
 ---
 
-# System Architecture
+## Technology Stack
 
-```
-User
-        │
-        ▼
-Streamlit Application
-        │
-        ▼
-Application Orchestrator
-        │
-        ▼
-DeepAgents Planner
-        │
-        ▼
-LangGraph Workflow
-        │
-        ├──────────────► Web Search Agent
-        │
-        ├──────────────► Market Analysis Agent
-        │
-        ├──────────────► Competitor Analysis Agent
-        │
-        ├──────────────► SWOT & Risk Agent
-        │
-        ├──────────────► MVP Recommendation Agent
-        │
-        ├──────────────► Go-To-Market Agent
-        │
-        ├──────────────► Validation Report Agent
-        │
-        └──────────────► Conversational Advisor
-                         │
-                         ▼
-        Google Gemini + Tavily Search
-                         │
-                         ▼
-            Startup Validation Report
-```
-
----
-
-# Technology Stack
-
-## Language
-
-- Python 3.11+
-
-## Application Framework
+### Frontend
 
 - Streamlit
-
-## AI Orchestration
-
-- DeepAgents
-
-## Workflow Engine
-
-- LangGraph
-
-## LLM Framework
-
-- LangChain
-
-## Large Language Model
-
-- Google Gemini
-
-## Search Engine
-
-- Tavily Search
-
-## Data Validation
-
-- Pydantic
-
-## Visualization
-
+- HTML
+- CSS
 - Plotly
 
-## Testing
+### Backend
 
-- Pytest
+- Python 3.11
+- LangGraph
+- Google Gemini
+- Tavily Search API
+- Pydantic
+- Deterministic Scoring Engine
 
 ---
 
-# Project Structure
+## Project Structure
 
-```
-ai-startup-validator/
-
-├── app/
+```text
+AI-Startup-Idea-Validator/
+│
 ├── agents/
-├── services/
+│   ├── web_search_agent.py
+│   ├── market_analysis_agent.py
+│   ├── competitor_agent.py
+│   ├── swot_risk_agent.py
+│   ├── mvp_recommendation_agent.py
+│   ├── gtm_strategy_agent.py
+│   ├── report_agent.py
+│   └── conversational_advisor.py
+│
+├── app/
+│   ├── config.py
+│   ├── orchestrator.py
+│   └── main.py
+│
 ├── pipeline/
-├── state/
-├── tools/
+│   └── graph.py
+│
 ├── prompts/
-├── ui/
+│
 ├── reports/
+│
+├── services/
+│
+├── state/
+│
+├── tools/
+│
+├── ui/
+│   ├── streamlit_app.py
+│   └── components/
+│
 ├── tests/
-├── docs/
+│
 ├── requirements.txt
-├── README.md
-└── .env.example
+├── .env.example
+└── README.md
 ```
 
 ---
 
-# AI Agents
+## System Workflow
 
-### Web Search Agent
-
-Collects live industry trends, competitors, market insights, and supporting evidence using Tavily Search.
-
-### Market Analysis Agent
-
-Analyzes market opportunity, customer segments, industry growth, TAM, SAM, and SOM.
-
-### Competitor Analysis Agent
-
-Identifies direct and indirect competitors and evaluates competitive positioning.
-
-### SWOT & Risk Agent
-
-Performs SWOT analysis and evaluates business, technical, financial, and operational risks.
-
-### MVP Recommendation Agent
-
-Generates a prioritized Minimum Viable Product roadmap.
-
-### Go-To-Market Agent
-
-Creates pricing strategies, customer acquisition plans, marketing channels, and launch recommendations.
-
-### Validation Report Agent
-
-Combines outputs from all AI agents into a structured startup validation report.
-
-### Conversational Advisor
-
-Allows users to ask follow-up questions based on the generated validation report.
+1. User enters a startup idea.
+2. Planner Agent creates an execution strategy.
+3. Tavily Search gathers live market intelligence.
+4. Market Analysis Agent evaluates market opportunity.
+5. Competitor Agent identifies existing competitors.
+6. SWOT Agent performs business risk analysis.
+7. MVP Agent recommends product features and roadmap.
+8. GTM Agent generates launch and marketing strategies.
+9. Report Agent prepares the final validation report.
+10. Interactive AI Advisor answers follow-up questions.
+11. Results are displayed through the Streamlit dashboard.
 
 ---
 
-# Deterministic Scoring Engine
+## Installation
 
-The application uses a deterministic scoring engine instead of relying entirely on AI-generated scores.
-
-Evaluation dimensions include:
-
-- Market Opportunity
-- Innovation
-- Competition
-- Scalability
-- Technical Feasibility
-- Revenue Model
-- Execution Risk
-- Market Timing
-- Investor Readiness
-- Product-Market Fit
-- Startup Health Index
-
-These dimensions are combined to generate a Startup Viability Score with explainable recommendations.
-
----
-
-# Installation
-
-Clone the repository.
+Clone the repository:
 
 ```bash
 git clone https://github.com/CHANDRASAI9491/AI-Startup-Idea-Validator.git
-```
 
-Navigate to the project.
-
-```bash
 cd AI-Startup-Idea-Validator
 ```
 
-Create a virtual environment.
+Create a virtual environment:
 
 ```bash
 python -m venv .venv
 ```
 
-Activate the environment.
+Activate the virtual environment:
 
-Windows
+### Windows
 
 ```bash
 .venv\Scripts\activate
 ```
 
-Linux/macOS
+### Linux / macOS
 
 ```bash
 source .venv/bin/activate
 ```
 
-Install dependencies.
+Install dependencies:
 
 ```bash
 pip install -r requirements.txt
@@ -242,33 +146,51 @@ pip install -r requirements.txt
 
 ---
 
-# Environment Variables
+## Environment Variables
 
-Create a `.env` file.
-
-Example:
+Create a `.env` file in the project root.
 
 ```env
 GOOGLE_API_KEY=YOUR_GEMINI_API_KEY
+
 TAVILY_API_KEY=YOUR_TAVILY_API_KEY
-MODEL_NAME=gemini-2.5-flash
-ENABLE_WEB_SEARCH=true
+
+MODEL_NAME=gemini-2.5-flash-lite
+
+MAX_SEARCH_RESULTS=5
+
 EXPORT_DIR=reports
 ```
 
 ---
 
-# Running the Application
+## Running the Application
 
-Start the Streamlit application.
+Launch the Streamlit application:
 
 ```bash
-streamlit run ui/streamlit_app.py
+python -m streamlit run ui/streamlit_app.py
+```
+
+Open the application in your browser:
+
+```
+http://localhost:8501
 ```
 
 ---
 
-# Running Tests
+## Example Startup Description
+
+```
+An AI-powered healthcare platform that helps hospitals and clinics automate patient appointment scheduling, symptom assessment, electronic medical record summarization, doctor recommendations, and hospital resource management. Patients interact with an AI assistant to book appointments, receive personalized healthcare guidance, and access medical records. Doctors receive AI-generated patient summaries before consultations while hospital administrators monitor operational efficiency using intelligent analytics dashboards.
+```
+
+---
+
+## Testing
+
+Run the complete test suite:
 
 ```bash
 pytest tests -v
@@ -276,47 +198,68 @@ pytest tests -v
 
 ---
 
-# Generated Report
+## Example Output
 
-The generated report includes:
+The system generates:
 
 - Executive Summary
-- Problem Statement
-- Solution Overview
-- Market Analysis
+- Market Opportunity Analysis
+- Customer Pain Points
 - Competitor Analysis
 - SWOT Analysis
 - Risk Assessment
 - MVP Roadmap
 - Go-To-Market Strategy
-- Investor Readiness
-- Startup Health Score
 - Startup Viability Score
 - Final Recommendation
+- Exportable PDF, Markdown, and JSON reports
 
 ---
 
-# Future Enhancements
+## Current Capabilities
 
+- AI Startup Validation
+- Multi-Agent Workflow
+- Live Web Research
+- Market Trend Analysis
+- Competitor Intelligence
+- SWOT & Risk Assessment
+- MVP Planning
+- Go-To-Market Strategy
+- Deterministic Startup Scoring
+- Interactive Dashboard
+- Professional Charts & Visualizations
+- AI-Powered Business Insights
+
+---
+
+## Future Enhancements
+
+- Investor Pitch Deck Generator
+- Financial Forecasting
+- Startup Comparison Dashboard
 - User Authentication
-- Startup Project History
-- Multi-language Support
-- Team Collaboration
 - Cloud Deployment
-- Advanced Business Analytics
-- Investment Recommendation Engine
+- Multi-Language Support
 - Startup Portfolio Management
 
 ---
 
-# Contributors
+## Team
 
-Developed by:
+**Team Lead**
 
-**Pothuri Chandra Sai**
+- Pothuri Chandra Sai
+
+**Team Members**
+
+- Yashika Chaudary
+- Harsha
+- Karthik
 
 ---
 
-# License
 
-This project is released under the MIT License.
+## License
+
+This project is developed for educational and research purposes.
