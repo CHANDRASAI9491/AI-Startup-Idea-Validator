@@ -1,44 +1,37 @@
 import os
-import logging
 from dotenv import load_dotenv
 
-# Load environment variables from .env if present
 load_dotenv()
 
 
 class Config:
-    """Centralized Application Configuration Manager."""
-
-    APP_NAME: str = "AI Startup Idea Validator"
-    APP_VERSION: str = "2.0.0-SaaS"
+    # Application
+    APP_NAME = "AI Startup Idea Validator"
+    APP_VERSION = "1.0.0"
 
     # API Keys
-    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "") or os.getenv("GOOGLE_API_KEY", "")
-    TAVILY_API_KEY: str = os.getenv("TAVILY_API_KEY", "")
+    GEMINI_API_KEY = os.getenv("GOOGLE_API_KEY")
+    TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 
-    # Model Configuration
-    DEFAULT_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    # Model
+    DEFAULT_MODEL = os.getenv("MODEL_NAME", "gemini-2.5-flash")
 
-    # Search Configuration
-    MAX_SEARCH_RESULTS: int = int(os.getenv("MAX_SEARCH_RESULTS", "5"))
-    ENABLE_WEB_SEARCH: bool = os.getenv("ENABLE_WEB_SEARCH", "true").lower() == "true"
+    # Search
+    MAX_SEARCH_RESULTS = int(os.getenv("MAX_SEARCH_RESULTS", "5"))
 
-    # Storage & Reports
-    REPORTS_DIR: str = os.getenv("REPORTS_DIR", "outputs/reports")
-    PROMPTS_DIR: str = os.getenv("PROMPTS_DIR", "prompts")
-
-    @classmethod
-    def is_gemini_available(cls) -> bool:
-        return bool(cls.GEMINI_API_KEY.strip())
+    # Directories
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    PROMPTS_DIR = os.path.join(BASE_DIR, "prompts")
+    REPORTS_DIR = os.path.join(BASE_DIR, "reports")
+    EXPORT_DIR = os.getenv("EXPORT_DIR", REPORTS_DIR)
 
     @classmethod
-    def is_tavily_available(cls) -> bool:
-        return bool(cls.TAVILY_API_KEY.strip())
+    def is_gemini_available(cls):
+        return bool(cls.GEMINI_API_KEY)
 
     @classmethod
-    def ensure_directories(cls) -> None:
-        os.makedirs(cls.REPORTS_DIR, exist_ok=True)
+    def is_tavily_available(cls):
+        return bool(cls.TAVILY_API_KEY)
 
 
 config = Config()
-config.ensure_directories()

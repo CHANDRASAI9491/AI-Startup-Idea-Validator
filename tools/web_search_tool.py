@@ -1,25 +1,61 @@
-import logging
-from typing import List, Dict, Any, Optional
-from state.schema import SearchResultItem, WebSearchResults
-from services.search_service import SearchService
-from services.logger import get_logger
+import os
+from tavily import TavilyClient
+from dotenv import load_dotenv
 
-logger = get_logger(__name__)
+from state.schema import WebSearchResults, SearchResultItem
+
+load_dotenv()
 
 
 class WebSearchTool:
-    """Search Tool wrapper utilizing Tavily Search API and SearchService deduplication/ranking."""
+    def __init__(self):
+        api_key = os.getenv("TAVILY_API_KEY")
 
-    def __init__(self, api_key: Optional[str] = None):
-        self.search_service = SearchService(api_key=api_key)
+        if not api_key:
+            raise ValueError("TAVILY_API_KEY not found in .env")
 
-    def search_market_data(self, query: str, max_results: int = 5) -> List[SearchResultItem]:
-        return self.search_service.search_topic(query, category="market", max_results=max_results)
+        self.client = TavilyClient(api_key=api_key)
 
-    def run_multi_query_search(self, idea_text: str, industry: str = "Technology", max_results: int = 3) -> WebSearchResults:
-        """Executes multi-category Tavily queries across trends, competitors, pain points, news, and funding."""
-        return self.search_service.execute_multi_category_search(
-            idea_text=idea_text,
-            industry=industry,
-            max_results=max_results
+    def _convert(self, results):
+
+        items = []
+
+        for r in results:
+            items.append(
+                SearchResultItem(
+                    title=r.get("title", ""),
+                    url=r.get("url", ""),
+                    snippet=r.get("content", "")
+                )
+            )
+
+        return items
+
+    def run_multi_query_search(
+        self,
+        query: str,
+        industry: str = "",
+        max_results: int = 5,
+    ) -> WebSearchResults:
+
+        if industry:
+            query = f"{query} {industry}"
+
+        response = self.client.search(
+            query=query,
+            search_depth="advanced",
+            max_results=max_results,
         )
+
+        items = self._convert(response.get("results", []))
+
+        return WebSearchResults(
+            market_trends=items,
+            competitors=items,
+            customer_pain_points=items,
+            industry_news=items,
+            funding=items,
+        )
+
+    def search(self, query: str):
+        return self.run_multi_query_search(query)
