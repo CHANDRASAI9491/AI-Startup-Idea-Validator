@@ -2,8 +2,10 @@ import logging
 from typing import List, Dict, Any, Optional
 from state.schema import StartupIdea, DeepAgentsPlan
 from services.llm_service import LLMService
+from services.prompt_loader import PromptLoader
+from services.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class DeepAgentsPlanner:
@@ -15,35 +17,18 @@ class DeepAgentsPlanner:
     def plan_validation(self, idea: StartupIdea) -> DeepAgentsPlan:
         logger.info(f"DeepAgentsPlanner generating execution plan for idea: {idea.idea_text}")
 
-        prompt = f"""
-Create a strategic multi-agent validation plan for this startup concept.
+        prompt = PromptLoader.load_prompt(
+            "deep_agents_planner",
+            idea_text=idea.idea_text,
+            target_industry=idea.target_industry or "Technology / SaaS",
+            target_audience=idea.target_audience or "General Users / Businesses",
+            business_model=idea.business_model or "B2B SaaS / Subscription"
+        )
 
-Startup Description: {idea.idea_text}
-Industry Sector: {idea.target_industry}
-Target Audience: {idea.target_audience}
-Business Model: {idea.business_model}
-
-Respond ONLY with a JSON object matching this structure:
-{{
-  "strategic_objective": "Validate market demand, competitive defensibility, and financial risk for the concept.",
-  "research_questions": [
-    "What is the total addressable market size and CAGR for this domain?",
-    "Who are the key direct and indirect incumbents?",
-    "What technical and regulatory risks exist?",
-    "What is the optimal MVP feature scope and launch timeline?"
-  ],
-  "agent_allocations": {{
-    "WebSearchAgent": "Gather targeted web snippets for market trends, competitors, and pain points.",
-    "MarketAnalysisAgent": "Quantify TAM/SAM/SOM, CAGR, and build target customer personas.",
-    "CompetitorAgent": "Evaluate incumbent features, positioning, and competitive moat.",
-    "SWOTRiskAgent": "Assess strengths, weaknesses, opportunities, threats, and risk scores.",
-    "MVPRecommendationAgent": "Define core value proposition, tech stack, and 4-week roadmap.",
-    "GTMStrategyAgent": "Formulate acquisition channels, pricing model, and launch tactics.",
-    "ReportAgent": "Synthesize all agent findings into an executive viability score and verdict."
-  }}
-}}
-"""
-        json_data = self.llm_service.generate_json(prompt, system_instruction="You are a Chief AI Architect and Strategic Planner.")
+        json_data = self.llm_service.generate_json(
+            prompt,
+            system_instruction="You are a Chief AI Architect and Strategic Planner."
+        )
 
         if json_data:
             try:
@@ -78,13 +63,13 @@ class PlanningTool:
     def __init__(self):
         self.steps = [
             {"id": "planner", "name": "DeepAgents Strategic Research Planning", "status": "pending"},
-            {"id": "web_search", "name": "Web Research and Market Data Gathering", "status": "pending"},
-            {"id": "market_analysis", "name": "TAM/SAM/SOM and Market Size Evaluation", "status": "pending"},
+            {"id": "web_search", "name": "Tavily Web Research and Evidence Gathering", "status": "pending"},
+            {"id": "market_analysis", "name": "TAM/SAM/SOM and Market Sizing Evaluation", "status": "pending"},
             {"id": "competitor_analysis", "name": "Competitive Matrix and Moat Mapping", "status": "pending"},
-            {"id": "swot_risk", "name": "SWOT Matrix and Risk Score Calculation", "status": "pending"},
-            {"id": "mvp_recommendation", "name": "MVP Feature Scoping and Tech Stack", "status": "pending"},
-            {"id": "gtm_strategy", "name": "Go-To-Market and Pricing Channels", "status": "pending"},
-            {"id": "final_report", "name": "Executive Validation Report Synthesis", "status": "pending"}
+            {"id": "swot_risk", "name": "SWOT Matrix and Risk Severity Matrix", "status": "pending"},
+            {"id": "mvp_recommendation", "name": "MVP Feature Scoping and Tech Architecture", "status": "pending"},
+            {"id": "gtm_strategy", "name": "Go-To-Market and Customer Acquisition Channels", "status": "pending"},
+            {"id": "final_report", "name": "Executive Validation Synthesis and Verdict", "status": "pending"}
         ]
 
     def update_step(self, step_id: str, status: str, details: str = "") -> None:

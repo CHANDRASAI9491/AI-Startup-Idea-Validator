@@ -1,26 +1,24 @@
 import streamlit as st
+from app.config import config
 
 
 def render_sidebar() -> str:
-    """Renders clean enterprise sidebar navigation without emojis."""
-    st.sidebar.markdown("### Enterprise AI Platform")
-    st.sidebar.markdown("<p style='font-size:0.85rem; color:#64748B;'>DeepAgents & LangGraph Validation Suite</p>", unsafe_allow_html=True)
-    st.sidebar.markdown("---")
+    """Renders the Enterprise Sidebar Navigation Menu."""
+    with st.sidebar:
+        st.markdown(f"### {config.APP_NAME}")
+        st.markdown(f"*Version {config.APP_VERSION}*")
+        st.markdown("---")
 
-    selected_page = st.sidebar.radio(
-        "Navigation Menu",
-        [
-            "Validate Startup",
-            "Reports",
-            "AI Advisor",
-            "Execution Status",
-            "Settings",
-            "About"
-        ],
-        index=0
-    )
+        page = st.radio(
+            "Navigation",
+            ["Validate Startup", "Reports", "AI Advisor", "Execution Status", "Settings", "About"],
+            index=0
+        )
 
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("<div style='font-size:0.75rem; color:#94A3B8;'>Enterprise System v2.0<br/>Status: Operational</div>", unsafe_allow_html=True)
+        st.markdown("---")
+        st.markdown("#### Engine Status")
+        st.markdown(f"• **Gemini AI:** `{'Ready' if config.is_gemini_available() else 'Fallback Mode'}`")
+        st.markdown(f"• **Tavily Search:** `{'Ready' if config.is_tavily_available() else 'Structured Fallback'}`")
+        st.markdown(f"• **Orchestrator:** `LangGraph + DeepAgents`")
 
-    return selected_page
+        return page

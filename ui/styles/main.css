@@ -1,0 +1,230 @@
+/* AI Startup Idea Validator - Enterprise SaaS Design System */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  --primary: #2563EB;
+  --primary-hover: #1D4ED8;
+  --secondary: #7C3AED;
+  --accent: #06B6D4;
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --background: #F8FAFC;
+  --surface: #FFFFFF;
+  --text-main: #0F172A;
+  --text-muted: #64748B;
+  --border-light: #E2E8F0;
+  --radius-lg: 16px;
+  --radius-md: 10px;
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 10px 25px -5px rgba(37, 99, 235, 0.12);
+}
+
+/* Global Container Tweaks */
+.stApp {
+  background-color: var(--background) !important;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+  color: var(--text-main) !important;
+}
+
+/* Hide default streamlit clutter */
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
+
+/* Custom Hero Section */
+.hero-container {
+  background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+  border-radius: var(--radius-lg);
+  padding: 3rem 2.5rem;
+  color: #FFFFFF;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-container::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.25) 0%, rgba(124, 58, 237, 0) 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.85rem;
+  background: rgba(37, 99, 235, 0.2);
+  border: 1px solid rgba(37, 99, 235, 0.4);
+  border-radius: 20px;
+  color: #60A5FA;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1.25rem;
+}
+
+.hero-title {
+  font-size: 2.75rem;
+  font-weight: 800;
+  line-height: 1.15;
+  background: linear-gradient(135deg, #FFFFFF 0%, #CBD5E1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 0.75rem;
+}
+
+.hero-subtitle {
+  font-size: 1.15rem;
+  color: #94A3B8;
+  max-width: 720px;
+  line-height: 1.6;
+}
+
+/* SaaS Cards */
+.saas-card {
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease-in-out;
+}
+
+.saas-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: #CBD5E1;
+}
+
+.saas-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #F1F5F9;
+  padding-bottom: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.saas-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.saas-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.badge-proceed { background: #DCFCE7; color: #15803D; border: 1px solid #86EFAC; }
+.badge-caution { background: #FEF3C7; color: #B45309; border: 1px solid #FDE68A; }
+.badge-pivot   { background: #E0F2FE; color: #0369A1; border: 1px solid #BAE6FD; }
+.badge-stop    { background: #FEE2E2; color: #B91C1C; border: 1px solid #FCA5A5; }
+
+/* Metrics Grid */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.metric-card {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.metric-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.metric-label {
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.25rem;
+}
+
+/* Chat Bubbles for Advisor */
+.chat-bubble-user {
+  background: var(--primary);
+  color: #FFFFFF;
+  border-radius: 16px 16px 4px 16px;
+  padding: 1rem 1.25rem;
+  margin: 0.75rem 0 0.75rem auto;
+  max-width: 80%;
+  font-size: 0.95rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.chat-bubble-advisor {
+  background: #FFFFFF;
+  color: var(--text-main);
+  border: 1px solid var(--border-light);
+  border-radius: 16px 16px 16px 4px;
+  padding: 1.25rem;
+  margin: 0.75rem auto 0.75rem 0;
+  max-width: 85%;
+  font-size: 0.95rem;
+  box-shadow: var(--shadow-sm);
+  line-height: 1.6;
+}
+
+/* Form Controls */
+.stTextArea textarea {
+  border-radius: var(--radius-md) !important;
+  border: 1.5px solid var(--border-light) !important;
+  font-size: 0.95rem !important;
+  padding: 1rem !important;
+  transition: border-color 0.2s ease !important;
+}
+
+.stTextArea textarea:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+}
+
+/* Primary Action Button */
+div.stButton > button {
+  width: 100% !important;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  border-radius: var(--radius-md) !important;
+  padding: 0.85rem 1.75rem !important;
+  font-size: 1.05rem !important;
+  font-weight: 700 !important;
+  box-shadow: var(--shadow-md) !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+}
+
+div.stButton > button:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3) !important;
+  opacity: 0.95 !important;
+}

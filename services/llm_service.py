@@ -2,12 +2,13 @@ import logging
 from typing import Optional, Dict, Any
 from app.config import config
 from tools.retrieval_utils import extract_json_from_text
+from services.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class LLMService:
-    """Service layer for managing Google Gemini 2.5 Flash model interactions."""
+    """Service layer for managing Google Gemini Flash model interactions with robust fallback."""
 
     def __init__(self, model_name: Optional[str] = None):
         self.model_name = model_name or config.DEFAULT_MODEL
@@ -18,17 +19,20 @@ class LLMService:
             try:
                 from google import genai
                 self._client = genai.Client(api_key=self.api_key)
+                logger.info(f"LLMService initialized successfully with model '{self.model_name}'.")
             except Exception as e:
                 logger.warning(f"Failed to initialize google.genai Client: {e}")
                 self._client = None
+        else:
+            logger.info("No GEMINI_API_KEY configured. Operating in heuristic fallback mode.")
 
     def is_available(self) -> bool:
         return self._client is not None
 
     def generate_text(self, prompt: str, system_instruction: Optional[str] = None) -> Optional[str]:
-        """Generate text using Google Gemini 2.5 Flash."""
+        """Generate text using Google Gemini API."""
         if not self._client:
-            logger.debug("LLM Client not available. Skipping API call.")
+            logger.debug("LLM Client unavailable. Skipping API call.")
             return None
 
         try:
@@ -45,7 +49,7 @@ class LLMService:
             return None
 
     def generate_json(self, prompt: str, system_instruction: Optional[str] = None) -> Optional[Dict[str, Any]]:
-        """Generate text and parse JSON result cleanly."""
+        """Generate text and cleanly parse JSON result."""
         json_instruction = (system_instruction or "") + "\nRespond strictly with valid JSON. Do not include markdown formatting outer wrappers other than standard JSON."
         text_response = self.generate_text(prompt, system_instruction=json_instruction)
         if text_response:

@@ -1,41 +1,28 @@
 import logging
 from agents.base_agent import BaseAgent
 from state.schema import StartupState, GTMStrategy
+from services.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class GTMStrategyAgent(BaseAgent):
-    """Go-To-Market Strategy Agent specifying channels, pricing, launch tactics, and positioning."""
+    """Go-To-Market Strategy Agent formulating acquisition channels, pricing models, positioning, and tactics."""
 
-    def run(self, state: StartupState) -> StartupState:
-        logger.info(f"GTMStrategyAgent running for idea: {state.idea.idea_text}")
+    def execute(self, state: StartupState) -> StartupState:
+        logger.info(f"GTMStrategyAgent formulating acquisition plan for idea: '{state.idea.idea_text}'")
         try:
-            prompt = f"""
-Formulate a Go-To-Market (GTM) strategy for this startup concept.
+            prompt = self.load_prompt(
+                "gtm_agent",
+                idea_text=state.idea.idea_text,
+                business_model=state.idea.business_model or "B2B SaaS / Subscription",
+                target_audience=state.idea.target_audience or "General Users / Businesses"
+            )
 
-Startup Idea: {state.idea.idea_text}
-Target Industry: {state.idea.target_industry}
-Target Audience: {state.idea.target_audience}
-
-Respond ONLY with a JSON object matching this structure:
-{{
-  "primary_acquisition_channels": [
-    "Product-Led Growth (Free Trial)",
-    "Content Marketing and SEO",
-    "Targeted LinkedIn Outbound"
-  ],
-  "pricing_strategy": "Freemium with $29/mo Starter and $99/mo Pro Tier",
-  "positioning_statement": "For target users who need efficient solutions, our product delivers speed and automation unmatched by legacy tools.",
-  "launch_tactics": [
-    "Launch on Product Hunt and Hacker News (Show HN)",
-    "Distribute early access invites to 100 beta testers",
-    "Publish case study teardowns on industry blogs"
-  ],
-  "estimated_cac_summary": "Estimated initial CAC is low ($20-$50) by leveraging organic content and viral referral loops."
-}}
-"""
-            json_data = self.generate_json(prompt, system_instruction="You are a startup Growth Marketer.")
+            json_data = self.generate_json(
+                prompt,
+                system_instruction="You are a Senior SaaS Growth Marketer and GTM Strategist."
+            )
 
             if json_data:
                 try:
@@ -44,21 +31,21 @@ Respond ONLY with a JSON object matching this structure:
                 except Exception as e:
                     logger.warning(f"GTMStrategy parsing error: {e}")
 
-            # Fallback GTM strategy if LLM output is unavailable or invalid
+            # Fallback heuristic calculation if LLM output unavailable or invalid
             state.gtm_strategy = GTMStrategy(
                 primary_acquisition_channels=[
-                    "Organic Search and Technical Content SEO",
-                    f"Niche community engagement on Twitter/X, LinkedIn and Reddit within {state.idea.target_industry}",
-                    "Product-led viral growth via shareable validation reports"
+                    "Product-Led Growth (PLG) freemium self-serve funnel",
+                    "Targeted LinkedIn B2B outbound campaign",
+                    "SEO & thought-leadership content marketing"
                 ],
-                pricing_strategy="Freemium model: 1 free validation, $29/mo for unlimited validation and export access.",
-                positioning_statement=f"For {state.idea.target_audience} looking to validate startup ideas fast, our AI platform delivers comprehensive market research in minutes.",
+                pricing_strategy="Freemium entry tier with $49/mo Pro and $199/mo Enterprise team plans.",
+                positioning_statement=f"The fastest AI-driven strategic validation platform for {state.idea.target_audience or 'modern founders'}.",
                 launch_tactics=[
-                    "Launch Product Hunt campaign with interactive video demo",
-                    "Post Show HN on Hacker News featuring live demo links",
-                    "Direct outreach to 50 target customer leads for structured feedback"
+                    "Product Hunt launchpad campaign",
+                    "Venture capital incubator & accelerator partnerships",
+                    "Targeted founder community focus groups"
                 ],
-                estimated_cac_summary="Estimated low initial CAC ($15 - $35) driven by organic community build and inbound content."
+                estimated_cac_summary="Estimated initial CAC of $35 - $65 per paid subscriber with a 4-month payback period."
             )
         except Exception as e:
             logger.error(f"Error in GTMStrategyAgent: {e}")

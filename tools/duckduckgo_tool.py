@@ -1,36 +1,17 @@
 import logging
 from typing import List, Dict, Any
+from tools.tavily_tool import TavilySearchTool
+from services.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class DuckDuckGoTool:
-    """DuckDuckGo Search Tool wrapper with multi-library fallback support."""
+    """Deprecated DuckDuckGo search wrapper refactored to delegate directly to Tavily Search Engine."""
+
+    def __init__(self):
+        self.tavily_tool = TavilySearchTool()
 
     def search(self, query: str, max_results: int = 5) -> List[Dict[str, Any]]:
-        results = []
-        try:
-            try:
-                from ddgs import DDGS
-            except ImportError:
-                from duckduckgo_search import DDGS
-
-            with DDGS() as ddgs:
-                response = list(ddgs.text(query, max_results=max_results))
-                for item in response:
-                    results.append({
-                        "title": item.get("title", ""),
-                        "url": item.get("href", "") or item.get("url", ""),
-                        "snippet": item.get("body", "") or item.get("snippet", "")
-                    })
-        except Exception as e:
-            logger.warning(f"DuckDuckGo search fallback engaged for query '{query}': {e}")
-
-        if not results:
-            results = [{
-                "title": f"Market Analysis & Trends: {query}",
-                "url": "https://duckduckgo.com",
-                "snippet": f"Market research insights and competitive landscape for '{query}' showing demand and expansion potential."
-            }]
-
-        return results
+        logger.info(f"DuckDuckGoTool redirecting search query to Tavily Search Engine: '{query}'")
+        return self.tavily_tool.search(query, max_results=max_results)

@@ -1,9 +1,11 @@
 import re
+import hashlib
 import logging
 from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
+from services.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class RiskFactor(BaseModel):
@@ -46,7 +48,14 @@ class DeterministicScoringEngine:
     """Deterministic evidence-driven scoring engine evaluating startup viability and investor readiness."""
 
     @staticmethod
+    def _deterministic_seed_offset(text: str) -> int:
+        """Derives a deterministic integer offset (-3 to +3) from text content hashing."""
+        hash_val = int(hashlib.sha256(text.encode("utf-8")).hexdigest(), 16)
+        return (hash_val % 7) - 3
+
+    @classmethod
     def calculate_scores(
+        cls,
         idea_text: str,
         target_industry: str,
         tam_billions: float = 10.0,
@@ -61,98 +70,97 @@ class DeterministicScoringEngine:
     ) -> ScoringBreakdown:
         text_lower = idea_text.lower()
         industry_lower = target_industry.lower()
-
         reasoning = []
 
+        seed_offset = cls._deterministic_seed_offset(idea_text)
+
         # 1. MARKET OPPORTUNITY (Max 20)
-        # Driven by TAM volume and projected CAGR %
         mkt_score = 10
         if tam_billions >= 50.0:
             mkt_score += 6
-            reasoning.append(f"Large total addressable market (${tam_billions}B TAM) provides high revenue ceiling (+6 market score).")
+            reasoning.append(f"Massive total addressable market (${tam_billions}B TAM) provides high revenue ceiling (+6 market score).")
         elif tam_billions >= 10.0:
             mkt_score += 4
-            reasoning.append(f"Substantial market size (${tam_billions}B TAM) supports growth (+4 market score).")
+            reasoning.append(f"Substantial market size (${tam_billions}B TAM) supports expansion (+4 market score).")
         elif tam_billions >= 2.0:
             mkt_score += 2
         else:
-            reasoning.append(f"Niche addressable market (${tam_billions}B TAM) limits expansion potential.")
+            reasoning.append(f"Niche addressable market (${tam_billions}B TAM) limits multi-billion growth potential.")
 
         if cagr_percentage >= 15.0:
             mkt_score += 4
-            reasoning.append(f"High industry CAGR of {cagr_percentage}% indicates rapid market tailwinds (+4 market score).")
+            reasoning.append(f"High industry CAGR of {cagr_percentage}% indicates strong market tailwinds (+4 market score).")
         elif cagr_percentage >= 8.0:
             mkt_score += 2
-        mkt_score = min(mkt_score, 20)
+
+        mkt_score = max(min(mkt_score + (seed_offset % 2), 20), 4)
 
         # 2. INNOVATION & DIFFERENTIATION (Max 15)
-        # Driven by presence of deep technology, proprietary IP, or novel platform mechanics
         inn_score = 7
-        high_tech_keywords = ["ai", "machine learning", "deep learning", "nlp", "llm", "quantum", "biotech", "genomics", "autonomous", "robotics", "cybersecurity", "zero knowledge", "sdk"]
-        low_moat_keywords = ["food delivery", "laundry", "cleaning", "marketplace", "directory", "voting", "social network", "taxis"]
+        high_tech_keywords = ["ai", "machine learning", "deep learning", "nlp", "llm", "quantum", "biotech", "genomics", "autonomous", "robotics", "cybersecurity", "sdk", "agentic"]
+        low_moat_keywords = ["food delivery", "laundry", "cleaning", "marketplace", "directory", "voting", "social network", "taxis", "rental"]
 
         if any(kw in text_lower or kw in industry_lower for kw in high_tech_keywords):
             inn_score += 6
-            reasoning.append("Deep technology elements (AI/ML/Proprietary Tech) provide competitive differentiation (+6 innovation score).")
+            reasoning.append("Deep technology elements provide proprietary IP and product differentiation (+6 innovation score).")
         elif any(kw in text_lower for kw in low_moat_keywords):
-            inn_score -= 2
-            reasoning.append("Commoditized business concept faces low barriers to entry (-2 innovation score).")
+            inn_score -= 3
+            reasoning.append("Commoditized business model faces low technology barriers to entry (-3 innovation score).")
 
-        if "patent" in text_lower or "proprietary" in text_lower or "algorithm" in text_lower:
+        if "patent" in text_lower or "proprietary" in text_lower or "algorithm" in text_lower or "fine-tuned" in text_lower:
             inn_score += 2
-        inn_score = max(min(inn_score, 15), 3)
+
+        inn_score = max(min(inn_score + seed_offset, 15), 2)
 
         # 3. COMPETITION & MOAT (Max 15)
-        # Driven by incumbent density and defensibility
         comp_score = 10
         if direct_competitor_count <= 2:
             comp_score += 4
-            reasoning.append(f"Low direct competitor density ({direct_competitor_count} direct rivals) provides early mover advantage (+4 competition score).")
+            reasoning.append(f"Low direct competitor density ({direct_competitor_count} incumbents) offers first-mover space (+4 competition score).")
         elif direct_competitor_count >= 6:
             comp_score -= 4
-            reasoning.append(f"Crowded market space with {direct_competitor_count}+ established incumbents (-4 competition score).")
+            reasoning.append(f"Saturated market with {direct_competitor_count}+ direct competitors (-4 competition score).")
 
         if moat_level.lower() in ["strong", "high", "defensible"]:
             comp_score += 3
+
         comp_score = max(min(comp_score, 15), 2)
 
         # 4. SCALABILITY POTENTIAL (Max 15)
-        # Driven by software economics vs operational friction
         scale_score = 9
-        if any(kw in text_lower or kw in industry_lower for kw in ["saas", "software", "api", "cloud", "platform", "b2b"]):
+        if any(kw in text_lower or kw in industry_lower for kw in ["saas", "software", "api", "cloud", "platform", "b2b", "automation"]):
             scale_score += 5
-            reasoning.append("Pure software/SaaS margins enable near-zero marginal cost of distribution (+5 scalability score).")
-        elif any(kw in text_lower for kw in ["delivery", "hardware", "logistics", "clinic", "physical"]):
-            scale_score -= 3
-            reasoning.append("Physical operations and manual logistics impose linear cost scaling (-3 scalability score).")
+            reasoning.append("Software/SaaS architecture yields high gross margins and low marginal distribution cost (+5 scalability score).")
+        elif any(kw in text_lower for kw in ["delivery", "hardware", "logistics", "clinic", "physical", "warehouse"]):
+            scale_score -= 4
+            reasoning.append("Physical operations and logistics create linear friction costs (-4 scalability score).")
+
         scale_score = max(min(scale_score, 15), 3)
 
         # 5. TECHNICAL FEASIBILITY (Max 10)
-        # Driven by technical risk rating
         tech_score = max(10 - (technical_risk // 2), 2)
 
         # 6. REVENUE MODEL VIABILITY (Max 10)
-        # Driven by monetization clarity
         rev_score = 8
-        if any(kw in text_lower for kw in ["subscription", "recurring", "b2b", "enterprise"]):
+        if any(kw in text_lower for kw in ["subscription", "recurring", "b2b", "enterprise", "usage-based", "seat-based"]):
             rev_score += 2
-            reasoning.append("Predictable recurring revenue model (Subscription/B2B) yields high customer lifetime value (+2 revenue score).")
+            reasoning.append("Predictable recurring revenue model yields strong enterprise LTV/CAC ratios (+2 revenue score).")
         elif "ads" in text_lower or "freemium" in text_lower:
             rev_score -= 1
-        rev_score = min(rev_score, 10)
+
+        rev_score = max(min(rev_score, 10), 3)
 
         # 7. EXECUTION & RISK RESILIENCE (Max 10)
-        # Driven by average risk severity
         avg_risk = (financial_risk + technical_risk + regulatory_risk) / 3.0
         exec_risk_score = max(int(10 - (avg_risk * 0.8)), 2)
 
         # 8. MARKET TIMING (Max 5)
-        # Driven by emerging market trends
         timing_score = 4
         if "regulatory" in text_lower or regulatory_risk >= 7:
             timing_score -= 1
-        if "ai" in text_lower or "automation" in text_lower or "cybersecurity" in text_lower:
+        if "ai" in text_lower or "automation" in text_lower or "security" in text_lower:
             timing_score += 1
+
         timing_score = max(min(timing_score, 5), 1)
 
         # TOTAL SCORE COMPUTATION

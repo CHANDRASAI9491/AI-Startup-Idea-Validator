@@ -57,7 +57,7 @@ state: StartupState = st.session_state.current_state
 system_status = "Operational" if state is None else (state.status.replace("_", " ").title())
 render_navbar(session_id=st.session_state.session_id, status=system_status)
 
-# PAGE ROUTING (Opens directly on Validation Page)
+# PAGE ROUTING (Opens directly on Validate Startup Home Page)
 if selected_page == "Validate Startup":
     render_header()
 
@@ -82,7 +82,7 @@ if selected_page == "Validate Startup":
             st.session_state.current_state = new_state
             st.session_state.session_id = sess_id or form_data["idea_text"][:10].replace(" ", "_")
             st.session_state.chat_history = []
-            st.success("Validation complete. View report summary below or navigate to 'Reports' in sidebar.")
+            st.success("Validation complete! View strategic report summary below or navigate to 'Reports' in sidebar.")
             st.rerun()
 
     # Render Startup Input Form
@@ -105,7 +105,7 @@ elif selected_page == "AI Advisor":
 
 elif selected_page == "Execution Status":
     st.markdown('<div class="saas-card">', unsafe_allow_html=True)
-    st.markdown('<div class="saas-section-title">DeepAgents Execution Status Monitor</div>', unsafe_allow_html=True)
+    st.markdown('<div class="saas-card-header"><div class="saas-title">DeepAgents Execution Status Monitor</div></div>', unsafe_allow_html=True)
     if not state or not state.planning_output:
         st.info("No active execution plan found. Please execute a startup validation on the main page.")
     else:
@@ -123,26 +123,29 @@ elif selected_page == "Execution Status":
 
 elif selected_page == "Settings":
     st.markdown('<div class="saas-card">', unsafe_allow_html=True)
-    st.markdown('<div class="saas-section-title">Platform Configuration and Engine Settings</div>', unsafe_allow_html=True)
+    st.markdown('<div class="saas-card-header"><div class="saas-title">Platform Configuration & Engine Settings</div></div>', unsafe_allow_html=True)
     st.markdown(f"**Gemini Model Target:** `{config.DEFAULT_MODEL}`")
+    st.markdown(f"**Search Engine:** `Tavily Search API`")
     st.markdown(f"**Max Search Results Per Category:** `{config.MAX_SEARCH_RESULTS}`")
     st.markdown(f"**Output Reports Directory:** `{config.REPORTS_DIR}`")
     st.markdown(f"**Google API Key Configured:** `{'Yes' if config.is_gemini_available() else 'No (Operating in Local Heuristic Mode)'}`")
+    st.markdown(f"**Tavily API Key Configured:** `{'Yes' if config.is_tavily_available() else 'No (Operating in Structured Research Mode)'}`")
     st.markdown('</div>', unsafe_allow_html=True)
 
 elif selected_page == "About":
     st.markdown('<div class="saas-card">', unsafe_allow_html=True)
-    st.markdown('<div class="saas-section-title">About Enterprise AI Startup Idea Validator</div>', unsafe_allow_html=True)
+    st.markdown('<div class="saas-card-header"><div class="saas-title">About Enterprise AI Startup Idea Validator</div></div>', unsafe_allow_html=True)
     st.markdown("""
-This platform is a commercial-grade enterprise application designed to evaluate startup ideas using a multi-agent AI pipeline.
+This platform is a commercial-grade enterprise application designed to evaluate early-stage startup concepts using a multi-agent AI pipeline.
 
 **System Architecture:**
-- **UI & Visualization:** Streamlit with Plotly Charts & Vibrant SaaS Gradient Styling
+- **UI & Visualization:** Streamlit with Plotly Charts & Custom SaaS CSS Design System
 - **Multi-Agent Orchestration:** DeepAgents Strategic Planner & LangGraph StateGraph
 - **AI Language Model:** Google Gemini 2.5 Flash
-- **Web Search Engine:** DuckDuckGo Search API
+- **Web Search Engine:** Tavily Search API with deduplication, ranking, and citation tracking
+- **Deterministic Engine:** 8-Dimension Weighted Viability Scoring Matrix (Out of 100)
 - **State Validation:** Pydantic 2.0+
-- **Document Generation:** Markdown and ReportLab PDF
+- **Document Generation:** Multi-format PDF, Markdown, and JSON exporters
 """)
     st.markdown('</div>', unsafe_allow_html=True)
 

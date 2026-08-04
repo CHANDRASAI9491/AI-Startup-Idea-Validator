@@ -8,12 +8,13 @@ from pipeline.graph import ValidationGraph
 from tools.file_tools import FileTools
 from agents.conversational_advisor import ConversationalAdvisor
 from app.config import config
+from services.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ApplicationOrchestrator:
-    """Application Orchestrator managing memory, LangGraph execution, report exports, and advisor."""
+    """Application Orchestrator managing memory, LangGraph execution, report exports, and AI advisor."""
 
     def __init__(self):
         self.memory = MemoryStore()

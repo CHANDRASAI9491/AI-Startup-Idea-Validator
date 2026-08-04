@@ -2,60 +2,30 @@ import logging
 from agents.base_agent import BaseAgent
 from state.schema import StartupState, CompetitorAnalysis, CompetitorItem
 from tools.retrieval_utils import format_search_results_summary
+from services.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class CompetitorAgent(BaseAgent):
-    """Competitor Analysis Agent evaluating direct/indirect competitors, positioning, and moat."""
+    """Competitor Analysis Agent evaluating direct/indirect incumbents, feature matrix, and moat defensibility."""
 
-    def run(self, state: StartupState) -> StartupState:
-        logger.info(f"CompetitorAgent running for idea: {state.idea.idea_text}")
+    def execute(self, state: StartupState) -> StartupState:
+        logger.info(f"CompetitorAgent analyzing market landscape for idea: '{state.idea.idea_text}'")
         try:
             search_summary = format_search_results_summary(state.search_results)
-            
-            prompt = f"""
-Identify key competitors and market positioning for this startup idea based on research snippets.
 
-Startup Idea: {state.idea.idea_text}
-Industry: {state.idea.target_industry}
+            prompt = self.load_prompt(
+                "competitor_agent",
+                idea_text=state.idea.idea_text,
+                target_industry=state.idea.target_industry or "Technology",
+                search_summary=search_summary
+            )
 
-Web Research Summary:
-{search_summary}
-
-Respond ONLY with a JSON object matching this structure:
-{{
-  "direct_competitors": [
-    {{
-      "name": "Competitor A",
-      "url": "https://example.com",
-      "description": "Leading solution in market",
-      "key_features": ["Feature 1", "Feature 2"],
-      "pricing_model": "Subscription ($49/mo)",
-      "strengths": ["Brand dominance"],
-      "weaknesses": ["Complex onboarding"]
-    }}
-  ],
-  "indirect_competitors": [
-    {{
-      "name": "Generic Workarounds",
-      "url": "",
-      "description": "Manual Excel/Spreadsheet processes",
-      "key_features": ["Custom flexibility"],
-      "pricing_model": "Free / Built-in",
-      "strengths": ["No added software fee"],
-      "weaknesses": ["Time consuming"]
-    }}
-  ],
-  "feature_comparison_matrix": {{
-    "AI Automation": ["Proposed: Yes", "Competitors: Partial"],
-    "Speed": ["Proposed: Fast (<5min)", "Competitors: Manual"]
-  }},
-  "market_positioning_summary": "The startup occupies a high-automation, high-accessibility niche.",
-  "moat_assessment": "Proprietary workflow models, speed advantage, and vertical focus."
-}}
-"""
-            json_data = self.generate_json(prompt, system_instruction="You are a competitive intelligence strategist.")
+            json_data = self.generate_json(
+                prompt,
+                system_instruction="You are a Principal Competitive Intelligence Analyst."
+            )
 
             if json_data:
                 try:
@@ -64,36 +34,45 @@ Respond ONLY with a JSON object matching this structure:
                 except Exception as e:
                     logger.warning(f"CompetitorAnalysis parsing error: {e}")
 
-            # Fallback competitor analysis if LLM output unavailable or invalid
+            # Fallback heuristic calculation if LLM output unavailable or invalid
             state.competitor_analysis = CompetitorAnalysis(
                 direct_competitors=[
                     CompetitorItem(
-                        name="Established Industry Incumbent",
-                        url="https://example.com/competitor1",
-                        description=f"Existing provider of legacy software in {state.idea.target_industry}.",
-                        key_features=["Core features", "Standard reporting"],
-                        pricing_model="Enterprise SaaS ($99 - $499/mo)",
-                        strengths=["Existing enterprise brand", "Installed customer base"],
-                        weaknesses=["High cost", "Slow innovation cycles"]
+                        name="Incumbent Core SaaS",
+                        url="https://example.com/incumbent",
+                        description=f"Established incumbent platform in {state.idea.target_industry}",
+                        key_features=["Basic reporting", "Manual dashboard"],
+                        pricing_model="Enterprise ($149/mo)",
+                        strengths=["Brand awareness", "Large sales team"],
+                        weaknesses=["High pricing", "Slow product iteration"]
+                    ),
+                    CompetitorItem(
+                        name="Legacy Tooling Solution",
+                        url="https://example.org/legacy",
+                        description="Legacy desktop and spreadsheet workflow solution",
+                        key_features=["Templates", "File exports"],
+                        pricing_model="Perpetual license",
+                        strengths=["Install base"],
+                        weaknesses=["No AI automation", "No cloud sync"]
                     )
                 ],
                 indirect_competitors=[
                     CompetitorItem(
-                        name="Manual and Spreadsheet Processes",
-                        url="",
-                        description="Internal spreadsheets and manual team effort.",
-                        key_features=["Custom flexibility"],
+                        name="Custom Spreadsheets / Manual Workflows",
+                        url="https://example.com/manual",
+                        description="Internal manual team processes and custom spreadsheets",
                         pricing_model="Internal labor cost",
-                        strengths=["No upfront software licenses"],
-                        weaknesses=["Prone to errors, lacks automation"]
+                        strengths=["Low upfront software cost"],
+                        weaknesses=["High human error rate", "Non-scalable"]
                     )
                 ],
                 feature_comparison_matrix={
-                    "Automation": {"Proposed": "AI-Driven (High)", "Incumbents": "Manual / Basic"},
-                    "Time to Value": {"Proposed": "< 10 minutes", "Incumbents": "Weeks"}
+                    "AI Automation": {"Us": "Yes", "Incumbent Core": "Partial"},
+                    "Cloud Synchronization": {"Us": "Yes", "Incumbent Core": "Yes"},
+                    "Real-time Analytics": {"Us": "Yes", "Incumbent Core": "No"}
                 },
-                market_positioning_summary=f"Positioned as an agile, AI-first alternative tailored specifically for modern {state.idea.target_audience}.",
-                moat_assessment="Speed-to-insight advantage, proprietary workflow integration, and intuitive design."
+                market_positioning_summary=f"Positions as an AI-first automated alternative in the {state.idea.target_industry} space.",
+                moat_assessment="Defensible workflow automation, proprietary data loops, and rapid time-to-value."
             )
         except Exception as e:
             logger.error(f"Error in CompetitorAgent: {e}")

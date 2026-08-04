@@ -26,9 +26,9 @@ class StructuredConcept(BaseModel):
 
 
 class SearchResultItem(BaseModel):
-    title: str
-    url: str
-    snippet: str
+    title: str = Field(..., description="Result title")
+    url: str = Field(..., description="Source URL")
+    snippet: str = Field(..., description="Content snippet")
 
 
 class WebSearchResults(BaseModel):
@@ -105,10 +105,10 @@ class MVPFeature(BaseModel):
 
 class MVPRecommendation(BaseModel):
     core_value_proposition: str = ""
-    tech_stack_frontend: str = "React / Next.js / Streamlit"
-    tech_stack_backend: str = "FastAPI / Python 3.12+"
+    tech_stack_frontend: str = "Streamlit / Modern CSS"
+    tech_stack_backend: str = "Python 3.11+ / LangGraph"
     tech_stack_database: str = "PostgreSQL"
-    tech_stack_ai: str = "Google Gemini 2.5 Flash"
+    tech_stack_ai: str = "Google Gemini 2.5 Flash / Tavily Search API"
     features: List[MVPFeature] = Field(default_factory=list)
     four_week_roadmap: Dict[str, str] = Field(default_factory=dict)
     key_metrics_kpis: List[str] = Field(default_factory=list)

@@ -10,8 +10,9 @@ from agents.swot_risk_agent import SWOTRiskAgent
 from agents.mvp_recommendation_agent import MVPRecommendationAgent
 from agents.gtm_strategy_agent import GTMStrategyAgent
 from agents.report_agent import ReportAgent
+from services.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ValidationGraph:

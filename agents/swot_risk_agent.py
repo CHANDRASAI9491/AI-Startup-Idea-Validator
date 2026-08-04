@@ -1,45 +1,31 @@
 import logging
 from agents.base_agent import BaseAgent
-from state.schema import StartupState, SWOTAnalysis
-from tools.retrieval_utils import format_search_results_summary
+from state.schema import StartupState, SWOTAnalysis, RiskItem
+from pipeline.context_passer import ContextPasser
+from services.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class SWOTRiskAgent(BaseAgent):
-    """SWOT and Risk Agent conducting Strengths, Weaknesses, Opportunities, Threats, and Risk scores."""
+    """SWOT & Risk Agent generating strengths, weaknesses, opportunities, threats, and a severity risk matrix."""
 
-    def run(self, state: StartupState) -> StartupState:
-        logger.info(f"SWOTRiskAgent running for idea: {state.idea.idea_text}")
+    def execute(self, state: StartupState) -> StartupState:
+        logger.info(f"SWOTRiskAgent calculating risk matrix for idea: '{state.idea.idea_text}'")
         try:
-            search_summary = format_search_results_summary(state.search_results)
-            
-            prompt = f"""
-Conduct a comprehensive SWOT analysis and Risk Assessment for this startup concept.
+            context_summary = ContextPasser.extract_summary(state)
 
-Startup Idea: {state.idea.idea_text}
-Industry: {state.idea.target_industry}
+            prompt = self.load_prompt(
+                "swot_risk_agent",
+                idea_text=state.idea.idea_text,
+                target_industry=state.idea.target_industry or "Technology / SaaS",
+                context_summary=context_summary
+            )
 
-Web Research Summary:
-{search_summary}
-
-Respond ONLY with a JSON object matching this structure:
-{{
-  "strengths": ["Strong value proposition", "Low capital requirement"],
-  "weaknesses": ["Unproven market brand", "Initial customer trust hurdle"],
-  "opportunities": ["Expanding global adoption", "Partnership opportunities"],
-  "threats": ["Incumbent response", "Shifting regulatory environment"],
-  "financial_risk": 4,
-  "technical_risk": 3,
-  "regulatory_risk": 2,
-  "overall_risk_score": 3,
-  "risk_mitigation_plan": [
-    "Build early customer case studies to establish trust",
-    "Maintain lean operations to minimize cash burn"
-  ]
-}}
-"""
-            json_data = self.generate_json(prompt, system_instruction="You are a venture risk auditor.")
+            json_data = self.generate_json(
+                prompt,
+                system_instruction="You are a Senior Venture Risk Officer and Strategic Analyst."
+            )
 
             if json_data:
                 try:
@@ -48,33 +34,59 @@ Respond ONLY with a JSON object matching this structure:
                 except Exception as e:
                     logger.warning(f"SWOTAnalysis parsing error: {e}")
 
-            # Fallback SWOT analysis if LLM output is unavailable or invalid
+            # Fallback heuristic calculation if LLM output unavailable or invalid
             state.swot_analysis = SWOTAnalysis(
                 strengths=[
-                    "High value-to-cost ratio for early adopters",
-                    "Scalable cloud architecture with low marginal server cost",
-                    f"Tightly focused on {state.idea.target_audience} pain points"
+                    "High-margin software revenue model",
+                    "Proprietary AI automation workflow",
+                    "Fast time-to-value for target users"
                 ],
                 weaknesses=[
-                    "Early brand awareness and customer acquisition trust hurdles",
-                    "Dependency on continuous AI model availability"
+                    "Early-stage brand recognition",
+                    "Initial marketing & acquisition pipeline requirement"
                 ],
                 opportunities=[
-                    f"Rapid expansion in the growing {state.idea.target_industry} sector",
-                    "Up-selling enterprise tiers and custom team integrations"
+                    f"Rapid growth in enterprise {state.idea.target_industry} demand",
+                    "API integrations and partnership ecosystem"
                 ],
                 threats=[
-                    "Potential copycat features from well-funded legacy competitors",
-                    "Customer acquisition cost inflation across digital channels"
+                    "Incumbents attempting feature cloning",
+                    "Evolving AI compliance & data privacy rules"
                 ],
-                financial_risk=4,
-                technical_risk=3,
-                regulatory_risk=2,
-                overall_risk_score=3,
+                financial_risk=5,
+                technical_risk=4,
+                regulatory_risk=3,
+                overall_risk_score=4,
+                risk_matrix=[
+                    RiskItem(
+                        risk_name="Initial Customer Acquisition Cost (CAC)",
+                        category="Financial",
+                        probability=3,
+                        impact=4,
+                        severity_score=12,
+                        mitigation_strategy="Deploy product-led growth (PLG) freemium funnel and targeted outbounds."
+                    ),
+                    RiskItem(
+                        risk_name="Incumbent Feature Parity Response",
+                        category="Market",
+                        probability=3,
+                        impact=3,
+                        severity_score=9,
+                        mitigation_strategy="Focus on specialized niche features and superior user experience."
+                    ),
+                    RiskItem(
+                        risk_name="Data Privacy & Security Boundaries",
+                        category="Regulatory",
+                        probability=2,
+                        impact=3,
+                        severity_score=6,
+                        mitigation_strategy="Implement SOC2 compliance framework and zero-retention API policies."
+                    )
+                ],
                 risk_mitigation_plan=[
-                    "Focus on product-led growth and referral incentives to keep CAC low",
-                    "Implement strict data encryption and user privacy protocols",
-                    "Design modular provider wrappers to ensure API vendor independence"
+                    "Focus initial release strictly on high-impact core features",
+                    "Establish clear customer feedback and iteration channels",
+                    "Maintain lean operating expenditure during pre-PMF validation phase"
                 ]
             )
         except Exception as e:

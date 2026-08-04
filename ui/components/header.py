@@ -1,7 +1,14 @@
 import streamlit as st
 
 
-def render_header():
-    """Renders main application header with gradient title and short description."""
-    st.markdown('<div class="gradient-title">AI Startup Idea Validator</div>', unsafe_allow_html=True)
-    st.markdown('<div class="saas-subtitle">Autonomous Enterprise Validation Engine powered by DeepAgents research planning and LangGraph multi-agent market analysis.</div>', unsafe_allow_html=True)
+def render_header() -> None:
+    """Renders the Hero Banner Section for the AI Startup Idea Validator Home Page."""
+    st.markdown("""
+<div class="hero-container">
+  <div class="hero-badge">DeepAgents + LangGraph Multi-Agent Architecture</div>
+  <div class="hero-title">AI Startup Idea Validator</div>
+  <div class="hero-subtitle">
+    Transform early-stage startup concepts into investor-ready strategic validation reports with Tavily web research, deterministic 8-dimension scoring, and grounded AI decision support.
+  </div>
+</div>
+""", unsafe_allow_html=True)
