@@ -1,6 +1,12 @@
-.venv/
+# Generated reports
+reports/*.pdf
+reports/*.json
+reports/*.md
+
+# Python cache
 __pycache__/
-.pytest_cache/
-.validation_memory/
-outputs/
+*.pyc
+
+# Environment
+.venv/
 .env
