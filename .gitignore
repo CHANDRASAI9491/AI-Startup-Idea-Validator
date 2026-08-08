@@ -1,12 +1,20 @@
 # Generated reports
-reports/*.pdf
-reports/*.json
+
+reports/*.pdf*
+*reports/*.json
 reports/*.md
 
+# Generated validation memory
+.validation_memory/
+
 # Python cache
+
 __pycache__/
 *.pyc
 
 # Environment
+
 .venv/
 .env
+# Generated validation memory
+.validation_memory/
