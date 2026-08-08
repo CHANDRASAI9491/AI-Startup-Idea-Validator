@@ -77,3 +77,19 @@ class TavilySearchTool:
             ]
 
         return results
+
+
+from langchain_core.tools import tool
+
+
+@tool
+def tavily_search_tool(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
+    """Search the web for market trends, competitors, customer pain points, and industry news using Tavily Search API.
+    
+    Args:
+        query: Search query string.
+        max_results: Maximum number of search results to return (default: 5).
+    """
+    search_tool = TavilySearchTool()
+    return search_tool.search(query=query, max_results=max_results)
+
