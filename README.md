@@ -1,8 +1,8 @@
-# AI Startup Idea Validator
+# Development of AI Based Startup Idea Validator with Market Analysis Assistance
 
 ## Overview
 
-AI Startup Idea Validator is a multi-agent AI application that evaluates startup ideas using LangGraph, Google Gemini, Tavily Search, and a deterministic scoring engine. The system performs real-time market research, competitor analysis, SWOT analysis, MVP planning, Go-To-Market strategy generation, and produces a comprehensive startup validation report with an overall viability score.
+Development of AI Based Startup Idea Validator with Market Analysis Assistance is a multi-agent AI application that evaluates startup ideas using Deep Agents, LangGraph, Google Gemini, Tavily Search, and a deterministic scoring engine. The system performs real-time market research, competitor analysis, SWOT analysis, MVP planning, Go-To-Market strategy generation, and produces a comprehensive startup validation report with an overall viability score.
 
 The project is designed to help entrepreneurs, students, startup founders, incubators, and innovation teams validate business ideas before investing significant time and resources.
 

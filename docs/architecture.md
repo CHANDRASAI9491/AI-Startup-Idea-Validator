@@ -1,6 +1,6 @@
 # System Architecture & Multi-Agent DAG Specification
 
-The **AI Startup Idea Validator** platform is built on a modular multi-agent graph architecture designed to validate, score, and advise early-stage startup founders.
+The **Development of AI Based Startup Idea Validator with Market Analysis Assistance** platform is built on a modular multi-agent graph architecture designed to validate, score, and advise early-stage startup founders.
 
 ```mermaid
 graph TD

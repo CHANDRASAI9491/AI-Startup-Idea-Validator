@@ -159,6 +159,7 @@ class StartupState(BaseModel):
     mvp_recommendation: Optional[MVPRecommendation] = None
     gtm_strategy: Optional[GTMStrategy] = None
     final_report: Optional[ValidationReport] = None
+    deep_result: Optional[Dict[str, Any]] = None
     status: str = "initialized"
     error: Optional[str] = None
 

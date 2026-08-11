@@ -14,5 +14,5 @@ def test_market_analysis_agent():
     updated_state = agent.run(state)
     assert updated_state.market_analysis is not None
     assert updated_state.market_analysis.tam_billions > 0
-    assert updated_state.market_analysis.market_readiness_score >= 0
+    assert 0 <= updated_state.market_analysis.market_readiness_score <= 100
     assert len(updated_state.market_analysis.key_growth_drivers) > 0

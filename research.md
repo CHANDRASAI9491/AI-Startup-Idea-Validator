@@ -1,4 +1,4 @@
-# AI Startup Idea Validator - Research Document
+# Development of AI Based Startup Idea Validator with Market Analysis Assistance - Research Document
 
 ---
 
@@ -8,7 +8,7 @@ Startup founders often struggle to determine whether their business ideas are te
 
 Most existing AI tools provide isolated functionalities such as chatbot assistance or business plan generation, but they do not offer a complete startup validation workflow.
 
-The objective of this project is to develop an AI-powered Startup Idea Validator that automates startup evaluation using a multi-agent architecture. The system performs real-time market research, competitor analysis, SWOT analysis, MVP recommendation, Go-To-Market strategy generation, and deterministic startup scoring to help entrepreneurs make informed business decisions.
+The objective of this project is to develop Development of AI Based Startup Idea Validator with Market Analysis Assistance that automates startup evaluation using a multi-agent architecture. The system performs real-time market research, competitor analysis, SWOT analysis, MVP recommendation, Go-To-Market strategy generation, and deterministic startup scoring to help entrepreneurs make informed business decisions.
 
 ---
 
@@ -324,6 +324,6 @@ Future improvements include:
 
 # 10. Final Conclusion
 
-The AI Startup Idea Validator provides an intelligent and automated solution for startup evaluation using a LangGraph-based multi-agent architecture. By integrating Google Gemini for reasoning and Tavily Search for real-time market intelligence, the system automates market research, competitor analysis, SWOT analysis, MVP recommendation, Go-To-Market strategy generation, and startup viability scoring.
+The Development of AI Based Startup Idea Validator with Market Analysis Assistance provides an intelligent and automated solution for startup evaluation using a Deep Agents + LangGraph multi-agent architecture. By integrating Google Gemini for reasoning and Tavily Search for real-time market intelligence, the system automates market research, competitor analysis, SWOT analysis, MVP recommendation, Go-To-Market strategy generation, and startup viability scoring.
 
 The modular architecture enables scalability, maintainability, and future extensibility while significantly reducing the manual effort required for startup validation. This project demonstrates how coordinated AI agents can support entrepreneurs in making informed, data-driven business decisions before investing time and resources into new business ventures.

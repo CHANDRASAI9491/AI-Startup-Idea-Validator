@@ -1,6 +1,8 @@
 import pytest
+import json
+from langchain_core.messages import AIMessage, HumanMessage
 from deepagents import create_deep_agent, SubAgent, DeepAgentState
-from state.schema import StartupIdea, StartupState
+from state.schema import StartupIdea, StartupState, MarketAnalysis
 from pipeline.deep_agents_orchestrator import StartupValidatorDeepAgentsPipeline
 from tools.tavily_tool import tavily_search_tool, TavilySearchTool
 from app.orchestrator import ApplicationOrchestrator
@@ -89,3 +91,74 @@ def test_orchestrator_integration():
     assert state is not None
     assert state.status == "completed"
     assert state.final_report is not None
+
+
+def test_deep_agent_result_is_consumed_to_populate_state():
+    """Verify that deep_result returned by deep_agent.invoke() is mapped into StartupState."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(idea_text="AI-driven Supply Chain Optimizer", target_industry="Logistics")
+
+    fake_custom_payload = {
+        "market_analysis": {
+            "tam_billions": 42.5,
+            "sam_billions": 10.0,
+            "som_billions": 1.2,
+            "market_size_summary": "Custom TAM $42.5B extracted from deep_result",
+            "cagr_percentage": 22.0,
+            "key_growth_drivers": ["Supply chain automation"],
+            "target_personas": [],
+            "market_readiness_score": 90
+        }
+    }
+
+    fake_deep_result = {
+        "messages": [
+            HumanMessage(content="Validate idea"),
+            AIMessage(content=json.dumps(fake_custom_payload))
+        ],
+        "structured_response": fake_custom_payload,
+        "files": {}
+    }
+
+    state = StartupState(idea=idea)
+
+    def dummy_notify(s, st):
+        pass
+
+    pipeline._map_deep_result_to_state(state, fake_deep_result, dummy_notify)
+
+    # Prove that the custom deep_result value is mapped into state
+    assert state.market_analysis is not None
+    assert state.market_analysis.tam_billions == 42.5
+    assert state.market_analysis.sam_billions == 10.0
+    assert state.market_analysis.cagr_percentage == 22.0
+    assert "Custom TAM $42.5B" in state.market_analysis.market_size_summary
+
+
+def test_fails_if_deep_agent_result_is_ignored():
+    """Test that fails if deep_result custom data is ignored in favor of hardcoded defaults."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(idea_text="Quantum AI Encryption Key Manager", target_industry="Cybersecurity")
+
+    custom_tam = 999.9
+    fake_deep_result = {
+        "structured_response": {
+            "market_analysis": {
+                "tam_billions": custom_tam,
+                "sam_billions": 200.0,
+                "som_billions": 20.0,
+                "market_size_summary": "Quantum TAM $999.9B",
+                "cagr_percentage": 35.0,
+                "key_growth_drivers": ["Quantum resistance"],
+                "target_personas": [],
+                "market_readiness_score": 95
+            }
+        }
+    }
+
+    state = StartupState(idea=idea)
+    pipeline._map_deep_result_to_state(state, fake_deep_result, lambda s, st: None)
+
+    # Must equal custom_tam (999.9), NOT static default 15.0 or 10.0
+    assert state.market_analysis.tam_billions == 999.9
+    assert state.market_analysis.tam_billions != 15.0

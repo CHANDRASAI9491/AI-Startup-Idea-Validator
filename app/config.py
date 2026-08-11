@@ -6,7 +6,7 @@ load_dotenv()
 
 class Config:
     # Application
-    APP_NAME = "AI Startup Idea Validator"
+    APP_NAME = "Development of AI Based Startup Idea Validator with Market Analysis Assistance"
     APP_VERSION = "1.0.0"
 
     # API Keys

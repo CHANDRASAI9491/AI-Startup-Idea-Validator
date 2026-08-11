@@ -29,7 +29,7 @@ from ui.components.footer import render_footer
 # ============================================================
 
 st.set_page_config(
-    page_title="AI Startup Idea Validator",
+    page_title="Development of AI Based Startup Idea Validator with Market Analysis Assistance",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -314,7 +314,7 @@ elif selected_page == "About":
         '''
         <div class="saas-card-header">
             <div class="saas-title">
-                About AI Startup Idea Validator
+                About Development of AI Based Startup Idea Validator with Market Analysis Assistance
             </div>
         </div>
         ''',
@@ -323,7 +323,7 @@ elif selected_page == "About":
 
     st.markdown(
         """
-The **AI Startup Idea Validator** is a multi-agent AI platform
+The **Development of AI Based Startup Idea Validator with Market Analysis Assistance** is a multi-agent AI platform
 designed to evaluate early-stage startup concepts using
 real-time market research and AI-powered business analysis.
 
