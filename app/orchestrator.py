@@ -14,12 +14,13 @@ logger = get_logger(__name__)
 
 
 class ApplicationOrchestrator:
-    """Application Orchestrator managing memory, LangGraph execution, report exports, and AI advisor."""
+    """Application Orchestrator managing memory, Deep Agents execution, report exports, and AI advisor."""
 
     def __init__(self):
         self.memory = MemoryStore()
         self.graph = ValidationGraph()
         self.advisor = ConversationalAdvisor()
+
 
     def validate_idea(
         self,

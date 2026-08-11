@@ -1,14 +1,26 @@
-import pytest
 from agents.web_search_agent import WebSearchAgent
-from state.schema import StartupState, StartupIdea
+from state.schema import StartupIdea, StartupState
 
 
 def test_web_search_agent():
+    idea = StartupIdea(
+        idea_text="AI-powered healthcare assistant for hospitals",
+        target_industry="Healthcare"
+    )
+
+    state = StartupState(idea=idea)
+
     agent = WebSearchAgent()
-    state = StartupState(idea=StartupIdea(idea_text="AI Startup Validator", target_industry="Technology"))
-    
-    updated_state = agent.run(state)
-    
-    assert updated_state.search_results is not None
-    assert hasattr(updated_state.search_results, "market_trends")
-    assert isinstance(updated_state.search_results.market_trends, list)
+
+    result = agent.execute(state)
+
+    assert result.error is None
+
+    assert result.search_results is not None
+
+    print("\n===== WEB SEARCH RESULTS =====")
+    print(result.search_results)
+
+
+if __name__ == "__main__":
+    test_web_search_agent()
