@@ -2,6 +2,8 @@ streamlit
 langgraph
 langchain
 langchain-core
+langchain-google-genai==4.3.2
+deepagents==0.7.5
 google-genai
 tavily-python
 pydantic
