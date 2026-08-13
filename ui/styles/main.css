@@ -29,11 +29,15 @@
   color: var(--text-main) !important;
 }
 
-/* Hide default streamlit clutter */
+/* Hide default Streamlit clutter */
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
-header {visibility: hidden;}
 
+/* Keep Streamlit header visible so sidebar open/close controls remain available */
+header {
+  visibility: visible;
+  background: transparent;
+}
 /* Custom Hero Section */
 .hero-container {
   background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
@@ -79,6 +83,7 @@ header {visibility: hidden;}
   font-weight: 800;
   line-height: 1.15;
   background: linear-gradient(135deg, #FFFFFF 0%, #CBD5E1 100%);
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin-bottom: 0.75rem;
