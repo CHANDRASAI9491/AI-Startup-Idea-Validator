@@ -95,7 +95,8 @@ if selected_page == "Validate Startup":
             "Analyzing your startup idea using the AI validation pipeline..."
         ):
 
-            sess_id = st.session_state.session_id or None
+            import uuid
+            sess_id = st.session_state.get("session_id") or f"session_{str(uuid.uuid4())[:8]}"
 
             new_state = orchestrator.validate_idea(
                 idea_text=form_data["idea_text"],
@@ -109,12 +110,7 @@ if selected_page == "Validate Startup":
             )
 
             st.session_state.current_state = new_state
-
-            # Internal session identifier only
-            st.session_state.session_id = (
-                sess_id
-                or form_data["idea_text"][:10].replace(" ", "_")
-            )
+            st.session_state.session_id = sess_id
 
             st.session_state.chat_history = []
 
@@ -356,4 +352,4 @@ render_footer()
 render_advisor_chat(
     orchestrator,
     state
-)
+)
