@@ -1,17 +1,25 @@
 import streamlit as st
-from app.config import config
 
 
 def render_sidebar() -> str:
-    """Render the main application sidebar."""
+    """Render the professional dark application sidebar."""
 
     with st.sidebar:
-
         st.markdown(
-            f"## {config.APP_NAME}"
+            """
+            <div class="sidebar-brand-container">
+                <div class="sidebar-logo-mark">
+                    <span class="sidebar-logo-pulse"></span>
+                    <span class="sidebar-logo-text">Startup Validator</span>
+                </div>
+                <div class="sidebar-subtitle">
+                    AI Venture Research & Due Diligence
+                </div>
+            </div>
+            <div class="sidebar-divider"></div>
+            """,
+            unsafe_allow_html=True
         )
-
-        st.markdown("---")
 
         page = st.radio(
             "Navigation",
@@ -22,7 +30,8 @@ def render_sidebar() -> str:
                 "Settings",
                 "About"
             ],
-            index=0
+            index=0,
+            label_visibility="collapsed"
         )
 
         return page

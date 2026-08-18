@@ -1,0 +1,32 @@
+/* =========================================================
+   DASHBOARD & PRESENTATION LAYER EXTENSIONS
+   ========================================================= */
+
+/* Top Dashboard Toolbar */
+.dashboard-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding: 0.75rem 1.25rem;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+}
+
+/* Tab Content Wrappers */
+.tab-content-container {
+  padding-top: 0.5rem;
+}
+
+/* Metric Pill Indicators */
+.metric-pill-indicator {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}

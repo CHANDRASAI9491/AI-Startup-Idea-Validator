@@ -16,5 +16,6 @@ __pycache__/
 
 .venv/
 .env
-# Generated validation memory
-.validation_memory/
+
+# Database
+database/*.db

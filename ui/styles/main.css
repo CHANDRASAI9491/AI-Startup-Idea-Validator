@@ -1,68 +1,456 @@
-/* AI Startup Idea Validator - Enterprise SaaS Main Stylesheet */
+/* =========================================================
+   AI STARTUP IDEA VALIDATOR - DARK SHELL + LIGHT WORKSPACE
+   ========================================================= */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
-  --primary: #2563EB;
-  --primary-hover: #1D4ED8;
-  --secondary: #7C3AED;
-  --accent: #06B6D4;
-  --success: #22C55E;
-  --warning: #F59E0B;
-  --danger: #EF4444;
-  --background: #F8FAFC;
+  --shell: #07111F;
+  --shell-secondary: #0B1728;
+  --sidebar: #0A1626;
+  --workspace: #F8FAFC;
   --surface: #FFFFFF;
-  --text-main: #0F172A;
-  --text-muted: #64748B;
-  --border-light: #E2E8F0;
-  --radius-lg: 16px;
-  --radius-md: 10px;
-  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06);
-  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
-  --shadow-lg: 0 10px 25px -5px rgba(37, 99, 235, 0.12);
+  
+  --primary: #2563EB;
+  --primary-dark: #1D4ED8;
+  
+  --text: #0F172A;
+  --muted: #64748B;
+  
+  --border: #E2E8F0;
+  --border-dark: #1E293B;
+  
+  --success: #16A34A;
+  --warning: #F59E0B;
+  --danger: #DC2626;
+  
+  --radius-lg: 12px;
+  --radius-md: 8px;
+  --radius-sm: 6px;
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06);
 }
 
-/* Global Container Tweaks */
+/* ---------------------------------------------------------
+   GLOBAL APP SHELL
+   --------------------------------------------------------- */
 .stApp {
-  background-color: var(--background) !important;
+  background-color: var(--workspace) !important;
   font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
-  color: var(--text-main) !important;
+  color: var(--text) !important;
 }
 
-/* Hide default Streamlit clutter */
 #MainMenu { visibility: hidden; }
 footer { visibility: hidden; }
 
-/* Keep Streamlit header visible so sidebar open/close controls remain available */
 header {
   visibility: visible !important;
   background: transparent !important;
 }
 
-/* Custom Hero Section */
-.hero-container {
-  background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
-  border-radius: var(--radius-lg);
-  padding: 2.5rem;
-  color: #FFFFFF;
-  margin-bottom: 2rem;
-  box-shadow: var(--shadow-lg);
-  position: relative;
-  overflow: hidden;
+/* ---------------------------------------------------------
+   DARK TOP NAVIGATION BAR
+   --------------------------------------------------------- */
+.saas-top-navbar {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  background-color: var(--shell) !important;
+  border: 1px solid var(--border-dark) !important;
+  border-radius: var(--radius-lg) !important;
+  padding: 12px 24px !important;
+  margin-bottom: 20px !important;
+  box-shadow: 0 2px 8px rgba(7, 17, 31, 0.15) !important;
 }
 
-/* SaaS Cards */
+.top-nav-left {
+  display: flex !important;
+  align-items: center !important;
+}
+
+.top-nav-brand {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.brand-logo-dot {
+  width: 10px !important;
+  height: 10px !important;
+  border-radius: 50% !important;
+  background-color: var(--primary) !important;
+  box-shadow: 0 0 8px rgba(37, 99, 235, 0.6) !important;
+}
+
+.brand-name {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: #FFFFFF !important;
+  letter-spacing: -0.01em !important;
+}
+
+.top-nav-right {
+  display: flex !important;
+  align-items: center !important;
+  gap: 20px !important;
+}
+
+.top-nav-link {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #94A3B8 !important;
+  cursor: pointer !important;
+  transition: color 0.15s ease !important;
+}
+
+.top-nav-link:hover {
+  color: #FFFFFF !important;
+}
+
+.top-nav-user {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding-left: 12px !important;
+  border-left: 1px solid var(--border-dark) !important;
+}
+
+.user-avatar {
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 50% !important;
+  background: #1E293B !important;
+  border: 1px solid #334155 !important;
+  color: #FFFFFF !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+}
+
+.user-name {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #E2E8F0 !important;
+}
+
+/* ---------------------------------------------------------
+   HERO SECTION & ANALYTICAL ILLUSTRATION
+   --------------------------------------------------------- */
+.saas-hero-container {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  gap: 24px !important;
+  padding: 1.25rem 0 1.5rem 0 !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.hero-content {
+  flex: 1 !important;
+}
+
+.saas-hero-heading {
+  font-size: 2.1rem !important;
+  font-weight: 750 !important;
+  color: #0F172A !important;
+  letter-spacing: -0.025em !important;
+  line-height: 1.18 !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.hero-subtext {
+  color: #2563EB !important;
+  font-weight: 650 !important;
+}
+
+.saas-hero-subheading {
+  font-size: 1.05rem !important;
+  color: #64748B !important;
+  line-height: 1.5 !important;
+  margin: 0 !important;
+}
+
+.hero-illustration-container {
+  flex-shrink: 0 !important;
+  width: 220px !important;
+  height: 120px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.hero-illustration-svg {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* ---------------------------------------------------------
+   DARK SIDEBAR
+   --------------------------------------------------------- */
+[data-testid="stSidebar"] {
+  background-color: var(--sidebar) !important;
+  border-right: 1px solid var(--border-dark) !important;
+  width: 250px !important;
+  min-width: 220px !important;
+}
+
+[data-testid="stSidebarNav"] {
+  padding-top: 0.5rem !important;
+}
+
+.sidebar-brand-container {
+  padding: 0.5rem 0 0.75rem 0 !important;
+}
+
+.sidebar-logo-mark {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.sidebar-logo-pulse {
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+  background-color: #3B82F6 !important;
+}
+
+.sidebar-logo-text {
+  font-size: 1.15rem !important;
+  font-weight: 800 !important;
+  color: #FFFFFF !important;
+  letter-spacing: -0.02em !important;
+}
+
+.sidebar-subtitle {
+  font-size: 0.75rem !important;
+  color: #94A3B8 !important;
+  margin-top: 3px !important;
+  font-weight: 500 !important;
+}
+
+.sidebar-divider {
+  height: 1px !important;
+  background: #1E293B !important;
+  margin: 0.75rem 0 1rem 0 !important;
+}
+
+/* Sidebar Radio Navigation Items */
+[data-testid="stSidebar"] [data-testid="stRadio"] > div {
+  gap: 4px !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stRadio"] label {
+  background: transparent !important;
+  border-radius: var(--radius-md) !important;
+  padding: 8px 12px !important;
+  transition: all 0.15s ease !important;
+  margin-bottom: 2px !important;
+  color: #94A3B8 !important;
+  cursor: pointer !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stRadio"] label:hover {
+  background: #132238 !important;
+  color: #FFFFFF !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stRadio"] label[data-checked="true"],
+[data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked) {
+  background: var(--primary) !important;
+  color: #FFFFFF !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked) * {
+  color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+  font-weight: 600 !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stRadio"] label * {
+  color: inherit !important;
+  font-size: 0.9rem !important;
+}
+
+/* ---------------------------------------------------------
+   SAAS WORKSPACE CARDS
+   --------------------------------------------------------- */
 .saas-card {
-  background: var(--surface);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-lg);
-  padding: 1.75rem;
-  margin-bottom: 1.5rem;
-  box-shadow: var(--shadow-sm);
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-lg) !important;
+  padding: 1.5rem !important;
+  margin-bottom: 1.25rem !important;
+  box-shadow: var(--shadow-sm) !important;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease !important;
+}
+
+.saas-card:hover {
+  border-color: #CBD5E1 !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+.saas-card-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-bottom: 1.25rem !important;
+}
+
+.saas-card-label {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.06em !important;
+  color: #94A3B8 !important;
+  text-transform: uppercase !important;
+  margin-bottom: 2px !important;
+}
+
+.saas-card-subtext {
+  font-size: 13px !important;
+  color: #64748B !important;
+  margin-top: 2px !important;
 }
 
 .saas-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--text-main);
+  font-size: 1.25rem !important;
+  font-weight: 700 !important;
+  color: #0F172A !important;
+  letter-spacing: -0.015em !important;
+}
+
+/* ---------------------------------------------------------
+   FORMS & INPUT CONTROLS
+   --------------------------------------------------------- */
+.stTextInput input,
+.stSelectbox div[data-baseweb="select"] {
+  height: 44px !important;
+  min-height: 44px !important;
+  border-radius: var(--radius-md) !important;
+  border-color: #CBD5E1 !important;
+  background: #FFFFFF !important;
+  font-size: 0.92rem !important;
+  color: #0F172A !important;
+}
+
+.stTextArea textarea {
+  border-radius: var(--radius-md) !important;
+  border-color: #CBD5E1 !important;
+  background: #FFFFFF !important;
+  font-size: 0.92rem !important;
+  color: #0F172A !important;
+}
+
+.stTextInput input:focus,
+.stTextArea textarea:focus,
+.stSelectbox div[data-baseweb="select"]:focus-within {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15) !important;
+}
+
+/* Primary Button */
+.stButton > button {
+  background: var(--primary) !important;
+  color: #FFFFFF !important;
+  border: 1px solid var(--primary-dark) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 10px 20px !important;
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+  transition: all 0.15s ease !important;
+}
+
+.stButton > button:hover {
+  background: var(--primary-dark) !important;
+}
+
+.stButton > button * {
+  color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+  font-weight: 600 !important;
+}
+
+/* Download Buttons */
+.stDownloadButton > button {
+  background: #FFFFFF !important;
+  color: #0F172A !important;
+  border: 1px solid #CBD5E1 !important;
+  border-radius: var(--radius-md) !important;
+  padding: 8px 16px !important;
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+  width: 100% !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+  transition: all 0.15s ease !important;
+}
+
+.stDownloadButton > button:hover {
+  background: #F8FAFC !important;
+  border-color: #94A3B8 !important;
+}
+
+.stDownloadButton > button * {
+  color: #0F172A !important;
+  -webkit-text-fill-color: #0F172A !important;
+  font-weight: 600 !important;
+}
+
+/* Tabs Styling with Blue Underline */
+.stTabs [data-baseweb="tab-list"] {
+  gap: 8px !important;
+  border-bottom: 1px solid #E2E8F0 !important;
+  margin-bottom: 16px !important;
+}
+
+.stTabs [data-baseweb="tab"] {
+  padding: 8px 16px !important;
+  font-size: 0.92rem !important;
+  font-weight: 600 !important;
+  color: #64748B !important;
+  border-bottom: 2px solid transparent !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.stTabs [data-baseweb="tab"][aria-selected="true"] {
+  color: var(--primary) !important;
+  border-bottom: 2px solid var(--primary) !important;
+}
+
+.stTabs [data-baseweb="tab"][aria-selected="true"] * {
+  color: var(--primary) !important;
+}
+
+/* ---------------------------------------------------------
+   RESPONSIVE BREAKPOINTS
+   --------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .saas-hero-container {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+  .hero-illustration-container {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .saas-top-navbar {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+  }
+  .top-nav-right {
+    width: 100% !important;
+    justify-content: space-between !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .saas-hero-heading {
+    font-size: 1.6rem !important;
+  }
 }

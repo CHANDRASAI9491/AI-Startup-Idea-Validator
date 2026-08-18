@@ -5,7 +5,7 @@ import streamlit as st
 def inject_custom_css() -> None:
     """Injects custom CSS stylesheets into Streamlit."""
     styles_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "styles"))
-    for css_filename in ["style.css", "main.css", "advisor.css"]:
+    for css_filename in ["main.css", "style.css", "dashboard.css", "advisor.css"]:
         css_path = os.path.join(styles_dir, css_filename)
         if os.path.exists(css_path):
             try:
@@ -13,4 +13,3 @@ def inject_custom_css() -> None:
                     st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
             except Exception:
                 pass
-
