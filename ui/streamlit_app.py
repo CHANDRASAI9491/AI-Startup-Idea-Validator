@@ -166,18 +166,6 @@ elif selected_page == "Reports":
 
 
 # ============================================================
-# AI ADVISOR PAGE
-# ============================================================
-
-elif selected_page == "AI Advisor":
-
-    render_advisor_chat(
-        orchestrator,
-        state
-    )
-
-
-# ============================================================
 # EXECUTION STATUS PAGE
 # ============================================================
 
@@ -359,7 +347,13 @@ real-time market research and AI-powered business analysis.
 
 
 # ============================================================
-# FOOTER
+# FOOTER & FLOATING ADVISOR
 # ============================================================
 
 render_footer()
+
+# Global floating AI Venture Advisor (accessible across all pages)
+render_advisor_chat(
+    orchestrator,
+    state
+)

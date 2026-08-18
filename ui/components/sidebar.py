@@ -18,7 +18,6 @@ def render_sidebar() -> str:
             [
                 "Validate Startup",
                 "Reports",
-                "AI Advisor",
                 "Execution Status",
                 "Settings",
                 "About"
