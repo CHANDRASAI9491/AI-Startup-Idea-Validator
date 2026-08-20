@@ -126,9 +126,9 @@ def test_no_validation_report():
     advisor = ConversationalAdvisor()
     empty_state = StartupState(idea=StartupIdea(idea_text="Raw Idea"), final_report=None)
     response = advisor.answer_question("What is our market size?", empty_state)
-    assert "No validation report data is available" in response
+    assert "No active validation report is available. Please validate a startup idea first." in response
     # Also test with state=None
-    assert "No validation report data is available" in advisor.answer_question("What is our market size?", None)
+    assert "No active validation report is available. Please validate a startup idea first." in advisor.answer_question("What is our market size?", None)
 
 
 # 2. Market question uses report context
@@ -328,7 +328,7 @@ def test_session_id_handling_in_orchestrator(sample_startup_state):
 
     # 1. Non-existent session returns clear message
     res_invalid = orchestrator.ask_advisor("non_existent_session_999", "What is our biggest risk?")
-    assert "not found" in res_invalid
+    assert "No active validation report is available. Please validate a startup idea first." in res_invalid
 
     # 2. Valid active session returns grounded answer
     with patch.object(orchestrator.advisor, "generate_text", return_value="### Direct Answer\nYour top risk is GPU Cost."):
@@ -440,3 +440,70 @@ def test_risk_followup_produces_mitigation_action_not_repeat_fact(sample_startup
         assert "quantized model deployment" in ans_action or "serverless inference" in ans_action
         # Ensure it does not simply repeat the same phrasing as the fact question
         assert ans_action != ans_fact
+
+
+# 22. Competitor names from report vs missing competitor names fallback
+def test_competitor_names_from_report_and_missing_names_fallback(sample_startup_state):
+    advisor = ConversationalAdvisor()
+
+    # Case A: Competitors present in report
+    with patch.object(advisor, "generate_text", return_value=None):
+        ans_with_comps = advisor.answer_question("Who are my main competitors?", sample_startup_state)
+        assert "Direct Competitors:" in ans_with_comps
+        assert "LegalFly" in ans_with_comps
+        assert "Ironclad" in ans_with_comps
+        assert "Indirect Competitors:" in ans_with_comps
+        assert "Manual Paralegal Review" in ans_with_comps
+
+    # Case B: No competitor names in report
+    state_no_comps = StartupState(
+        idea=sample_startup_state.idea,
+        final_report=sample_startup_state.final_report,
+        competitor_analysis=CompetitorAnalysis(
+            moat_assessment="Strong network effects and brand trust.",
+            market_positioning_summary="Category leader in automated review.",
+            direct_competitors=[],
+            indirect_competitors=[]
+        )
+    )
+    with patch.object(advisor, "generate_text", return_value=None):
+        ans_no_comps = advisor.answer_question("Who are my main competitors?", state_no_comps)
+        assert "Detailed competitor names are unavailable in the current report" in ans_no_comps
+        assert "Strong network effects" in ans_no_comps or "Category leader" in ans_no_comps
+
+
+# 23. Multi-turn follow-up intent inheritance is not fooled by assistant response text
+def test_multi_turn_followup_intent_inheritance_not_fooled_by_assistant_text():
+    advisor = ConversationalAdvisor()
+
+    # Assistant response mentions Market Score, Risk Score, MVP Score, etc.
+    assistant_resp = (
+        "### Direct Answer\nYour TAM is $25B.\n\n"
+        "### Evidence From Validation\nMarket Score: 88 | Risk Score: 75 | MVP Score: 90"
+    )
+    history = [
+        {"role": "user", "content": "What is my market size?"},
+        {"role": "assistant", "content": assistant_resp}
+    ]
+
+    # User asks "Why?" -> must inherit 'market', NOT 'risk'
+    intent_why = advisor.classify_intent("Why?", chat_history=history)
+    assert intent_why == "market"
+
+    # User asks "Tell me more." -> must inherit 'market'
+    intent_more = advisor.classify_intent("Tell me more.", chat_history=history)
+    assert intent_more == "market"
+
+
+# 24. Short follow-up questions intent resolution
+def test_short_followup_questions_intent():
+    advisor = ConversationalAdvisor()
+
+    risk_history = [
+        {"role": "user", "content": "What is the biggest risk?"},
+        {"role": "assistant", "content": "HIPAA compliance is the biggest risk."}
+    ]
+
+    for short_q in ["Why?", "How?", "Can I reduce it?", "How can I improve it?", "What about that?", "Explain more."]:
+        intent = advisor.classify_intent(short_q, chat_history=risk_history)
+        assert intent == "risk", f"Failed for '{short_q}', got '{intent}'"

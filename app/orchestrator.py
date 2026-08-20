@@ -62,8 +62,8 @@ class ApplicationOrchestrator:
 
     def ask_advisor(self, session_id: str, user_question: str, chat_history: Optional[List[Dict[str, str]]] = None) -> str:
         state = self.memory.get_state(session_id)
-        if not state:
-            return f"Session '{session_id}' not found. Please run a validation first."
+        if not state or not state.final_report:
+            return "No active validation report is available. Please validate a startup idea first."
         return self.advisor.answer_question(user_question, state, chat_history or [])
 
     def get_session_history(self, session_id: str) -> Optional[StartupState]:

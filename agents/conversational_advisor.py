@@ -79,13 +79,23 @@ class ConversationalAdvisor(BaseAgent):
         return None
 
     def _get_previous_intent(self, chat_history: List[Dict[str, Any]]) -> Optional[str]:
-        """Scans chat history backwards to find the most recent explicitly resolved intent."""
+        """Scans chat history backwards across user queries first to find the most recent resolved intent."""
+        # 1. First scan user messages backwards (direct user discussion topic)
         for msg in reversed(chat_history):
-            if msg.get("role") in ["user", "assistant"]:
+            if msg.get("role") == "user":
                 content = msg.get("content", "").lower().strip()
                 intent = self._detect_explicit_intent(content)
                 if intent:
                     return intent
+
+        # 2. Fallback scan on assistant messages if no user message matched
+        for msg in reversed(chat_history):
+            if msg.get("role") == "assistant":
+                content = msg.get("content", "").lower().strip()
+                intent = self._detect_explicit_intent(content)
+                if intent:
+                    return intent
+
         return None
 
     def classify_intent(self, user_question: str, chat_history: Optional[List[Dict[str, Any]]] = None) -> str:
@@ -419,12 +429,31 @@ class ConversationalAdvisor(BaseAgent):
                 moat = state.competitor_analysis.moat_assessment if (state.competitor_analysis and state.competitor_analysis.moat_assessment) else "specialized niche positioning and faster workflow automation"
                 recommended_action = f"Differentiate by sharpening your primary moat: **{moat}**."
                 evidence = f"Validation Report Competitor Score: {report.competitor_score}/100 | Target Moat: {moat}"
-            elif state.competitor_analysis and state.competitor_analysis.moat_assessment:
+            elif state.competitor_analysis:
                 c = state.competitor_analysis
-                direct_answer = f"Your competitive positioning focuses on: **{c.market_positioning_summary or c.moat_assessment}**."
-                why_it_matters = "Defensible differentiation creates a moat against existing market players."
-                recommended_action = f"Focus MVP on core differentiator: {c.moat_assessment}"
-                evidence = f"Moat Assessment: {c.moat_assessment} | Competitor Score: {report.competitor_score}/100"
+                moat = c.moat_assessment or "specialized niche positioning and faster workflow automation"
+                direct_comps = [getattr(item, 'name', str(item)) for item in c.direct_competitors] if c.direct_competitors else []
+                indirect_comps = [getattr(item, 'name', str(item)) for item in c.indirect_competitors] if c.indirect_competitors else []
+
+                if is_action_question:
+                    direct_answer = f"To differentiate from existing solutions, leverage your primary defensible moat: **{moat}**."
+                    why_it_matters = f"Defensible differentiation protects pricing power and retention in {idea.target_industry}."
+                    recommended_action = f"Focus MVP on core differentiator: **{moat}**."
+                    evidence = f"Moat Assessment: {moat} | Competitor Score: {report.competitor_score}/100"
+                else:
+                    if direct_comps or indirect_comps:
+                        comp_lines = ["Based on the validation report, key identified competitors include:"]
+                        if direct_comps:
+                            comp_lines.append("\nDirect Competitors:\n" + "\n".join(f"- {name}" for name in direct_comps))
+                        if indirect_comps:
+                            comp_lines.append("\nIndirect Competitors:\n" + "\n".join(f"- {name}" for name in indirect_comps))
+                        direct_answer = "\n".join(comp_lines)
+                    else:
+                        direct_answer = f"Detailed competitor names are unavailable in the current report. Your competitive positioning focuses on: **{c.market_positioning_summary or moat}**."
+
+                    why_it_matters = f"Understanding competitor positioning allows you to target underserved niches in {idea.target_industry}."
+                    recommended_action = f"Focus MVP on your primary differentiator: **{moat}**."
+                    evidence = f"Competitor Score: {report.competitor_score}/100 | Moat Assessment: {moat}"
             else:
                 return "The validation report does not contain enough evidence to analyze competitor dynamics."
 
@@ -503,7 +532,7 @@ class ConversationalAdvisor(BaseAgent):
         try:
             # A. Validate state and final report
             if not state or not state.final_report:
-                return "No validation report data is available for this session. Please validate a startup concept first."
+                return "No active validation report is available. Please validate a startup idea first."
 
             # B. Detect intent
             intent = self.classify_intent(user_question, chat_history)

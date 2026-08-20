@@ -71,22 +71,24 @@ def render_advisor_chat(
             st.session_state.session_id = current_session_id
         orchestrator.memory.save_state(current_session_id, current_state)
 
-    # Validate active_conversation_id or restore/initialize
+    # Validate or initialize active_conversation_id
+    conv_list = list_conversations()
     active_conv_id = st.session_state.active_conversation_id
+
     if active_conv_id:
         existing_conv = get_conversation(active_conv_id)
         if not existing_conv:
             active_conv_id = None
 
     if not active_conv_id:
-        all_convs = list_conversations()
-        if all_convs:
-            active_conv_id = all_convs[0]["id"]
+        if conv_list:
+            active_conv_id = conv_list[0]["id"]
         else:
             active_conv_id = create_conversation(
                 title="New Conversation",
                 session_id=current_session_id
             )
+            conv_list = list_conversations()
         st.session_state.active_conversation_id = active_conv_id
 
     # Load messages from SQLite for the active conversation
@@ -151,7 +153,7 @@ def render_advisor_chat(
                 save_message(
                     curr_conv_id,
                     "assistant",
-                    "No active validation report found. Please enter a startup idea and click 'Validate Startup' first."
+                    "No active validation report is available. Please validate a startup idea first."
                 )
             except Exception:
                 pass
@@ -196,6 +198,9 @@ def render_advisor_chat(
                 )
             except Exception as exc:
                 answer = f"An error occurred while consulting the AI Advisor: {str(exc)}"
+
+        if not answer or not answer.strip():
+            answer = "I apologize, but I could not generate a response. Please try rephrasing your question."
 
         # 5. Save assistant answer to SQLite
         try:
@@ -267,24 +272,52 @@ def render_advisor_chat(
 
                 if selected_conv_id != st.session_state.get("active_conversation_id"):
                     st.session_state.active_conversation_id = selected_conv_id
+                    st.session_state.chat_history = [
+                        {"role": m["role"], "content": m["content"]}
+                        for m in get_messages(selected_conv_id)
+                    ]
                     st.rerun()
 
         with col_new:
             if st.button("+ New Chat", key="advisor_new_chat", help="Start a new chat"):
-                new_conv_id = create_conversation(
-                    title="New Conversation",
-                    session_id=current_session_id
-                )
-                st.session_state.active_conversation_id = new_conv_id
-                st.session_state.chat_history = []
+                # Check if current conversation is already an empty New Conversation
+                curr_id = st.session_state.get("active_conversation_id")
+                curr_msgs = get_messages(curr_id) if curr_id else []
+                curr_meta = get_conversation(curr_id) if curr_id else None
+
+                if curr_id and len(curr_msgs) == 0 and curr_meta and curr_meta.get("title") == "New Conversation":
+                    # Already on a clean empty conversation, no need to create duplicate
+                    st.session_state.chat_history = []
+                else:
+                    new_id = create_conversation(
+                        title="New Conversation",
+                        session_id=st.session_state.get("session_id")
+                    )
+                    st.session_state.active_conversation_id = new_id
+                    st.session_state.chat_history = []
                 st.rerun()
 
         with col_del:
-            if st.button("Delete", key="advisor_clear", help="Delete current chat"):
-                if st.session_state.get("active_conversation_id"):
-                    delete_conversation(st.session_state.active_conversation_id)
-                    st.session_state.active_conversation_id = None
-                    st.session_state.chat_history = []
+            with st.popover("Delete", help="Delete current conversation"):
+                st.markdown("<p style='font-size: 11px; margin-bottom: 6px; font-weight: 600; color: #0F172A;'>Delete this chat?</p>", unsafe_allow_html=True)
+                if st.button("Confirm Delete", key="advisor_confirm_delete", type="primary"):
+                    curr_id = st.session_state.get("active_conversation_id")
+                    if curr_id:
+                        delete_conversation(curr_id)
+                    remaining = list_conversations()
+                    if remaining:
+                        st.session_state.active_conversation_id = remaining[0]["id"]
+                        st.session_state.chat_history = [
+                            {"role": m["role"], "content": m["content"]}
+                            for m in get_messages(remaining[0]["id"])
+                        ]
+                    else:
+                        new_id = create_conversation(
+                            title="New Conversation",
+                            session_id=st.session_state.get("session_id")
+                        )
+                        st.session_state.active_conversation_id = new_id
+                        st.session_state.chat_history = []
                     st.rerun()
 
         st.markdown("<div class='advisor-divider'></div>", unsafe_allow_html=True)

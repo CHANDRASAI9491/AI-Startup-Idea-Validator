@@ -303,6 +303,12 @@ def test_generate_title_from_message():
     assert generate_title_from_message("") == "New Conversation"
     assert generate_title_from_message("   ") == "New Conversation"
 
+    # Requirement 1 exact examples
+    assert generate_title_from_message("What is my viability score?") == "My Viability Score"
+    assert generate_title_from_message("Who are my main competitors?") == "Who Are My Main Competitors"
+    assert generate_title_from_message("What is the biggest risk?") == "Biggest Risk"
+
+    # Additional domain & acronym cases
     t1 = generate_title_from_message("What is the biggest risk in my healthcare startup?")
     assert "Risk In My Healthcare Startup" in t1 or "Biggest Risk" in t1
     assert len(t1) <= 40
@@ -314,8 +320,8 @@ def test_generate_title_from_message():
     t3 = generate_title_from_message("Tell me about our direct competitors in legal tech")
     assert "Direct Competitors In Legal Tech" in t3 or "Competitors" in t3
 
-    t4 = generate_title_from_message("What is my viability score?")
-    assert "Viability Score" in t4
+    t_acronym = generate_title_from_message("What is the MVP tech stack and GTM strategy?")
+    assert "MVP" in t_acronym and "GTM" in t_acronym
 
 
 def test_chat_history_db_class_wrapper(temp_db_path):
@@ -417,3 +423,68 @@ def test_persistent_history_passed_to_advisor_context(temp_db_path, sample_advis
     assert final_messages[1]["content"] == ans1
     assert final_messages[2]["content"] == q2
     assert final_messages[3]["content"] == ans2
+
+
+def test_new_chat_and_switching_lifecycle(temp_db_path):
+    """Verify creating a new chat, switching conversations, and ensuring no message leakage."""
+    db = ChatHistoryDB(db_path=temp_db_path)
+
+    # 1. Create first conversation and send messages
+    conv1 = db.create_conversation(title="New Conversation")
+    db.save_message(conv1, "user", "What is my viability score?")
+    db.update_conversation_title(conv1, db.generate_title("What is my viability score?"))
+    db.save_message(conv1, "assistant", "Your viability score is 85/100.")
+
+    # 2. User starts a new chat
+    conv2 = db.create_conversation(title="New Conversation")
+    assert conv2 != conv1
+    # conv2 starts empty
+    assert len(db.get_messages(conv2)) == 0
+
+    # User sends question in conv2
+    db.save_message(conv2, "user", "Who are my main competitors?")
+    db.update_conversation_title(conv2, db.generate_title("Who are my main competitors?"))
+    db.save_message(conv2, "assistant", "Key competitors are LegalFly and Ironclad.")
+
+    # 3. Verify dropdown list order (newest updated first)
+    conv_list = db.list_conversations()
+    assert len(conv_list) == 2
+    assert conv_list[0]["id"] == conv2
+    assert conv_list[0]["title"] == "Who Are My Main Competitors"
+    assert conv_list[1]["id"] == conv1
+    assert conv_list[1]["title"] == "My Viability Score"
+
+    # 4. Switch back to conv1 and verify messages
+    msgs_conv1 = db.get_messages(conv1)
+    assert len(msgs_conv1) == 2
+    assert msgs_conv1[0]["content"] == "What is my viability score?"
+    assert msgs_conv1[1]["content"] == "Your viability score is 85/100."
+
+    # 5. Verify conv2 messages are preserved and separate
+    msgs_conv2 = db.get_messages(conv2)
+    assert len(msgs_conv2) == 2
+    assert msgs_conv2[0]["content"] == "Who are my main competitors?"
+    assert msgs_conv2[1]["content"] == "Key competitors are LegalFly and Ironclad."
+
+
+def test_delete_selected_conversation_flow(temp_db_path):
+    """Verify deleting the currently selected conversation cleans it up and leaves other conversations intact."""
+    db = ChatHistoryDB(db_path=temp_db_path)
+
+    c1 = db.create_conversation(title="Chat 1")
+    db.save_message(c1, "user", "Hello 1")
+    c2 = db.create_conversation(title="Chat 2")
+    db.save_message(c2, "user", "Hello 2")
+
+    # Delete c2
+    deleted = db.delete_conversation(c2)
+    assert deleted is True
+
+    # Check c2 is gone and c1 remains intact
+    assert db.get_conversation(c2) is None
+    assert len(db.get_messages(c2)) == 0
+
+    remaining = db.list_conversations()
+    assert len(remaining) == 1
+    assert remaining[0]["id"] == c1
+    assert len(db.get_messages(c1)) == 1

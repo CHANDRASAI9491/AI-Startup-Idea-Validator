@@ -365,11 +365,42 @@ def generate_title_from_message(user_message: str, max_length: int = 40) -> str:
         else:
             clean_text = truncated
 
-    # Title-case for clean UI appearance
+    # Acronym mapping for consistent domain title styling
+    acronyms = {
+        "mvp": "MVP",
+        "gtm": "GTM",
+        "ai": "AI",
+        "tam": "TAM",
+        "sam": "SAM",
+        "som": "SOM",
+        "cac": "CAC",
+        "swot": "SWOT",
+        "hipaa": "HIPAA",
+        "pmf": "PMF",
+        "b2b": "B2B",
+        "b2c": "B2C",
+        "kpi": "KPI",
+        "kpis": "KPIs",
+        "llm": "LLM",
+        "nlp": "NLP",
+        "api": "API",
+        "roi": "ROI",
+        "saas": "SaaS",
+    }
+
+    # Title-case for clean UI appearance while respecting acronyms
     words = clean_text.split()
     if words:
-        clean_title = " ".join(w.capitalize() if not w.isupper() else w for w in words)
-        return clean_title
+        formatted_words = []
+        for w in words:
+            w_lower = w.lower()
+            if w_lower in acronyms:
+                formatted_words.append(acronyms[w_lower])
+            elif w.isupper() and len(w) > 1:
+                formatted_words.append(w)
+            else:
+                formatted_words.append(w.capitalize())
+        return " ".join(formatted_words)
 
     return "New Conversation"
 

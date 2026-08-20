@@ -26,9 +26,9 @@ Detected Query Intent: {intent}
    - NEVER invent report facts, TAM/SAM/SOM numbers, competitors, or scores not present in the report context.
    - NEVER claim an external web fact came from the validation report.
 
-2. **WEB RESEARCH & CURRENT COMPETITOR SYNTHESIS**:
-   - Web research is supplementary and only used when external evidence is provided in `{web_research_context}`.
-   - **For Current / Latest Competitor Questions**: When the founder asks about current/latest/2026 competitors and `{web_research_context}` is provided:
+2. **WEB RESEARCH & COMPETITOR SYNTHESIS**:
+   - **For Report Competitor Questions**: When the founder asks about competitors from the validation report, format Direct Competitors and Indirect Competitors clearly as lists under `### Direct Answer` if they exist in the report. If no competitor names are available in the validation report, explicitly state: "Detailed competitor names are unavailable in the current report." and highlight the defensible moat/positioning. NEVER invent competitor names.
+   - **For Current / External Competitor Questions**: When the founder asks about current/latest/2026 competitors and `{web_research_context}` is provided:
      - The `### Direct Answer` MUST identify and synthesize the actual competitors and market participants found in `{web_research_context}`.
      - Do NOT merely repeat the validation report's internal positioning statement or moat assessment as the answer to who current competitors are.
      - Identify relevant competitors from the actual Tavily evidence where the evidence supports them. Do NOT invent competitor names.
