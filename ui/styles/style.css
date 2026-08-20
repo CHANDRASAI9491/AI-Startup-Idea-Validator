@@ -1,9 +1,109 @@
 /* =========================================================
-   CLEAN SAAS SCORE SUMMARY & REPORT STYLES
+   AI STARTUP IDEA VALIDATOR - SCORE CARDS & REPORT STYLES
    ========================================================= */
 
 /* ---------------------------------------------------------
-   1. TOP 3-CARD SCORE OVERVIEW GRID
+   1. TOP KPI SCORE CARDS GRID (6-CARD ROW)
+   --------------------------------------------------------- */
+.kpi-score-cards-grid {
+  display: grid !important;
+  grid-template-columns: repeat(6, 1fr) !important;
+  gap: 14px !important;
+  margin-bottom: 20px !important;
+}
+
+@media (max-width: 1200px) {
+  .kpi-score-cards-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .kpi-score-cards-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .kpi-score-cards-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+.kpi-mini-card {
+  background: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 12px !important;
+  padding: 16px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+  transition: all 0.2s ease !important;
+}
+
+.kpi-mini-card:hover {
+  border-color: #CBD5E1 !important;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06) !important;
+  transform: translateY(-2px) !important;
+}
+
+.kpi-mini-card.kpi-hero {
+  border-top: 3px solid #2563EB !important;
+}
+
+.kpi-mini-card.kpi-market {
+  border-top: 3px solid #3B82F6 !important;
+}
+
+.kpi-mini-card.kpi-comp {
+  border-top: 3px solid #6366F1 !important;
+}
+
+.kpi-mini-card.kpi-mvp {
+  border-top: 3px solid #10B981 !important;
+}
+
+.kpi-mini-card.kpi-risk {
+  border-top: 3px solid #F59E0B !important;
+}
+
+.kpi-mini-card.kpi-gtm {
+  border-top: 3px solid #8B5CF6 !important;
+}
+
+.kpi-label-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-bottom: 6px !important;
+}
+
+.kpi-card-label {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.05em !important;
+  color: #64748B !important;
+  text-transform: uppercase !important;
+}
+
+.kpi-val-hero {
+  font-size: 24px !important;
+  font-weight: 800 !important;
+  color: #0F172A !important;
+  letter-spacing: -0.02em !important;
+  line-height: 1.1 !important;
+  margin-bottom: 4px !important;
+}
+
+.kpi-val-sub {
+  font-size: 11px !important;
+  color: #64748B !important;
+  font-weight: 500 !important;
+}
+
+/* ---------------------------------------------------------
+   2. TOP 3-CARD SCORE OVERVIEW GRID
    --------------------------------------------------------- */
 .score-overview-grid {
   display: grid !important;
@@ -12,86 +112,104 @@
   margin-bottom: 20px !important;
 }
 
-@media (max-width: 960px) {
+@media (max-width: 1024px) {
   .score-overview-grid {
     grid-template-columns: 1fr !important;
   }
 }
 
-/* Card 1: Circular Validation Score */
-.score-hero-card {
+/* Card 1: Circular Score Card */
+.circular-score-card {
+  padding: 20px !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
   text-align: center !important;
-  padding: 20px 16px !important;
   background: #FFFFFF !important;
 }
 
-.score-ring-container {
+.circular-score-wrapper {
+  position: relative !important;
+  width: 96px !important;
+  height: 96px !important;
+  margin: 8px 0 10px 0 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  margin: 12px 0 !important;
 }
 
-.score-ring-svg {
-  filter: drop-shadow(0 2px 6px rgba(15, 23, 42, 0.06)) !important;
+.circular-score-svg {
+  width: 100% !important;
+  height: 100% !important;
+  transform: rotate(-90deg) !important;
 }
 
-.score-ring-text-val {
+.circular-score-text {
+  position: absolute !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+}
+
+.score-num {
   font-size: 26px !important;
   font-weight: 800 !important;
-  fill: #0F172A !important;
-  font-family: 'Inter', sans-serif !important;
+  color: #0F172A !important;
+  letter-spacing: -0.02em !important;
 }
 
-.score-ring-text-unit {
+.score-denom {
   font-size: 11px !important;
   font-weight: 600 !important;
-  fill: #64748B !important;
-  font-family: 'Inter', sans-serif !important;
+  color: #94A3B8 !important;
+  margin-top: 1px !important;
 }
 
 .score-verdict-badge {
-  font-size: 12px !important;
+  font-size: 11px !important;
   font-weight: 700 !important;
   text-transform: uppercase !important;
   letter-spacing: 0.05em !important;
   padding: 4px 12px !important;
-  border-radius: 6px !important;
+  border-radius: 20px !important;
+  margin-top: 6px !important;
 }
 
-.score-verdict-badge.status-strong {
-  background-color: #DCFCE7 !important;
-  color: #166534 !important;
+.status-strong {
+  background: #DCFCE7 !important;
+  color: #15803D !important;
   border: 1px solid #86EFAC !important;
 }
 
-.score-verdict-badge.status-moderate {
-  background-color: #FEF3C7 !important;
-  color: #92400E !important;
+.status-moderate {
+  background: #FEF3C7 !important;
+  color: #B45309 !important;
   border: 1px solid #FDE68A !important;
 }
 
-.score-verdict-badge.status-caution {
-  background-color: #FEE2E2 !important;
-  color: #991B1B !important;
+.status-caution {
+  background: #FEE2E2 !important;
+  color: #B91C1C !important;
   border: 1px solid #FECACA !important;
 }
 
-/* Card 2: Dimension Progress Bars */
+/* Card 2: Dimension Scores Progress Bars */
 .dimension-bars-card {
   padding: 20px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
   background: #FFFFFF !important;
 }
 
 .dimension-bars-list {
   display: flex !important;
   flex-direction: column !important;
-  gap: 10px !important;
-  margin-top: 10px !important;
+  gap: 12px !important;
+  margin-top: 8px !important;
 }
 
 .dim-bar-row {
@@ -104,16 +222,15 @@
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
+  font-size: 12px !important;
 }
 
 .dim-bar-title {
-  font-size: 12px !important;
   font-weight: 600 !important;
   color: #334155 !important;
 }
 
 .dim-bar-val {
-  font-size: 12px !important;
   font-weight: 700 !important;
   color: #0F172A !important;
 }
@@ -121,7 +238,7 @@
 .dim-progress-track {
   width: 100% !important;
   height: 7px !important;
-  background-color: #F1F5F9 !important;
+  background: #F1F5F9 !important;
   border-radius: 4px !important;
   overflow: hidden !important;
 }
@@ -129,88 +246,98 @@
 .dim-progress-fill {
   height: 100% !important;
   border-radius: 4px !important;
-  transition: width 0.3s ease !important;
+  transition: width 0.6s ease !important;
 }
 
-.dim-progress-fill.fill-blue {
-  background-color: #2563EB !important;
+.fill-blue {
+  background: linear-gradient(90deg, #3B82F6 0%, #2563EB 100%) !important;
 }
 
-.dim-progress-fill.fill-green {
-  background-color: #16A34A !important;
+.fill-indigo {
+  background: linear-gradient(90deg, #818CF8 0%, #6366F1 100%) !important;
 }
 
-.dim-progress-fill.fill-orange {
-  background-color: #F59E0B !important;
+.fill-green {
+  background: linear-gradient(90deg, #34D399 0%, #10B981 100%) !important;
 }
 
-.dim-progress-fill.fill-purple {
-  background-color: #8B5CF6 !important;
+.fill-orange {
+  background: linear-gradient(90deg, #FBBF24 0%, #F59E0B 100%) !important;
+}
+
+.fill-purple {
+  background: linear-gradient(90deg, #A78BFA 0%, #8B5CF6 100%) !important;
 }
 
 /* Card 3: Key Insight Card */
 .key-insight-card {
   padding: 20px !important;
-  background: #FFFFFF !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: space-between !important;
+  background: #FFFFFF !important;
 }
 
 .insight-heading {
   font-size: 14px !important;
   font-weight: 700 !important;
   color: #0F172A !important;
-  margin-top: 6px !important;
-  margin-bottom: 6px !important;
+  margin: 6px 0 !important;
 }
 
 .insight-body {
   font-size: 13px !important;
-  line-height: 1.55 !important;
   color: #475569 !important;
+  line-height: 1.55 !important;
   margin-bottom: 12px !important;
 }
 
 .verdict-pill {
-  display: inline-block !important;
-  font-size: 11px !important;
+  display: inline-flex !important;
+  font-size: 12px !important;
   font-weight: 700 !important;
   padding: 4px 10px !important;
   border-radius: 6px !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.04em !important;
   align-self: flex-start !important;
 }
 
-.verdict-pill.verdict-proceed {
-  background-color: #DCFCE7 !important;
-  color: #166534 !important;
-  border: 1px solid #86EFAC !important;
+.verdict-proceed,
+.verdict-viable {
+  background: #DCFCE7 !important;
+  color: #15803D !important;
 }
 
-.verdict-pill.verdict-pivot,
-.verdict-pill.verdict-proceed-with-caution {
-  background-color: #FEF3C7 !important;
-  color: #92400E !important;
-  border: 1px solid #FDE68A !important;
+.verdict-pivot {
+  background: #FEF3C7 !important;
+  color: #B45309 !important;
 }
 
-.verdict-pill.verdict-caution,
-.verdict-pill.verdict-do-not-proceed {
-  background-color: #FEE2E2 !important;
-  color: #991B1B !important;
-  border: 1px solid #FECACA !important;
+.verdict-reconsider,
+.verdict-caution {
+  background: #FEE2E2 !important;
+  color: #B91C1C !important;
 }
 
 /* ---------------------------------------------------------
-   2. EXECUTIVE SUMMARY TAB: SUPPORTING CARDS & LOWER METRICS
+   3. EXECUTIVE SUMMARY & TAB CARDS
    --------------------------------------------------------- */
+.tab-content-container {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+}
+
+.body-text {
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+  color: #334155 !important;
+  margin: 0 0 8px 0 !important;
+}
+
 .two-column-cards {
   display: grid !important;
   grid-template-columns: 1fr 1fr !important;
   gap: 16px !important;
-  margin-bottom: 16px !important;
 }
 
 @media (max-width: 768px) {
@@ -220,263 +347,211 @@
 }
 
 .strengths-card {
-  border-left: 3px solid #16A34A !important;
+  border-left: 4px solid #10B981 !important;
 }
 
 .risks-card {
-  border-left: 3px solid #DC2626 !important;
+  border-left: 4px solid #EF4444 !important;
 }
 
 .card-pill {
   display: inline-block !important;
-  font-size: 10px !important;
+  font-size: 11px !important;
   font-weight: 700 !important;
-  padding: 3px 8px !important;
-  border-radius: 4px !important;
   letter-spacing: 0.05em !important;
-  margin-bottom: 10px !important;
+  padding: 2px 8px !important;
+  border-radius: 4px !important;
+  margin-bottom: 12px !important;
 }
 
-.card-pill.pill-green {
+.pill-green {
   background: #DCFCE7 !important;
-  color: #166534 !important;
+  color: #15803D !important;
 }
 
-.card-pill.pill-red {
+.pill-red {
   background: #FEE2E2 !important;
-  color: #991B1B !important;
+  color: #B91C1C !important;
 }
 
 .clean-bullet-list {
-  padding-left: 18px !important;
-  color: #334155 !important;
-  font-size: 13px !important;
-  line-height: 1.6 !important;
   margin: 0 !important;
+  padding-left: 18px !important;
+  font-size: 13.5px !important;
+  line-height: 1.6 !important;
+  color: #334155 !important;
 }
 
 .clean-bullet-list li {
-  margin-bottom: 4px !important;
+  margin-bottom: 6px !important;
 }
 
-/* Lower 4-Metric Grid */
+/* Lower Metric Cards Grid */
 .lower-metrics-grid {
   display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) !important;
+  grid-template-columns: repeat(4, 1fr) !important;
   gap: 14px !important;
-  margin-top: 16px !important;
+  margin-top: 6px !important;
+}
+
+@media (max-width: 960px) {
+  .lower-metrics-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .lower-metrics-grid {
+    grid-template-columns: 1fr !important;
+  }
 }
 
 .lower-metric-card {
-  background: #F8FAFC !important;
+  background: #FFFFFF !important;
   border: 1px solid #E2E8F0 !important;
   border-radius: 10px !important;
-  padding: 14px 16px !important;
-  text-align: center !important;
-  transition: transform 0.15s ease, box-shadow 0.15s ease !important;
-}
-
-.lower-metric-card:hover {
-  transform: translateY(-2px) !important;
-  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.05) !important;
-  border-color: #CBD5E1 !important;
+  padding: 16px !important;
+  text-align: left !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important;
 }
 
 .metric-category {
   font-size: 11px !important;
   font-weight: 700 !important;
+  letter-spacing: 0.04em !important;
   color: #64748B !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.04em !important;
-  margin-bottom: 4px !important;
+  margin-bottom: 6px !important;
 }
 
 .metric-hero-val {
-  font-size: 24px !important;
+  font-size: 22px !important;
   font-weight: 800 !important;
   color: #0F172A !important;
   line-height: 1.2 !important;
-  margin-bottom: 3px !important;
+  margin-bottom: 4px !important;
 }
 
 .metric-caption {
   font-size: 11px !important;
-  color: #64748B !important;
-  font-weight: 500 !important;
+  color: #94A3B8 !important;
 }
 
 /* ---------------------------------------------------------
-   3. REPORT CONTAINER & MISC STYLES
+   4. SWOT MATRIX 4-QUADRANT GRID
    --------------------------------------------------------- */
-.report-tabs-divider {
-  height: 1px !important;
-  background: #E2E8F0 !important;
-  margin: 14px 0 !important;
-}
-
-.metric-tag {
-  font-size: 12px !important;
-  font-weight: 700 !important;
-  color: #2563EB !important;
-  background: #EFF6FF !important;
-  padding: 4px 10px !important;
-  border-radius: 6px !important;
-  border: 1px solid #DBEAFE !important;
-}
-
-.metric-tag.risk-tag {
-  color: #DC2626 !important;
-  background: #FEF2F2 !important;
-  border-color: #FEE2E2 !important;
-}
-
-.metrics-grid {
-  display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important;
-  gap: 12px !important;
-  margin-bottom: 20px !important;
-}
-
-.metric-card {
-  background: #F8FAFC !important;
-  border: 1px solid #E2E8F0 !important;
-  border-radius: 8px !important;
-  padding: 12px !important;
-  text-align: center !important;
-}
-
-.metric-value {
-  font-size: 18px !important;
-  font-weight: 700 !important;
-  color: #0F172A !important;
-  margin-bottom: 2px !important;
-}
-
-.metric-label {
-  font-size: 11px !important;
-  font-weight: 600 !important;
-  color: #64748B !important;
-}
-
-.summary-text-block {
-  margin-bottom: 16px !important;
-}
-
-.sub-heading {
-  font-size: 14px !important;
-  font-weight: 700 !important;
-  color: #0F172A !important;
-  margin-bottom: 6px !important;
-}
-
-.body-text {
-  font-size: 14px !important;
-  line-height: 1.6 !important;
-  color: #334155 !important;
-  margin-bottom: 8px !important;
-}
-
-.takeaways-block {
-  margin-top: 12px !important;
-}
-
-.takeaways-list {
-  padding-left: 20px !important;
-  color: #475569 !important;
-  font-size: 14px !important;
-  line-height: 1.6 !important;
-}
-
-/* SWOT Grid */
 .swot-grid {
   display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
-  gap: 12px !important;
-  margin-top: 12px !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 16px !important;
+  margin-top: 14px !important;
+}
+
+@media (max-width: 768px) {
+  .swot-grid {
+    grid-template-columns: 1fr !important;
+  }
 }
 
 .swot-box {
-  padding: 14px !important;
-  border-radius: 8px !important;
-  border: 1px solid !important;
+  background: #F8FAFC !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 10px !important;
+  padding: 16px !important;
 }
 
 .swot-strengths {
-  background: #F0FDF4 !important;
-  border-color: #DCFCE7 !important;
-}
-
-.swot-strengths .swot-header {
-  color: #15803D !important;
+  border-top: 3px solid #10B981 !important;
 }
 
 .swot-weaknesses {
-  background: #FEF2F2 !important;
-  border-color: #FEE2E2 !important;
-}
-
-.swot-weaknesses .swot-header {
-  color: #B91C1C !important;
+  border-top: 3px solid #F59E0B !important;
 }
 
 .swot-opportunities {
-  background: #F0F9FF !important;
-  border-color: #E0F2FE !important;
-}
-
-.swot-opportunities .swot-header {
-  color: #0369A1 !important;
+  border-top: 3px solid #3B82F6 !important;
 }
 
 .swot-threats {
-  background: #FFFBEB !important;
-  border-color: #FEF3C7 !important;
-}
-
-.swot-threats .swot-header {
-  color: #B45309 !important;
+  border-top: 3px solid #EF4444 !important;
 }
 
 .swot-header {
   font-size: 13px !important;
   font-weight: 700 !important;
-  margin-bottom: 6px !important;
+  color: #0F172A !important;
+  margin: 0 0 10px 0 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
 }
 
 .swot-list {
-  padding-left: 16px !important;
-  font-size: 12px !important;
+  margin: 0 !important;
+  padding-left: 18px !important;
+  font-size: 13px !important;
   color: #334155 !important;
   line-height: 1.5 !important;
-  margin: 0 !important;
 }
 
-/* Architecture Box */
+.swot-list li {
+  margin-bottom: 6px !important;
+}
+
+/* ---------------------------------------------------------
+   5. ARCHITECTURE & TECH STACK BOX
+   --------------------------------------------------------- */
 .architecture-box {
   display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
-  gap: 8px !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 12px !important;
   background: #F8FAFC !important;
   border: 1px solid #E2E8F0 !important;
   border-radius: 8px !important;
-  padding: 12px !important;
-  margin: 12px 0 !important;
+  padding: 14px !important;
+  margin: 14px 0 !important;
+}
+
+@media (max-width: 768px) {
+  .architecture-box {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
 }
 
 .arch-item {
   display: flex !important;
   flex-direction: column !important;
+  gap: 4px !important;
 }
 
 .arch-label {
   font-size: 10px !important;
   font-weight: 700 !important;
-  color: #94A3B8 !important;
   text-transform: uppercase !important;
+  color: #64748B !important;
+  letter-spacing: 0.05em !important;
 }
 
 .arch-val {
   font-size: 13px !important;
   font-weight: 600 !important;
   color: #0F172A !important;
+}
+
+.sub-heading {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: #0F172A !important;
+  margin: 16px 0 10px 0 !important;
+}
+
+.takeaways-list {
+  margin: 0 !important;
+  padding-left: 18px !important;
+  font-size: 13.5px !important;
+  color: #334155 !important;
+  line-height: 1.55 !important;
+}
+
+.takeaways-list li {
+  margin-bottom: 6px !important;
 }

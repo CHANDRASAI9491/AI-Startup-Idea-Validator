@@ -217,18 +217,16 @@ def render_advisor_chat(
 
         with col_hdr:
             icon_img_html = f"<img src='{SVG_ICON_DATA_URI}' style='width: 22px; height: 22px; margin-right: 8px; vertical-align: middle;' />" if SVG_ICON_DATA_URI else ""
-            st.markdown(
-                f"""
-                <div style="display: flex; align-items: center;">
-                    {icon_img_html}
-                    <div>
-                        <div class='advisor-header-title'>AI Venture Advisor</div>
-                        <div class='advisor-header-status'>{'Report active' if (current_state and current_state.final_report) else 'No active validation report'}</div>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True
+            hdr_html = (
+                '<div style="display: flex; align-items: center;">'
+                f'{icon_img_html}'
+                '<div>'
+                '<div class="advisor-header-title">AI Venture Advisor</div>'
+                f'<div class="advisor-header-status">{"Report active" if (current_state and current_state.final_report) else "No active validation report"}</div>'
+                '</div>'
+                '</div>'
             )
+            st.markdown(hdr_html, unsafe_allow_html=True)
 
         with col_close:
             if st.button("Close", key="advisor_close", help="Close Advisor drawer"):
@@ -307,12 +305,13 @@ def render_advisor_chat(
         # -----------------------------------------------------
         with st.container(height=320, border=False, key="advisor_messages"):
             if not st.session_state.chat_history:
-                st.markdown("""
-<div class="empty-chat-state">
-  <div class="empty-chat-title">AI Venture Advisor</div>
-  <div class="empty-chat-subtitle">Ask me anything about your validation report.</div>
-</div>
-""", unsafe_allow_html=True)
+                st.markdown(
+                    '<div class="empty-chat-state">'
+                    '<div class="empty-chat-title">AI Venture Advisor</div>'
+                    '<div class="empty-chat-subtitle">Ask me anything about your validation report.</div>'
+                    '</div>',
+                    unsafe_allow_html=True
+                )
 
                 st.markdown("<div class='empty-chat-prompt-label'>Suggested questions</div>", unsafe_allow_html=True)
 
@@ -332,18 +331,20 @@ def render_advisor_chat(
                     role = msg.get("role", "user")
                     content = msg.get("content", "")
                     if role == "user":
-                        st.markdown(f"""
-<div class="chat-msg user-msg">
-  <div class="msg-author">You</div>
-  <div class="msg-content">{content}</div>
-</div>
-""", unsafe_allow_html=True)
+                        st.markdown(
+                            '<div class="chat-msg user-msg">'
+                            '<div class="msg-author">You</div>'
+                            f'<div class="msg-content">{content}</div>'
+                            '</div>',
+                            unsafe_allow_html=True
+                        )
                     else:
-                        st.markdown(f"""
-<div class="chat-msg assistant-msg">
-  <div class="msg-author">AI Venture Advisor</div>
-  <div class="msg-content">
-""", unsafe_allow_html=True)
+                        st.markdown(
+                            '<div class="chat-msg assistant-msg">'
+                            '<div class="msg-author">AI Venture Advisor</div>'
+                            '<div class="msg-content">',
+                            unsafe_allow_html=True
+                        )
                         st.markdown(content)
                         st.markdown("</div></div>", unsafe_allow_html=True)
 

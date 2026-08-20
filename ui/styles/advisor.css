@@ -1,23 +1,51 @@
 /* =========================================================
-   CLEAN SAAS ADVISOR DRAWER & CUSTOM SVG LAUNCHER
+   AI STARTUP IDEA VALIDATOR - ADVISOR DRAWER & FLOATING LAUNCHER
    ========================================================= */
 
 /* ---------------------------------------------------------
-   1. FLOATING 60PX CIRCULAR LAUNCHER (BOTTOM-RIGHT)
+   1. FLOATING CIRCULAR LAUNCHER (BOTTOM-RIGHT)
    --------------------------------------------------------- */
-.st-key-floating_advisor_launcher {
+.st-key-floating_advisor_launcher,
+div[data-testid="stVerticalBlock"]:has(> div.st-key-advisor_launcher_button) {
   position: fixed !important;
-  right: 24px !important;
   bottom: 24px !important;
+  right: 24px !important;
   left: auto !important;
   top: auto !important;
+  width: 60px !important;
+  height: 60px !important;
+  min-width: 60px !important;
+  min-height: 60px !important;
+  max-width: 60px !important;
+  max-height: 60px !important;
   z-index: 999999 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  pointer-events: auto !important;
+}
+
+.st-key-floating_advisor_launcher > div,
+.st-key-advisor_launcher_button {
+  width: 60px !important;
+  height: 60px !important;
+  min-width: 60px !important;
+  min-height: 60px !important;
+  max-width: 60px !important;
+  max-height: 60px !important;
   margin: 0 !important;
   padding: 0 !important;
   overflow: visible !important;
 }
 
-.st-key-floating_advisor_launcher button {
+.st-key-floating_advisor_launcher button,
+.st-key-advisor_launcher_button button,
+.st-key-advisor_launcher_button > button {
+  position: fixed !important;
+  bottom: 24px !important;
+  right: 24px !important;
+  left: auto !important;
+  top: auto !important;
   width: 60px !important;
   height: 60px !important;
   min-width: 60px !important;
@@ -26,62 +54,63 @@
   max-height: 60px !important;
   border-radius: 50% !important;
   background-color: #2563EB !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.3) !important;
-  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.38) !important;
+  background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1NiA1NiIgd2lkdGg9IjU2IiBoZWlnaHQ9IjU2IiBmaWxsPSJub25lIj4KICA8IS0tIE1pbmltYWwgQ2hhdCBCdWJibGUgQ29udGFpbmVyIC0tPgogIDxwYXRoIGQ9Ik0yOCA4QzE2Ljk1NCA4IDggMTYuNTA3IDggMjdjMCA0LjIyIDEuNDQyIDguMTIgMy44ODIgMTEuMjY4TDEwIDQ2bDguNDcyLTIuMTE4QzIxLjIwNSA0NS4xODcgMjQuNDk2IDQ2IDI4IDQ2YzExLjA0NiAwIDIwLTguNTA3IDIwLTE5UzM5LjA0NiA4IDI4IDh6IiBmaWxsPSJ1cmwoI2Fkdmlzb3JfZ3JhZCkiIC8+CiAgCiAgPCEtLSBTdWJ0bGUgTmV1cmFsIE5ldHdvcmsgLyBBSSBNb3RpZiBJbnNpZGUgQnViYmxlIC0tPgogIDxnIHN0cm9rZT0iI0ZGRkZGRiIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgb3BhY2l0eT0iMC45NSI+CiAgICA8IS0tIE5ldXJhbCBDb25uZWN0aW9uIExpbmVzIC0tPgogICAgPGxpbmUgeDE9IjI4IiB5MT0iMjEiIHgyPSIyMCIgeTI9IjI4IiBvcGFjaXR5PSIwLjYiIC8+CiAgICA8bGluZSB4MT0iMjgiIHkxPSIyMSIgeDI9IjM2IiB5Mj0iMjgiIG9wYWNpdHk9IjAuNiIgLz4KICAgIDxsaW5lIHgxPSIyMCIgeTE9IjI4IiB4Mj0iMjUiIHkyPSIzNSIgb3BhY2l0eT0iMC42IiAvPgogICAgPGxpbmUgeDE9IjM2IiB5MT0iMjgiIHgyPSIzMSIgeTI9IjM1IiBvcGFjaXR5PSIwLjYiIC8+CiAgICA8bGluZSB4MT0iMjgiIHkxPSIyMSIgeDI9IjI4IiB5Mj0iMjkiIG9wYWNpdHk9IjAuNzUiIC8+CiAgICA8bGluZSB4MT0iMjgiIHkxPSIyOSIgeDI9IjI1IiB5Mj0iMzUiIG9wYWNpdHk9IjAuNzUiIC8+CiAgICA8bGluZSB4MT0iMjgiIHkxPSIyOSIgeDI9IjMxIiB5Mj0iMzUiIG9wYWNpdHk9IjAuNzUiIC8+CiAgICAKICAgIDwhLS0gT3V0ZXIgQ29ubmVjdGVkIE5vZGVzIC0tPgogICAgPGNpcmNsZSBjeD0iMjgiIGN5PSIyMSIgcj0iMi41IiBmaWxsPSIjRkZGRkZGIiAvPgogICAgPGNpcmNsZSBjeD0iMjAiIGN5PSIyOCIgcj0iMi4yIiBmaWxsPSIjRkZGRkZGIiAvPgogICAgPGNpcmNsZSBjeD0iMzYiIGN5PSIyOCIgcj0iMi4yIiBmaWxsPSIjRkZGRkZGIiAvPgogICAgPGNpcmNsZSBjeD0iMjUiIGN5PSIzNSIgcj0iMi4yIiBmaWxsPSIjRkZGRkZGIiAvPgogICAgPGNpcmNsZSBjeD0iMzEiIGN5PSIzNSIgcj0iMi4yIiBmaWxsPSIjRkZGRkZGIiAvPgogICAgCiAgICA8IS0tIENlbnRyYWwgQUkgQ29yZSBOb2RlIC0tPgogICAgPGNpcmNsZSBjeD0iMjgiIGN5PSIyOSIgcj0iMyIgZmlsbD0iI0ZGRkZGRiIgc3Ryb2tlPSIjMjU2M0VCIiBzdHJva2Utd2lkdGg9IjEiIC8+CiAgPC9nPgoKICA8IS0tIEdyYWRpZW50IERlZmluaXRpb24gLS0+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImFkdmlzb3JfZ3JhZCIgeDE9IjgiIHkxPSI4IiB4Mj0iNDgiIHkyPSI0NiIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjM0I4MkY2IiAvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMxRDRFRDgiIC8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KPC9zdmc+Cg==") !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: 38px 38px !important;
+  border: 2px solid #FFFFFF !important;
+  box-shadow: 0 4px 20px rgba(37, 99, 235, 0.45), 0 2px 8px rgba(15, 23, 42, 0.15) !important;
+  cursor: pointer !important;
+  z-index: 999999 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  cursor: pointer !important;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease !important;
   padding: 0 !important;
   margin: 0 !important;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56' width='36' height='36' fill='none'%3E%3Cpath d='M28 8C16.954 8 8 16.507 8 27c0 4.22 1.442 8.12 3.882 11.268L10 46l8.472-2.118C21.205 45.187 24.496 46 28 46c11.046 0 20-8.507 20-19S39.046 8 28 8z' fill='%23FFFFFF'/%3E%3Cg stroke='%232563EB' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='28' y1='21' x2='20' y2='28' opacity='0.7'/%3E%3Cline x1='28' y1='21' x2='36' y2='28' opacity='0.7'/%3E%3Cline x1='20' y1='28' x2='25' y2='35' opacity='0.7'/%3E%3Cline x1='36' y1='28' x2='31' y2='35' opacity='0.7'/%3E%3Cline x1='28' y1='21' x2='28' y2='29' opacity='0.8'/%3E%3Cline x1='28' y1='29' x2='25' y2='35' opacity='0.8'/%3E%3Cline x1='28' y1='29' x2='31' y2='35' opacity='0.8'/%3E%3Ccircle cx='28' cy='21' r='2.5' fill='%232563EB'/%3E%3Ccircle cx='20' cy='28' r='2.2' fill='%232563EB'/%3E%3Ccircle cx='36' cy='28' r='2.2' fill='%232563EB'/%3E%3Ccircle cx='25' cy='35' r='2.2' fill='%232563EB'/%3E%3Ccircle cx='31' cy='35' r='2.2' fill='%232563EB'/%3E%3Ccircle cx='28' cy='29' r='3' fill='%23FFFFFF' stroke='%232563EB' stroke-width='1.5'/%3E%3C/g%3E%3C/svg%3E") !important;
-  background-position: center !important;
-  background-repeat: no-repeat !important;
-  background-size: 34px 34px !important;
-  overflow: visible !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
 }
 
-.st-key-floating_advisor_launcher button:hover {
-  transform: translateY(-2px) !important;
-  background-color: #1D4ED8 !important;
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.48) !important;
+.st-key-floating_advisor_launcher button:hover,
+.st-key-advisor_launcher_button button:hover {
+  transform: translateY(-2px) scale(1.06) !important;
+  box-shadow: 0 8px 28px rgba(37, 99, 235, 0.6), 0 4px 12px rgba(15, 23, 42, 0.2) !important;
 }
 
-.st-key-floating_advisor_launcher button p {
+.st-key-floating_advisor_launcher button p,
+.st-key-advisor_launcher_button button p,
+.st-key-advisor_launcher_button button div[data-testid="stMarkdownContainer"] {
   display: none !important;
+  visibility: hidden !important;
 }
 
 /* ---------------------------------------------------------
-   2. COMPACT FLOATING DRAWER PANEL (BOTTOM-RIGHT)
+   2. FLOATING DRAWER PANEL (BOTTOM-RIGHT)
    --------------------------------------------------------- */
 .st-key-floating_advisor_panel {
   position: fixed !important;
-  right: 20px !important;
-  bottom: 88px !important;
+  right: 24px !important;
+  bottom: 96px !important;
   left: auto !important;
   top: auto !important;
   width: 420px !important;
   max-width: calc(100vw - 32px) !important;
-  height: 70vh !important;
-  max-height: 640px !important;
+  height: 72vh !important;
+  max-height: 660px !important;
   z-index: 999998 !important;
   background: #FFFFFF !important;
   border: 1px solid #CBD5E1 !important;
-  border-radius: 14px !important;
-  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.16), 0 4px 10px rgba(15, 23, 42, 0.08) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.22), 0 4px 12px rgba(15, 23, 42, 0.08) !important;
   padding: 14px 16px !important;
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden !important;
 }
 
-/* ---------------------------------------------------------
-   3. HEADER & CONTROLS
-   --------------------------------------------------------- */
+/* Header & Controls */
 .advisor-header-title {
   font-size: 15px !important;
-  font-weight: 700 !important;
+  font-weight: 750 !important;
   color: #0F172A !important;
   letter-spacing: -0.01em !important;
   line-height: 1.2 !important;
@@ -97,7 +126,7 @@
 .st-key-advisor_new_chat button {
   height: 30px !important;
   min-height: 30px !important;
-  padding: 0 8px !important;
+  padding: 0 10px !important;
   border-radius: 6px !important;
   border: 1px solid #2563EB !important;
   background: #EFF6FF !important;
@@ -162,9 +191,7 @@
   border-color: #CBD5E1 !important;
 }
 
-/* ---------------------------------------------------------
-   4. CHAT HISTORY SELECTOR
-   --------------------------------------------------------- */
+/* Chat History Selector */
 .chat-history-section-header {
   font-size: 9px !important;
   font-weight: 700 !important;
@@ -195,9 +222,7 @@
   margin: 6px 0 !important;
 }
 
-/* ---------------------------------------------------------
-   5. ACTIVE CONTEXT BADGE
-   --------------------------------------------------------- */
+/* Active Context Badge */
 .context-badge {
   background: #F8FAFC !important;
   border: 1px solid #E2E8F0 !important;
@@ -215,9 +240,7 @@
   color: #92400E !important;
 }
 
-/* ---------------------------------------------------------
-   6. EMPTY STATE & SUGGESTED QUESTIONS
-   --------------------------------------------------------- */
+/* Empty State & Suggested Questions */
 .empty-chat-state {
   text-align: center !important;
   padding: 8px 4px 4px 4px !important;
@@ -238,7 +261,7 @@
 
 .empty-chat-prompt-label {
   font-size: 10px !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
   color: #64748B !important;
   margin-bottom: 4px !important;
   text-transform: uppercase !important;
@@ -289,11 +312,9 @@
   -webkit-text-fill-color: #1D4ED8 !important;
 }
 
-/* ---------------------------------------------------------
-   7. CHAT MESSAGES & FOLLOW-UP SUGGESTIONS
-   --------------------------------------------------------- */
+/* Chat Messages */
 .chat-msg {
-  border-radius: 8px !important;
+  border-radius: 10px !important;
   padding: 8px 12px !important;
   margin-bottom: 8px !important;
   font-size: 12px !important;
@@ -301,14 +322,14 @@
 }
 
 .chat-msg.user-msg {
-  background: #F1F5F9 !important;
-  border: 1px solid #E2E8F0 !important;
+  background: #EFF6FF !important;
+  border: 1px solid #DBEAFE !important;
   color: #0F172A !important;
-  margin-left: 20px !important;
+  margin-left: 18px !important;
 }
 
 .chat-msg.assistant-msg {
-  background: #FFFFFF !important;
+  background: #F8FAFC !important;
   border: 1px solid #E2E8F0 !important;
   color: #0F172A !important;
   margin-right: 8px !important;
@@ -363,9 +384,7 @@
   border-color: #2563EB !important;
 }
 
-/* ---------------------------------------------------------
-   8. PINNED CHAT COMPOSER AT BOTTOM
-   --------------------------------------------------------- */
+/* Pinned Chat Composer */
 .composer-container {
   margin-top: auto !important;
   padding-top: 6px !important;
@@ -421,20 +440,20 @@
   background: #1D4ED8 !important;
 }
 
-/* ---------------------------------------------------------
-   9. MOBILE BREAKPOINTS
-   --------------------------------------------------------- */
+/* Mobile Breakpoints */
 @media (max-width: 640px) {
-  .st-key-floating_advisor_launcher {
-    right: 14px !important;
-    bottom: 14px !important;
+  .st-key-floating_advisor_launcher,
+  .st-key-floating_advisor_launcher button,
+  .st-key-advisor_launcher_button button {
+    right: 16px !important;
+    bottom: 16px !important;
   }
 
   .st-key-floating_advisor_panel {
-    right: 10px !important;
-    left: 10px !important;
-    bottom: 80px !important;
-    width: calc(100vw - 20px) !important;
+    right: 12px !important;
+    left: 12px !important;
+    bottom: 84px !important;
+    width: calc(100vw - 24px) !important;
     max-width: none !important;
     height: calc(100vh - 100px) !important;
     max-height: none !important;

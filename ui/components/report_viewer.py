@@ -24,15 +24,16 @@ def render_report_viewer(state: StartupState, session_id: str = None) -> None:
     st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
 
     # Validation Report Container
-    st.markdown("""
-<div class="saas-card report-container-card">
-  <div class="saas-card-header report-header-row">
-    <div>
-      <div class="saas-card-label">VALIDATION REPORT</div>
-      <div class="saas-title">Comprehensive Startup Validation Analysis</div>
-    </div>
-  </div>
-""", unsafe_allow_html=True)
+    st.markdown(
+        '<div class="saas-card report-container-card">'
+        '<div class="saas-card-header report-header-row">'
+        '<div>'
+        '<div class="saas-card-label">VALIDATION REPORT</div>'
+        '<div class="saas-title">Comprehensive Startup Validation Analysis</div>'
+        '</div>'
+        '</div>',
+        unsafe_allow_html=True
+    )
 
     # Export Action Buttons (Clean Text-Only Buttons)
     col1, col2, col3 = st.columns(3)
