@@ -101,6 +101,11 @@ def render_advisor_chat(
     # ---------------------------------------------------------
     # 2. FLOATING 60PX CIRCULAR LAUNCHER (BOTTOM-RIGHT)
     # ---------------------------------------------------------
+    st.markdown(
+        '<div id="ai-advisor-launcher-anchor"></div>',
+        unsafe_allow_html=True
+    )
+
     with st.container(key="floating_advisor_launcher"):
         launcher_help = "Close Advisor" if st.session_state.advisor_open else "AI Venture Advisor"
         if st.button(

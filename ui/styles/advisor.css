@@ -5,8 +5,18 @@
 /* ---------------------------------------------------------
    1. FLOATING CIRCULAR LAUNCHER (BOTTOM-RIGHT)
    --------------------------------------------------------- */
+#ai-advisor-launcher-anchor,
+div[data-testid="stElementContainer"]:has(#ai-advisor-launcher-anchor) {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
 .st-key-floating_advisor_launcher,
-div[data-testid="stVerticalBlock"]:has(> div.st-key-advisor_launcher_button) {
+div[data-testid="stElementContainer"]:has(#ai-advisor-launcher-anchor) + div {
   position: fixed !important;
   bottom: 24px !important;
   right: 24px !important;
@@ -29,10 +39,6 @@ div[data-testid="stVerticalBlock"]:has(> div.st-key-advisor_launcher_button) {
 .st-key-advisor_launcher_button {
   width: 60px !important;
   height: 60px !important;
-  min-width: 60px !important;
-  min-height: 60px !important;
-  max-width: 60px !important;
-  max-height: 60px !important;
   margin: 0 !important;
   padding: 0 !important;
   overflow: visible !important;
@@ -40,7 +46,7 @@ div[data-testid="stVerticalBlock"]:has(> div.st-key-advisor_launcher_button) {
 
 .st-key-floating_advisor_launcher button,
 .st-key-advisor_launcher_button button,
-.st-key-advisor_launcher_button > button {
+div[data-testid="stElementContainer"]:has(#ai-advisor-launcher-anchor) + div button {
   position: fixed !important;
   bottom: 24px !important;
   right: 24px !important;
@@ -59,7 +65,9 @@ div[data-testid="stVerticalBlock"]:has(> div.st-key-advisor_launcher_button) {
   background-repeat: no-repeat !important;
   background-size: 38px 38px !important;
   border: 2px solid #FFFFFF !important;
-  box-shadow: 0 4px 20px rgba(37, 99, 235, 0.45), 0 2px 8px rgba(15, 23, 42, 0.15) !important;
+  box-shadow:
+    0 4px 20px rgba(37, 99, 235, 0.45),
+    0 2px 8px rgba(15, 23, 42, 0.15) !important;
   cursor: pointer !important;
   z-index: 999999 !important;
   display: flex !important;
@@ -71,14 +79,18 @@ div[data-testid="stVerticalBlock"]:has(> div.st-key-advisor_launcher_button) {
 }
 
 .st-key-floating_advisor_launcher button:hover,
-.st-key-advisor_launcher_button button:hover {
+.st-key-advisor_launcher_button button:hover,
+div[data-testid="stElementContainer"]:has(#ai-advisor-launcher-anchor) + div button:hover {
   transform: translateY(-2px) scale(1.06) !important;
-  box-shadow: 0 8px 28px rgba(37, 99, 235, 0.6), 0 4px 12px rgba(15, 23, 42, 0.2) !important;
+  box-shadow:
+    0 8px 28px rgba(37, 99, 235, 0.6),
+    0 4px 12px rgba(15, 23, 42, 0.2) !important;
 }
 
 .st-key-floating_advisor_launcher button p,
 .st-key-advisor_launcher_button button p,
-.st-key-advisor_launcher_button button div[data-testid="stMarkdownContainer"] {
+.st-key-advisor_launcher_button button div[data-testid="stMarkdownContainer"],
+div[data-testid="stElementContainer"]:has(#ai-advisor-launcher-anchor) + div button p {
   display: none !important;
   visibility: hidden !important;
 }
@@ -444,7 +456,8 @@ div[data-testid="stVerticalBlock"]:has(> div.st-key-advisor_launcher_button) {
 @media (max-width: 640px) {
   .st-key-floating_advisor_launcher,
   .st-key-floating_advisor_launcher button,
-  .st-key-advisor_launcher_button button {
+  .st-key-advisor_launcher_button button,
+  div[data-testid="stElementContainer"]:has(#ai-advisor-launcher-anchor) + div button {
     right: 16px !important;
     bottom: 16px !important;
   }
