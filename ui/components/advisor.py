@@ -1,7 +1,10 @@
 import os
+import re
+import html
 import base64
+from urllib.parse import urlparse
 import streamlit as st
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Tuple
 
 from state.schema import StartupState
 from app.orchestrator import ApplicationOrchestrator
@@ -31,11 +34,48 @@ if os.path.exists(ICON_PATH):
         pass
 
 
+def _parse_advisor_sources(text: str) -> Tuple[str, List[Dict[str, str]]]:
+    """
+    Parses the advisor response text to cleanly separate markdown body
+    and structured sources if '### Additional Web Research' or '### Sources' is present.
+    """
+    sources_pattern = r"(?:###\s+(?:Additional Web Research|Sources|Web Sources))\s*\n([\s\S]*)"
+    match = re.search(sources_pattern, text, re.IGNORECASE)
+    
+    if not match:
+        return text, []
+
+    main_text = text[:match.start()].strip()
+    sources_block = match.group(1).strip()
+    
+    sources = []
+    # Match patterns like "- [Title] — URL" or "- [Title] (URL)" or "- [Title] - URL" or bullet URLs
+    line_pattern = r"[-*]?\s*(?:\[(.*?)\])?(?:\s*[\(—\-:]\s*|\s+)?(https?://[^\s\)]+)"
+    for line in sources_block.split("\n"):
+        line = line.strip()
+        if not line:
+            continue
+        line_match = re.search(line_pattern, line)
+        if line_match:
+            title = line_match.group(1) or ""
+            url = line_match.group(2).rstrip(".)")
+            domain = urlparse(url).netloc.replace("www.", "")
+            if not title:
+                title = domain
+            sources.append({
+                "title": title.strip(" []"),
+                "url": url.strip(),
+                "domain": domain
+            })
+
+    return main_text, sources
+
+
 def render_advisor_chat(
     orchestrator: ApplicationOrchestrator,
     state: Optional[StartupState],
 ) -> None:
-    """Render the Grounded AI Venture Advisor with persistent SQLite chat history and a custom SVG icon."""
+    """Render the Grounded AI Venture Advisor with persistent SQLite chat history, clean sources rendering, and modern search/chat input."""
 
     # ---------------------------------------------------------
     # 1. DATABASE & STATE SYNCHRONIZATION
@@ -192,7 +232,7 @@ def render_advisor_chat(
         report_context = orchestrator.advisor.build_intent_context(intent, rep_state)
         needs_web = orchestrator.advisor.should_search_web(q_clean, intent, report_context)
 
-        spinner_text = "Researching current market information..." if needs_web else "Analyzing report & evidence..."
+        spinner_text = "Researching current market information..." if needs_web else "Thinking..."
 
         with st.spinner(spinner_text):
             try:
@@ -223,16 +263,22 @@ def render_advisor_chat(
         # -----------------------------------------------------
         # A. HEADER BAR
         # -----------------------------------------------------
-        col_hdr, col_close = st.columns([5.5, 1.2], vertical_alignment="center")
+        col_hdr, col_close = st.columns([5.5, 1.3], vertical_alignment="center")
 
         with col_hdr:
-            icon_img_html = f"<img src='{SVG_ICON_DATA_URI}' style='width: 22px; height: 22px; margin-right: 8px; vertical-align: middle;' />" if SVG_ICON_DATA_URI else ""
+            icon_img_html = f"<img src='{SVG_ICON_DATA_URI}' style='width: 22px; height: 22px; margin-right: 8px; vertical-align: middle;' alt='Advisor Icon' />" if SVG_ICON_DATA_URI else ""
+            has_report = bool(current_state and current_state.final_report)
+            status_class = "active" if has_report else "inactive"
+            status_text = "Report active" if has_report else "No active report"
+            
             hdr_html = (
                 '<div style="display: flex; align-items: center;">'
                 f'{icon_img_html}'
                 '<div>'
                 '<div class="advisor-header-title">AI Venture Advisor</div>'
-                f'<div class="advisor-header-status">{"Report active" if (current_state and current_state.final_report) else "No active validation report"}</div>'
+                f'<div class="advisor-header-status {status_class}">'
+                f'<span class="status-indicator-dot"></span>{status_text}'
+                '</div>'
                 '</div>'
                 '</div>'
             )
@@ -249,7 +295,7 @@ def render_advisor_chat(
         st.markdown("<div class='chat-history-section-header'>CHAT HISTORY</div>", unsafe_allow_html=True)
         conv_list = list_conversations()
         
-        col_sel, col_new, col_del = st.columns([4.0, 2.2, 1.6], vertical_alignment="center")
+        col_sel, col_new, col_del = st.columns([4.2, 2.2, 1.6], vertical_alignment="center")
 
         with col_sel:
             if conv_list:
@@ -261,8 +307,8 @@ def render_advisor_chat(
                     match = next((c for c in conv_list if c["id"] == cid), None)
                     if match:
                         t = match.get("title", "Conversation")
-                        if len(t) > 26:
-                            t = t[:23] + "..."
+                        if len(t) > 28:
+                            t = t[:25] + "..."
                         return t
                     return "Conversation"
 
@@ -285,13 +331,11 @@ def render_advisor_chat(
 
         with col_new:
             if st.button("+ New Chat", key="advisor_new_chat", help="Start a new chat"):
-                # Check if current conversation is already an empty New Conversation
                 curr_id = st.session_state.get("active_conversation_id")
                 curr_msgs = get_messages(curr_id) if curr_id else []
                 curr_meta = get_conversation(curr_id) if curr_id else None
 
                 if curr_id and len(curr_msgs) == 0 and curr_meta and curr_meta.get("title") == "New Conversation":
-                    # Already on a clean empty conversation, no need to create duplicate
                     st.session_state.chat_history = []
                 else:
                     new_id = create_conversation(
@@ -334,19 +378,19 @@ def render_advisor_chat(
             concept_text = current_state.idea.idea_text or "Current startup concept"
             if len(concept_text) > 48:
                 concept_text = concept_text[:45] + "..."
-            st.markdown(f"<div class='context-badge'><strong>Consulting on:</strong> {concept_text}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='context-badge'><strong>Consulting on:</strong> {html.escape(concept_text)}</div>", unsafe_allow_html=True)
         else:
             st.markdown("<div class='context-badge warning'><strong>No active validation report.</strong> Validate an idea first.</div>", unsafe_allow_html=True)
 
         # -----------------------------------------------------
         # D. SCROLLABLE MESSAGES CONTAINER
         # -----------------------------------------------------
-        with st.container(height=320, border=False, key="advisor_messages"):
+        with st.container(height=340, border=False, key="advisor_messages"):
             if not st.session_state.chat_history:
                 st.markdown(
                     '<div class="empty-chat-state">'
                     '<div class="empty-chat-title">AI Venture Advisor</div>'
-                    '<div class="empty-chat-subtitle">Ask me anything about your validation report.</div>'
+                    '<div class="empty-chat-subtitle">Ask anything about your startup, market, competitors, or due diligence report.</div>'
                     '</div>',
                     unsafe_allow_html=True
                 )
@@ -354,10 +398,12 @@ def render_advisor_chat(
                 st.markdown("<div class='empty-chat-prompt-label'>Suggested questions</div>", unsafe_allow_html=True)
 
                 suggested_questions = [
-                    ("What is the biggest risk?", "advisor_sq_risk"),
-                    ("What is my viability score?", "advisor_sq_score"),
-                    ("How can I improve my GTM strategy?", "advisor_sq_gtm"),
+                    ("What is my biggest risk?", "advisor_sq_risk"),
+                    ("How can I improve my MVP?", "advisor_sq_mvp"),
                     ("Who are my main competitors?", "advisor_sq_comp"),
+                    ("How can I improve my GTM?", "advisor_sq_gtm"),
+                    ("What is my market opportunity?", "advisor_sq_market"),
+                    ("What is my viability score?", "advisor_sq_score"),
                 ]
 
                 for sq_text, sq_key in suggested_questions:
@@ -372,18 +418,41 @@ def render_advisor_chat(
                         st.markdown(
                             '<div class="chat-msg user-msg">'
                             '<div class="msg-author">You</div>'
-                            f'<div class="msg-content">{content}</div>'
+                            f'<div class="msg-content">{html.escape(content)}</div>'
                             '</div>',
                             unsafe_allow_html=True
                         )
                     else:
+                        main_body, sources = _parse_advisor_sources(content)
+                        
                         st.markdown(
                             '<div class="chat-msg assistant-msg">'
                             '<div class="msg-author">AI Venture Advisor</div>'
                             '<div class="msg-content">',
                             unsafe_allow_html=True
                         )
-                        st.markdown(content)
+                        st.markdown(main_body)
+                        
+                        # Render structured sources section if web research was performed
+                        if sources:
+                            sources_html = [
+                                '<div class="advisor-sources-block">',
+                                '<div class="advisor-sources-heading">Sources</div>',
+                                '<div class="advisor-sources-grid">'
+                            ]
+                            for src in sources:
+                                title_esc = html.escape(src["title"])
+                                url_esc = html.escape(src["url"])
+                                domain_esc = html.escape(src["domain"])
+                                sources_html.append(
+                                    f'<a href="{url_esc}" target="_blank" rel="noopener noreferrer" class="advisor-source-item">'
+                                    f'<span class="source-domain">{domain_esc}</span>'
+                                    f'<span class="source-title">{title_esc}</span>'
+                                    '</a>'
+                                )
+                            sources_html.append('</div></div>')
+                            st.markdown("".join(sources_html), unsafe_allow_html=True)
+                        
                         st.markdown("</div></div>", unsafe_allow_html=True)
 
                 # Context-aware follow-up question suggestions
@@ -444,7 +513,7 @@ def render_advisor_chat(
                                 handle_question_submit(fu_text)
 
         # -----------------------------------------------------
-        # E. PINNED CHAT COMPOSER AT BOTTOM
+        # E. PINNED CHAT COMPOSER AT BOTTOM (48-52PX TALL)
         # -----------------------------------------------------
         st.markdown("<div class='composer-container'>", unsafe_allow_html=True)
         with st.form(key="advisor_input_form", clear_on_submit=True):
@@ -452,12 +521,12 @@ def render_advisor_chat(
             with col_in:
                 user_question = st.text_input(
                     "Advisor Question",
-                    placeholder="Ask about your market, competitors, risks...",
+                    placeholder="Ask about your market, competitors, risks, MVP, or GTM...",
                     key="advisor_question_input",
                     label_visibility="collapsed",
                 )
             with col_btn:
-                submitted = st.form_submit_button("Send", help="Send question")
+                submitted = st.form_submit_button("Send", help="Send question to AI Venture Advisor")
 
         if submitted and user_question.strip():
             handle_question_submit(user_question.strip())
