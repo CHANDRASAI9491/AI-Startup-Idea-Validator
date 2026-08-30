@@ -49,7 +49,6 @@ def _parse_advisor_sources(text: str) -> Tuple[str, List[Dict[str, str]]]:
     sources_block = match.group(1).strip()
     
     sources = []
-    # Match patterns like "- [Title] — URL" or "- [Title] (URL)" or "- [Title] - URL" or bullet URLs
     line_pattern = r"[-*]?\s*(?:\[(.*?)\])?(?:\s*[\(—\-:]\s*|\s+)?(https?://[^\s\)]+)"
     for line in sources_block.split("\n"):
         line = line.strip()
@@ -75,7 +74,7 @@ def render_advisor_chat(
     orchestrator: ApplicationOrchestrator,
     state: Optional[StartupState],
 ) -> None:
-    """Render the Grounded AI Venture Advisor with persistent SQLite chat history, clean sources rendering, and modern search/chat input."""
+    """Render the Grounded AI Venture Advisor floating popup with top-left history button, + New Chat, and pill-styled suggested questions."""
 
     # ---------------------------------------------------------
     # 1. DATABASE & STATE SYNCHRONIZATION
@@ -113,7 +112,7 @@ def render_advisor_chat(
 
     # Validate or initialize active_conversation_id
     conv_list = list_conversations()
-    active_conv_id = st.session_state.active_conversation_id
+    active_conv_id = st.session_state.get("active_conversation_id")
 
     if active_conv_id:
         existing_conv = get_conversation(active_conv_id)
@@ -139,7 +138,7 @@ def render_advisor_chat(
         ]
 
     # ---------------------------------------------------------
-    # 2. FLOATING 60PX CIRCULAR LAUNCHER (BOTTOM-RIGHT)
+    # 2. FLOATING CIRCULAR LAUNCHER BUTTON (BOTTOM-RIGHT)
     # ---------------------------------------------------------
     st.markdown(
         '<div id="ai-advisor-launcher-anchor"></div>',
@@ -256,23 +255,69 @@ def render_advisor_chat(
         st.rerun()
 
     # ---------------------------------------------------------
-    # 4. COMPACT FLOATING DRAWER PANEL CONTAINER
+    # 4. FLOATING CHATBOT WINDOW CONTAINER
     # ---------------------------------------------------------
     with st.container(key="floating_advisor_panel"):
 
         # -----------------------------------------------------
-        # A. HEADER BAR
+        # 1. HEADER BAR: History Icon -> AI Venture Advisor -> Status -> Close
         # -----------------------------------------------------
-        col_hdr, col_close = st.columns([5.5, 1.3], vertical_alignment="center")
+        has_report = bool(current_state and current_state.final_report)
+        status_class = "active" if has_report else "inactive"
+        status_text = "Report active" if has_report else "No active report"
+
+        icon_img_html = f"<img src='{SVG_ICON_DATA_URI}' class='header-bot-icon' alt='Advisor' />" if SVG_ICON_DATA_URI else ""
+
+        col_hist, col_hdr, col_close = st.columns([1.1, 6.2, 1.1], vertical_alignment="center")
+
+        with col_hist:
+            # Top-Left History Icon Button with Dropdown List of Conversations
+            with st.popover("🕒", help="Chat History & Saved Conversations"):
+                st.markdown("<div class='history-popover-title'>Saved Conversations</div>", unsafe_allow_html=True)
+                history_list = list_conversations()
+                if not history_list:
+                    st.markdown("<p style='font-size: 11px; color: #64748B; padding: 4px 0;'>No saved conversations found.</p>", unsafe_allow_html=True)
+                else:
+                    curr_id = st.session_state.get("active_conversation_id")
+                    for c in history_list:
+                        cid = c["id"]
+                        title = c.get("title", "Conversation")
+                        if len(title) > 28:
+                            title = title[:25] + "..."
+                        
+                        c_item, c_del = st.columns([4.2, 1.2], vertical_alignment="center")
+                        with c_item:
+                            is_active = (cid == curr_id)
+                            prefix = "▶ " if is_active else ""
+                            if st.button(f"{prefix}{title}", key=f"pop_conv_{cid}", use_container_width=True):
+                                st.session_state.active_conversation_id = cid
+                                st.session_state.chat_history = [
+                                    {"role": m["role"], "content": m["content"]}
+                                    for m in get_messages(cid)
+                                ]
+                                st.rerun()
+                        with c_del:
+                            if st.button("🗑", key=f"pop_del_{cid}", help="Delete this chat"):
+                                delete_conversation(cid)
+                                remaining = list_conversations()
+                                if remaining:
+                                    st.session_state.active_conversation_id = remaining[0]["id"]
+                                    st.session_state.chat_history = [
+                                        {"role": m["role"], "content": m["content"]}
+                                        for m in get_messages(remaining[0]["id"])
+                                    ]
+                                else:
+                                    new_id = create_conversation(
+                                        title="New Conversation",
+                                        session_id=st.session_state.get("session_id")
+                                    )
+                                    st.session_state.active_conversation_id = new_id
+                                    st.session_state.chat_history = []
+                                st.rerun()
 
         with col_hdr:
-            icon_img_html = f"<img src='{SVG_ICON_DATA_URI}' style='width: 22px; height: 22px; margin-right: 8px; vertical-align: middle;' alt='Advisor Icon' />" if SVG_ICON_DATA_URI else ""
-            has_report = bool(current_state and current_state.final_report)
-            status_class = "active" if has_report else "inactive"
-            status_text = "Report active" if has_report else "No active report"
-            
             hdr_html = (
-                '<div style="display: flex; align-items: center;">'
+                '<div class="advisor-header-brand">'
                 f'{icon_img_html}'
                 '<div>'
                 '<div class="advisor-header-title">AI Venture Advisor</div>'
@@ -285,132 +330,117 @@ def render_advisor_chat(
             st.markdown(hdr_html, unsafe_allow_html=True)
 
         with col_close:
-            if st.button("Close", key="advisor_close", help="Close Advisor drawer"):
+            if st.button("✕", key="advisor_close", help="Close Advisor"):
                 st.session_state.advisor_open = False
                 st.rerun()
 
+        st.markdown("<div class='advisor-header-divider'></div>", unsafe_allow_html=True)
+
         # -----------------------------------------------------
-        # B. CHAT HISTORY CONTROLS
+        # 2. SUB-HEADER BAR: CHAT HISTORY / + New Chat
         # -----------------------------------------------------
-        st.markdown("<div class='chat-history-section-header'>CHAT HISTORY</div>", unsafe_allow_html=True)
-        conv_list = list_conversations()
-        
-        col_sel, col_new, col_del = st.columns([4.2, 2.2, 1.6], vertical_alignment="center")
+        col_sub_lbl, col_sub_new = st.columns([5.2, 2.8], vertical_alignment="center")
 
-        with col_sel:
-            if conv_list:
-                conv_ids = [c["id"] for c in conv_list]
-                curr_id = st.session_state.get("active_conversation_id")
-                sel_idx = conv_ids.index(curr_id) if curr_id in conv_ids else 0
+        with col_sub_lbl:
+            active_cid = st.session_state.get("active_conversation_id")
+            active_meta = get_conversation(active_cid) if active_cid else None
+            active_title = active_meta.get("title", "New Conversation") if active_meta else "New Conversation"
+            if len(active_title) > 28:
+                active_title = active_title[:25] + "..."
+            st.markdown(
+                f'<div class="chat-history-sub-header">'
+                f'<span class="history-label-tag">CHAT HISTORY</span>'
+                f'<span class="history-active-title">• {html.escape(active_title)}</span>'
+                f'</div>',
+                unsafe_allow_html=True
+            )
 
-                def format_label(cid: str) -> str:
-                    match = next((c for c in conv_list if c["id"] == cid), None)
-                    if match:
-                        t = match.get("title", "Conversation")
-                        if len(t) > 28:
-                            t = t[:25] + "..."
-                        return t
-                    return "Conversation"
-
-                selected_conv_id = st.selectbox(
-                    "Select Conversation",
-                    options=conv_ids,
-                    index=sel_idx,
-                    format_func=format_label,
-                    key="advisor_conversation_selector",
-                    label_visibility="collapsed"
+        with col_sub_new:
+            if st.button("+ New Chat", key="advisor_new_chat", help="Start new fresh conversation"):
+                new_id = create_conversation(
+                    title="New Conversation",
+                    session_id=st.session_state.get("session_id")
                 )
-
-                if selected_conv_id != st.session_state.get("active_conversation_id"):
-                    st.session_state.active_conversation_id = selected_conv_id
-                    st.session_state.chat_history = [
-                        {"role": m["role"], "content": m["content"]}
-                        for m in get_messages(selected_conv_id)
-                    ]
-                    st.rerun()
-
-        with col_new:
-            if st.button("+ New Chat", key="advisor_new_chat", help="Start a new chat"):
-                curr_id = st.session_state.get("active_conversation_id")
-                curr_msgs = get_messages(curr_id) if curr_id else []
-                curr_meta = get_conversation(curr_id) if curr_id else None
-
-                if curr_id and len(curr_msgs) == 0 and curr_meta and curr_meta.get("title") == "New Conversation":
-                    st.session_state.chat_history = []
-                else:
-                    new_id = create_conversation(
-                        title="New Conversation",
-                        session_id=st.session_state.get("session_id")
-                    )
-                    st.session_state.active_conversation_id = new_id
-                    st.session_state.chat_history = []
+                st.session_state.active_conversation_id = new_id
+                st.session_state.chat_history = []
                 st.rerun()
 
-        with col_del:
-            with st.popover("Delete", help="Delete current conversation"):
-                st.markdown("<p style='font-size: 11px; margin-bottom: 6px; font-weight: 600; color: #0F172A;'>Delete this chat?</p>", unsafe_allow_html=True)
-                if st.button("Confirm Delete", key="advisor_confirm_delete", type="primary"):
-                    curr_id = st.session_state.get("active_conversation_id")
-                    if curr_id:
-                        delete_conversation(curr_id)
-                    remaining = list_conversations()
-                    if remaining:
-                        st.session_state.active_conversation_id = remaining[0]["id"]
-                        st.session_state.chat_history = [
-                            {"role": m["role"], "content": m["content"]}
-                            for m in get_messages(remaining[0]["id"])
-                        ]
-                    else:
-                        new_id = create_conversation(
-                            title="New Conversation",
-                            session_id=st.session_state.get("session_id")
-                        )
-                        st.session_state.active_conversation_id = new_id
-                        st.session_state.chat_history = []
-                    st.rerun()
-
-        st.markdown("<div class='advisor-divider'></div>", unsafe_allow_html=True)
+        st.markdown("<div class='chat-history-divider'></div>", unsafe_allow_html=True)
 
         # -----------------------------------------------------
-        # C. ACTIVE REPORT CONTEXT BADGE
+        # 3. MAIN CONTENT VIEW (WELCOME SCREEN VS CONVERSATION THREAD)
         # -----------------------------------------------------
-        if current_state and current_state.final_report:
-            concept_text = current_state.idea.idea_text or "Current startup concept"
-            if len(concept_text) > 48:
-                concept_text = concept_text[:45] + "..."
-            st.markdown(f"<div class='context-badge'><strong>Consulting on:</strong> {html.escape(concept_text)}</div>", unsafe_allow_html=True)
-        else:
-            st.markdown("<div class='context-badge warning'><strong>No active validation report.</strong> Validate an idea first.</div>", unsafe_allow_html=True)
-
-        # -----------------------------------------------------
-        # D. SCROLLABLE MESSAGES CONTAINER
-        # -----------------------------------------------------
-        with st.container(height=340, border=False, key="advisor_messages"):
-            if not st.session_state.chat_history:
-                st.markdown(
-                    '<div class="empty-chat-state">'
-                    '<div class="empty-chat-title">AI Venture Advisor</div>'
-                    '<div class="empty-chat-subtitle">Ask anything about your startup, market, competitors, or due diligence report.</div>'
-                    '</div>',
-                    unsafe_allow_html=True
+        if not st.session_state.chat_history:
+            # -------------------------------------------------
+            # WELCOME SCREEN VIEW
+            # -------------------------------------------------
+            with st.container(key="advisor_welcome_view"):
+                # AI Venture Advisor welcome message
+                welcome_header_html = (
+                    '<div class="welcome-hero-container">'
+                    f'<div class="welcome-avatar-wrapper">{icon_img_html}</div>'
+                    '<h2 class="welcome-title">Hi there! I’m AI Venture Advisor 👋</h2>'
+                    '<p class="welcome-subtitle">Ask me anything about your startup.</p>'
+                    '</div>'
                 )
+                st.markdown(welcome_header_html, unsafe_allow_html=True)
 
-                st.markdown("<div class='empty-chat-prompt-label'>Suggested questions</div>", unsafe_allow_html=True)
+                # TRY ASKING Label
+                st.markdown('<div class="try-asking-label">TRY ASKING</div>', unsafe_allow_html=True)
 
-                suggested_questions = [
-                    ("What is my biggest risk?", "advisor_sq_risk"),
-                    ("How can I improve my MVP?", "advisor_sq_mvp"),
-                    ("Who are my main competitors?", "advisor_sq_comp"),
-                    ("How can I improve my GTM?", "advisor_sq_gtm"),
-                    ("What is my market opportunity?", "advisor_sq_market"),
-                    ("What is my viability score?", "advisor_sq_score"),
+                # My 6 suggested questions (2-column layout)
+                c1, c2 = st.columns(2)
+
+                col1_questions = [
+                    ("What is my biggest risk?", "🛡️ What is my biggest risk?", "advisor_sq_risk"),
+                    ("What is my market opportunity?", "📊 What is my market opportunity?", "advisor_sq_market"),
+                    ("How can I improve my GTM?", "🚀 How can I improve my GTM?", "advisor_sq_gtm"),
                 ]
 
-                for sq_text, sq_key in suggested_questions:
-                    with st.container(key=sq_key):
-                        if st.button(sq_text, key=f"btn_{sq_key}"):
-                            handle_question_submit(sq_text)
-            else:
+                col2_questions = [
+                    ("Who are my main competitors?", "⚔️ Who are my main competitors?", "advisor_sq_comp"),
+                    ("How can I improve my MVP?", "🛠️ How can I improve my MVP?", "advisor_sq_mvp"),
+                    ("What is my viability score?", "📈 What is my viability score?", "advisor_sq_score"),
+                ]
+
+                with c1:
+                    for raw_text, display_text, sq_key in col1_questions:
+                        with st.container(key=sq_key):
+                            if st.button(display_text, key=f"btn_{sq_key}"):
+                                handle_question_submit(raw_text)
+
+                with c2:
+                    for raw_text, display_text, sq_key in col2_questions:
+                        with st.container(key=sq_key):
+                            if st.button(display_text, key=f"btn_{sq_key}"):
+                                handle_question_submit(raw_text)
+
+                # Context Badge / No active report warning
+                if current_state and current_state.final_report:
+                    concept_text = current_state.idea.idea_text or "Current startup concept"
+                    if len(concept_text) > 42:
+                        concept_text = concept_text[:40] + "..."
+                    st.markdown(
+                        f'<div class="welcome-context-badge">'
+                        f'<span class="context-badge-icon">💡</span>'
+                        f'<span>Consulting on: <strong>{html.escape(concept_text)}</strong></span>'
+                        f'</div>',
+                        unsafe_allow_html=True
+                    )
+                else:
+                    st.markdown(
+                        '<div class="welcome-context-badge warning">'
+                        '<span class="context-badge-icon">⚠️</span>'
+                        '<span><strong>No active report.</strong> Validate an idea first to enable due diligence Q&A.</span>'
+                        '</div>',
+                        unsafe_allow_html=True
+                    )
+
+        else:
+            # -------------------------------------------------
+            # ACTIVE CONVERSATION THREAD VIEW
+            # -------------------------------------------------
+            with st.container(height=340, border=False, key="advisor_messages"):
                 for msg in st.session_state.chat_history:
                     role = msg.get("role", "user")
                     content = msg.get("content", "")
@@ -433,7 +463,7 @@ def render_advisor_chat(
                         )
                         st.markdown(main_body)
                         
-                        # Render structured sources section if web research was performed
+                        # Render structured web research sources if present
                         if sources:
                             sources_html = [
                                 '<div class="advisor-sources-block">',
@@ -513,20 +543,31 @@ def render_advisor_chat(
                                 handle_question_submit(fu_text)
 
         # -----------------------------------------------------
-        # E. PINNED CHAT COMPOSER AT BOTTOM (48-52PX TALL)
+        # 4. BOTTOM INPUT AREA: Ask anything... + mic + send
         # -----------------------------------------------------
-        st.markdown("<div class='composer-container'>", unsafe_allow_html=True)
+        st.markdown("<div class='composer-wrapper'>", unsafe_allow_html=True)
         with st.form(key="advisor_input_form", clear_on_submit=True):
-            col_in, col_btn = st.columns([5.2, 1.2], vertical_alignment="center")
+            col_in, col_mic, col_btn = st.columns([5.2, 0.7, 1.1], vertical_alignment="center")
             with col_in:
                 user_question = st.text_input(
                     "Advisor Question",
-                    placeholder="Ask about your market, competitors, risks, MVP, or GTM...",
+                    placeholder="Ask anything about your startup...",
                     key="advisor_question_input",
                     label_visibility="collapsed",
                 )
+            with col_mic:
+                st.markdown(
+                    '<div class="mic-icon-container" title="Voice Input">'
+                    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+                    '<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>'
+                    '<path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>'
+                    '<line x1="12" y1="19" x2="12" y2="22"></line>'
+                    '</svg>'
+                    '</div>',
+                    unsafe_allow_html=True
+                )
             with col_btn:
-                submitted = st.form_submit_button("Send", help="Send question to AI Venture Advisor")
+                submitted = st.form_submit_button("➔", help="Send question")
 
         if submitted and user_question.strip():
             handle_question_submit(user_question.strip())

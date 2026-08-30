@@ -22,7 +22,6 @@ def render_sidebar() -> str:
             "Navigation",
             [
                 "Validate Startup",
-                "Validation History",
                 "Reports",
                 "Settings",
                 "About"
