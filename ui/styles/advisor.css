@@ -1,5 +1,5 @@
 /* =========================================================
-   AI STARTUP IDEA VALIDATOR - ADVISOR DRAWER & FLOATING LAUNCHER
+   AI STARTUP IDEA VALIDATOR - MODERN AI VENTURE ADVISOR UX
    ========================================================= */
 
 /* ---------------------------------------------------------
@@ -60,7 +60,7 @@ div[data-testid="stElementContainer"]:has(#ai-advisor-launcher-anchor) + div but
   max-height: 60px !important;
   border-radius: 50% !important;
   background-color: #2563EB !important;
-  background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1NiA1NiIgd2lkdGg9IjU2IiBoZWlnaHQ9IjU2IiBmaWxsPSJub25lIj4KICA8IS0tIE1pbmltYWwgQ2hhdCBCdWJibGUgQ29udGFpbmVyIC0tPgogIDxwYXRoIGQ9Ik0yOCA4QzE2Ljk1NCA4IDggMTYuNTA3IDggMjdjMCA0LjIyIDEuNDQyIDguMTIgMy44ODIgMTEuMjY4TDEwIDQ2bDguNDcyLTIuMTE4QzIxLjIwMSA0NS4xODcgMjQuNDk2IDQ2IDI4IDQ2YzExLjA0NiAwIDIwLTguNTA3IDIwLTE5UzM5LjA0NiA4IDI4IDh6IiBmaWxsPSJ1cmwoI2Fkdmlzb3JfZ3JhZCkiIC8+CiAgCiAgPCEtLSBTdWJ0bGUgTmV1cmFsIE5ldHdvcmsgLyBBSSBNb3RpZiBJbnNpZGUgQnViYmxlIC0tPgogIDxnIHN0cm9rZT0iI0ZGRkZGRiIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgb3BhY2l0eT0iMC45NSI+CiAgICA8IS0tIE5ldXJhbCBDb25uZWN0aW9uIExpbmVzIC0tPgogICAgPGxpbmUgeDE9IjI4IiB5MT0iMjEiIHgyPSIyMCIgeTI9IjI4IiBvcGFjaXR5PSIwLjYiIC8+CiAgICA8bGluZSB4MT0iMjgiIHkxPSIyMSIgeDI9IzM2IiB5Mj0iMjgiIG9wYWNpdHk9IjAuNiIgLz4KICAgIDxsaW5lIHgxPSIyMCIgeTE9IjI4IiB4Mj0iMjUiIHkyPSIzNSIgb3BhY2l0eT0iMC42IiAvPgogICAgPGxpbmUgeDE9IzM2IiB5MT0iMjgiIHgyPSIzMSIgeTI9IjM1IiBvcGFjaXR5PSIwLjYiIC8+CiAgICA8bGluZSB4MT0iMjgiIHkxPSIyMSIgeDI9IjI4IiB5Mj0iMjkiIG9wYWNpdHk9IjAuNzUiIC8+CiAgICA8bGluZSB4MT0iMjgiIHkxPSIyOSIgeDI9IjI1IiB5Mj0iMzUiIG9wYWNpdHk9IjAuNzUiIC8+CiAgICA8bGluZSB4MT0iMjgiIHkxPSIyOSIgeDI9IjMxIiB5Mj0iMzUiIG9wYWNpdHk9IjAuNzUiIC8+CiAgICAKICAgIDwhLS0gT3V0ZXIgQ29ubmVjdGVkIE5vZGVzIC0tPgogICAgPGNpcmNsZSBjeD0iMjgiIGN5PSIyMSIgcj0iMi41IiBmaWxsPSIjRkZGRkZGIiAvPgogICAgPGNpcmNsZSBjeD0iMjAiIGN5PSIyOCIgcj0iMi4yIiBmaWxsPSIjRkZGRkZGIiAvPgogICAgPGNpcmNsZSBjeD0iMzYiIGN5PSIyOCIgcj0iMi4yIiBmaWxsPSIjRkZGRkZGIiAvPgogICAgPGNpcmNsZSBjeD0iMjUiIGN5PSIzNSIgcj0iMi4yIiBmaWxsPSIjRkZGRkZGIiAvPgogICAgPGNpcmNsZSBjeD0iMzEiIGN5PSIzNSIgcj0iMi4yIiBmaWxsPSIjRkZGRkZGIiAvPgogICAgCiAgICA8IS0tIENlbnRyYWwgQUkgQ29yZSBOb2RlIC0tPgogICAgPGNpcmNsZSBjeD0iMjgiIGN5PSIyOSIgcj0iMyIgZmlsbD0iI0ZGRkZGRiIgc3Ryb2tlPSIjMjU2M0VCIiBzdHJva2Utd2lkdGg9IjEiIC8+CiAgPC9nPgoKICA8IS0tIEdyYWRpZW50IERlZmluaXRpb24gLS0+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImFkdmlzb3JfZ3JhZCIgeDE9IjgiIHkxPSI8IiB4Mj0iNDgiIHkyPSI0NiIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjM0I4MkY2IiAvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMxRDRFRDgiIC8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KPC9zdmc+Cg==") !important;
+  background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1NiA1NiIgd2lkdGg9IjU2IiBoZWlnaHQ9IjU2IiBmaWxsPSJub25lIj4KICA8IS0tIE1pbmltYWwgQ2hhdCBCdWJibGUgQ29udGFpbmVyIC0tPgogIDxwYXRoIGQ9Ik0yOCA4QzE2Ljk1NCA4IDggMTYuNTA3IDggMjdjMCA0LjIyIDEuNDQyIDguMTIgMy44ODIgMTEuMjY4TDEwIDQ2bDguNDcyLTIuMTE4QzIxLjIwMSA0NS4xODcgMjQuNDk2IDQ2IDI4IDQ2YzExLjA0NiAwIDIwLTguNTA3IDIwLTE5UzM5LjA0NiA4IDI4IDh6IiBmaWxsPSJ1cmwoI2Fkdmlzb3JfZ3JhZCkiIC8+CiAgCiAgPCEtLSBTdWJ0bGUgTmV1cmFsIE5ldHdvcmsgLyBBSSBNb3RpZiBJbnNpZGUgQnViYmxlIC0tPgogIDxnIHN0cm9rZT0iI0ZGRkZGRiIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgb3BhY2l0eT0iMC45NSI+CiAgICA8IS0tIE5ldXJhbCBDb25uZWN0aW9uIExpbmVzIC0tPgogICAgPGxpbmUgeDE9IjI4IiB5MT0iMjEiIHgyPSIyMCIgeTI9IjI4IiBvcGFjaXR5PSIwLjYiIC8+CiAgICA8bGluZSB4MT0iMjgiIHkxPSIyMSIgeDI9IzM2IiB5Mj0iMjgiIG9wYWNpdHk9IjAuNiIgLz4KICAgIDxsaW5lIHgxPSIyMCIgeTE9IjI4IiB4Mj0iMjUiIHkyPSIzNSIgb3BhY2l0eT0iMC42IiAvPgogICAgPGxpbmUgeDE9IzM2IiB5MT0iMjgiIHgyPSIzMSIgeTI9IjM1IiBvcGFjaXR5PSIwLjYiIC8+CiAgICA8bGluZSB4MT0iMjgiIHkxPSIyMSIgeDI9IjI4IiB5Mj0iMjkiIG9wYWNpdHk9IjAuNzUiIC8+CiAgICA8bGluZSB4MT0iMjgiIHkxPSIyOSIgeDI9IjI1IiB5Mj0iMzUiIG9wYWNpdHk9IjAuNzUiIC8+CiAgICA8bGluZSB4MT0iMjgiIHkxPSIyOSIgeDI9IjMxIiB5Mj0iMzUiIG9wYWNpdHk9IjAuNzUiIC8+CiAgICAKICAgIDwhLS0gT3V0ZXIgQ29ubmVjdGVkIE5vZGVzIC0tPgogICAgPGNpcmNsZSBjeD0iMjgiIGN5PSIyMSIgcj0iMi41IiBmaWxsPSIjRkZGRkZGIiAvPgogICAgPGNpcmNsZSBjeD0iMjAiIGN5PSIyOCIgcj0iMi4yIiBmaWxsPSIjRkZGRkZGIiAvPgogICAgPGNpcmNsZSBjeD0iMzYiIGN5PSIyOCIgcj0iMi4yIiBmaWxsPSIjRkZGRkZGIiAvPgogICAgPGNpcmNsZSBjeD0iMjUiIGN5PSIzNSIgcj0iMi4yIiBmaWxsPSIjRkZGRkZGIiAvPgogICAgPGNpcmNsZSBjeD0iMzEiIGN5PSIzNSIgcj0iMi4yIiBmaWxsPSIjRkZGRkZGIiAvPgogICAgCiAgICA8IS0tIENlbnRyYWwgQUkgQ29yZSBOb2RlIC0tPgogICAgPGNpcmNsZSBjeD0iMjgiIGN5PSIyOSIgcj0iMyIgZmlsbD0iI0ZGRkZGRiIgc3Ryb2tlPSIjMjU2M0VCIiBzdHJva2Utd2lkdGg9IjEiIC8+CiAgPC9nPgoKICA8IS0tIEdyYWRpZW50IERlZmluaXRpb24gLS0+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImFkdmlzb3JfZ3JhZCIgeDE9IjgiIHkxPSI4IiB4Mj0iNDgiIHkyPSI0NiIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjM0I4MkY2IiAvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMxRDRFRDgiIC8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KPC9zdmc+Cg==") !important;
   background-position: center !important;
   background-repeat: no-repeat !important;
   background-size: 38px 38px !important;
@@ -104,18 +104,18 @@ div[data-testid="stElementContainer"]:has(#ai-advisor-launcher-anchor) + div but
   bottom: 96px !important;
   left: auto !important;
   top: auto !important;
-  width: 450px !important;
+  width: 440px !important;
   max-width: calc(100vw - 32px) !important;
   height: 660px !important;
-  max-height: calc(100vh - 100px) !important;
-  min-height: 500px !important;
+  max-height: calc(100vh - 110px) !important;
+  min-height: 480px !important;
   z-index: 999998 !important;
   background: #FFFFFF !important;
   border: 1px solid #E2E8F0 !important;
   border-radius: 20px !important;
   box-shadow:
-    0 20px 48px rgba(15, 23, 42, 0.18),
-    0 4px 12px rgba(15, 23, 42, 0.08) !important;
+    0 20px 48px rgba(15, 23, 42, 0.16),
+    0 4px 16px rgba(15, 23, 42, 0.06) !important;
   padding: 14px 16px 12px 16px !important;
   display: flex !important;
   flex-direction: column !important;
@@ -133,6 +133,7 @@ div[data-testid="stElementContainer"]:has(#ai-advisor-launcher-anchor) + div but
   width: 22px !important;
   height: 22px !important;
   flex-shrink: 0 !important;
+  object-fit: contain !important;
 }
 
 .advisor-header-title {
@@ -339,11 +340,13 @@ div[data-testid="stPopoverBody"] {
 }
 
 /* ---------------------------------------------------------
-   4. WELCOME SCREEN VIEW & FULLY ROUNDED PILL BUTTONS
+   4. WELCOME SCREEN VIEW & CLEAN SUGGESTION PILLS
    --------------------------------------------------------- */
 .st-key-advisor_welcome_view {
   margin: 0 !important;
   padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 .welcome-hero-container {
@@ -351,30 +354,31 @@ div[data-testid="stPopoverBody"] {
   flex-direction: column !important;
   align-items: center !important;
   text-align: center !important;
-  padding: 2px 0 0 0 !important;
-  margin-bottom: 6px !important;
+  padding: 6px 0 2px 0 !important;
+  margin-bottom: 8px !important;
 }
 
 .welcome-avatar-wrapper {
-  width: 40px !important;
-  height: 40px !important;
+  width: 44px !important;
+  height: 44px !important;
   border-radius: 50% !important;
-  background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%) !important;
+  background: #EFF6FF !important;
+  border: 1px solid #BFDBFE !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  margin-bottom: 4px !important;
-  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.22) !important;
+  margin-bottom: 6px !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.12) !important;
 }
 
 .welcome-avatar-wrapper img {
-  width: 22px !important;
-  height: 22px !important;
-  filter: brightness(0) invert(1) !important;
+  width: 24px !important;
+  height: 24px !important;
+  object-fit: contain !important;
 }
 
 .welcome-title {
-  font-size: 15px !important;
+  font-size: 16px !important;
   font-weight: 750 !important;
   color: #0F172A !important;
   margin: 0 0 2px 0 !important;
@@ -385,7 +389,7 @@ div[data-testid="stPopoverBody"] {
   font-size: 12px !important;
   font-weight: 450 !important;
   color: #64748B !important;
-  margin: 0 0 4px 0 !important;
+  margin: 0 0 6px 0 !important;
 }
 
 .try-asking-label {
@@ -394,12 +398,12 @@ div[data-testid="stPopoverBody"] {
   color: #64748B !important;
   letter-spacing: 0.06em !important;
   text-transform: uppercase !important;
-  margin-top: 2px !important;
+  margin-top: 4px !important;
   margin-bottom: 6px !important;
   text-align: left !important;
 }
 
-/* 2-Column Fully Rounded Pill Suggestion Buttons */
+/* 2-Column Clean Rounded Pill Suggestion Buttons */
 .st-key-advisor_sq_risk button,
 .st-key-advisor_sq_mvp button,
 .st-key-advisor_sq_comp button,
@@ -407,19 +411,19 @@ div[data-testid="stPopoverBody"] {
 .st-key-advisor_sq_market button,
 .st-key-advisor_sq_score button {
   width: 100% !important;
-  min-height: 42px !important;
-  height: 42px !important;
+  min-height: 40px !important;
+  height: 40px !important;
   background: #FFFFFF !important;
-  border: 1px solid #BFDBFE !important;
-  border-radius: 20px !important;
-  padding: 8px 14px !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 18px !important;
+  padding: 6px 12px !important;
   margin-bottom: 6px !important;
   text-align: left !important;
   display: flex !important;
   align-items: center !important;
   justify-content: flex-start !important;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  box-shadow: 0 2px 5px rgba(15, 23, 42, 0.04) !important;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03) !important;
 }
 
 .st-key-advisor_sq_risk button *,
@@ -444,7 +448,7 @@ div[data-testid="stPopoverBody"] {
   background: #EFF6FF !important;
   border-color: #2563EB !important;
   transform: translateY(-1px) !important;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.15) !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12) !important;
 }
 
 .st-key-advisor_sq_risk button:hover *,
@@ -457,20 +461,19 @@ div[data-testid="stPopoverBody"] {
   -webkit-text-fill-color: #1D4ED8 !important;
 }
 
-/* Context Badge / Warning Banner */
+/* Context Badge / Status Banner */
 .welcome-context-badge {
   background: #F8FAFC !important;
   border: 1px solid #E2E8F0 !important;
   border-radius: 8px !important;
-  padding: 5px 10px !important;
+  padding: 6px 10px !important;
   font-size: 11px !important;
   color: #334155 !important;
-  margin-top: 4px !important;
+  margin-top: 6px !important;
   margin-bottom: 6px !important;
   display: flex !important;
   align-items: center !important;
-  gap: 6px !important;
-  line-height: 1.3 !important;
+  line-height: 1.35 !important;
 }
 
 .welcome-context-badge.warning {
@@ -479,13 +482,15 @@ div[data-testid="stPopoverBody"] {
   color: #92400E !important;
 }
 
-.context-badge-icon {
-  font-size: 12px !important;
+/* ---------------------------------------------------------
+   5. INDEPENDENTLY SCROLLABLE CHAT MESSAGES THREAD
+   --------------------------------------------------------- */
+.st-key-advisor_messages {
+  overflow-y: auto !important;
+  padding-right: 4px !important;
+  margin-bottom: 6px !important;
 }
 
-/* ---------------------------------------------------------
-   5. CHAT MESSAGES THREAD
-   --------------------------------------------------------- */
 .chat-msg {
   border-radius: 12px !important;
   padding: 10px 14px !important;
@@ -498,8 +503,8 @@ div[data-testid="stPopoverBody"] {
   background: #EFF6FF !important;
   border: 1px solid #BFDBFE !important;
   color: #0F172A !important;
-  margin-left: 24px !important;
-  border-bottom-right-radius: 3px !important;
+  margin-left: 28px !important;
+  border-bottom-right-radius: 4px !important;
 }
 
 .chat-msg.user-msg .msg-author {
@@ -510,8 +515,8 @@ div[data-testid="stPopoverBody"] {
   background: #FFFFFF !important;
   border: 1px solid #E2E8F0 !important;
   color: #0F172A !important;
-  margin-right: 12px !important;
-  border-bottom-left-radius: 3px !important;
+  margin-right: 8px !important;
+  border-bottom-left-radius: 4px !important;
   box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04) !important;
 }
 
@@ -531,7 +536,7 @@ div[data-testid="stPopoverBody"] {
 
 /* Markdown Headings in Assistant Messages */
 .chat-msg.assistant-msg h3 {
-  font-size: 12px !important;
+  font-size: 11.5px !important;
   font-weight: 750 !important;
   color: #1E293B !important;
   margin-top: 10px !important;
@@ -539,7 +544,7 @@ div[data-testid="stPopoverBody"] {
   padding-bottom: 3px !important;
   border-bottom: 1px solid #F1F5F9 !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.04em !important;
+  letter-spacing: 0.05em !important;
 }
 
 .chat-msg.assistant-msg h3:first-child {
@@ -547,7 +552,7 @@ div[data-testid="stPopoverBody"] {
 }
 
 .chat-msg.assistant-msg h4 {
-  font-size: 11.5px !important;
+  font-size: 11px !important;
   font-weight: 700 !important;
   color: #334155 !important;
   margin-top: 8px !important;
@@ -597,7 +602,7 @@ div[data-testid="stPopoverBody"] {
 }
 
 .advisor-sources-heading {
-  font-size: 10.5px !important;
+  font-size: 10px !important;
   font-weight: 750 !important;
   color: #475569 !important;
   text-transform: uppercase !important;
@@ -699,13 +704,13 @@ div[data-testid="stPopoverBody"] {
 }
 
 /* ---------------------------------------------------------
-   6. COMPOSER / INPUT AREA AT BOTTOM
+   6. LARGE ROUNDED COMPOSER CAPSULE AT BOTTOM
    --------------------------------------------------------- */
 .composer-wrapper {
   margin-top: auto !important;
-  padding-top: 8px !important;
-  border-top: 1px solid #F1F5F9 !important;
+  padding-top: 6px !important;
   background: #FFFFFF !important;
+  width: 100% !important;
 }
 
 .st-key-advisor_input_form {
@@ -713,96 +718,120 @@ div[data-testid="stPopoverBody"] {
   padding: 0 !important;
 }
 
+.st-key-advisor_input_form form,
+div[data-testid="stForm"]:has(.st-key-advisor_question_input) {
+  border: 1.5px solid #E2E8F0 !important;
+  border-radius: 28px !important;
+  background: #FFFFFF !important;
+  padding: 4px 6px 4px 8px !important;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05) !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+  margin: 0 !important;
+  min-height: 52px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.st-key-advisor_input_form form:focus-within,
+div[data-testid="stForm"]:has(.st-key-advisor_question_input):focus-within {
+  border-color: #2563EB !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15), 0 4px 20px rgba(37, 99, 235, 0.08) !important;
+}
+
+/* Left Icon Badge inside Composer */
+.composer-advisor-badge {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  background: #EFF6FF !important;
+  border: 1px solid #DBEAFE !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 auto !important;
+  flex-shrink: 0 !important;
+}
+
+.composer-advisor-badge img {
+  width: 18px !important;
+  height: 18px !important;
+  object-fit: contain !important;
+}
+
+/* Center Text Input */
 .st-key-advisor_question_input {
   margin: 0 !important;
   padding: 0 !important;
+  width: 100% !important;
 }
 
 .st-key-advisor_question_input div[data-baseweb="input"] {
-  height: 42px !important;
-  min-height: 42px !important;
-  border-radius: 21px !important;
-  border: 1.5px solid #CBD5E1 !important;
-  background: #FFFFFF !important;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
-  transition: all 0.15s ease !important;
-}
-
-.st-key-advisor_question_input div[data-baseweb="input"]:focus-within {
-  border-color: #2563EB !important;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16) !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
 }
 
 .st-key-advisor_question_input input {
   height: 40px !important;
-  font-size: 12.5px !important;
-  padding: 0 14px !important;
+  font-size: 13px !important;
+  padding: 0 8px !important;
   color: #0F172A !important;
   -webkit-text-fill-color: #0F172A !important;
   font-weight: 450 !important;
+  background: transparent !important;
+  border: none !important;
 }
 
 .st-key-advisor_question_input input::placeholder {
   color: #94A3B8 !important;
   -webkit-text-fill-color: #94A3B8 !important;
-  font-size: 12px !important;
+  font-size: 12.5px !important;
 }
 
-.mic-icon-container {
-  width: 34px !important;
-  height: 34px !important;
-  border-radius: 50% !important;
-  background: #F8FAFC !important;
-  border: 1px solid #E2E8F0 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  margin: 0 auto !important;
-  cursor: pointer !important;
-  transition: all 0.15s ease !important;
-}
-
-.mic-icon-container:hover {
-  background: #EFF6FF !important;
-  border-color: #93C5FD !important;
-}
-
-.st-key-advisor_input_form button[type="submit"] {
-  height: 38px !important;
-  min-height: 38px !important;
-  width: 38px !important;
-  min-width: 38px !important;
-  max-width: 38px !important;
-  border-radius: 50% !important;
+/* Right Send Button */
+.st-key-advisor_input_form button[type="submit"],
+div[data-testid="stFormSubmitButton"]:has(button) button {
+  height: 36px !important;
+  min-height: 36px !important;
+  width: auto !important;
+  min-width: 56px !important;
+  border-radius: 18px !important;
   background: #2563EB !important;
   color: #FFFFFF !important;
   border: none !important;
-  font-weight: 700 !important;
-  font-size: 15px !important;
+  font-weight: 650 !important;
+  font-size: 12px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  padding: 0 !important;
+  padding: 0 14px !important;
   margin: 0 auto !important;
   box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3) !important;
+  cursor: pointer !important;
 }
 
-.st-key-advisor_input_form button[type="submit"] * {
+.st-key-advisor_input_form button[type="submit"] *,
+div[data-testid="stFormSubmitButton"]:has(button) button * {
   color: #FFFFFF !important;
   -webkit-text-fill-color: #FFFFFF !important;
-  font-size: 15px !important;
-  font-weight: 700 !important;
+  font-size: 12px !important;
+  font-weight: 650 !important;
 }
 
-.st-key-advisor_input_form button[type="submit"]:hover {
+.st-key-advisor_input_form button[type="submit"]:hover,
+div[data-testid="stFormSubmitButton"]:has(button) button:hover {
   background: #1D4ED8 !important;
   box-shadow: 0 4px 14px rgba(37, 99, 235, 0.45) !important;
-  transform: scale(1.06) !important;
+  transform: scale(1.04) !important;
 }
 
-.st-key-advisor_input_form button[type="submit"]:active {
-  transform: scale(0.98) !important;
+.st-key-advisor_input_form button[type="submit"]:active,
+div[data-testid="stFormSubmitButton"]:has(button) button:active {
+  transform: scale(0.96) !important;
 }
 
 /* ---------------------------------------------------------
@@ -827,3 +856,4 @@ div[data-testid="stPopoverBody"] {
     max-height: none !important;
   }
 }
+

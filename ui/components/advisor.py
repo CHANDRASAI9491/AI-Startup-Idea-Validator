@@ -379,28 +379,28 @@ def render_advisor_chat(
                 welcome_header_html = (
                     '<div class="welcome-hero-container">'
                     f'<div class="welcome-avatar-wrapper">{icon_img_html}</div>'
-                    '<h2 class="welcome-title">Hi there! I’m AI Venture Advisor 👋</h2>'
-                    '<p class="welcome-subtitle">Ask me anything about your startup.</p>'
+                    '<h2 class="welcome-title">AI Venture Advisor</h2>'
+                    '<p class="welcome-subtitle">Ask anything about your startup.</p>'
                     '</div>'
                 )
                 st.markdown(welcome_header_html, unsafe_allow_html=True)
 
-                # TRY ASKING Label
-                st.markdown('<div class="try-asking-label">TRY ASKING</div>', unsafe_allow_html=True)
+                # Suggested Questions Header
+                st.markdown('<div class="try-asking-label">SUGGESTED QUESTIONS</div>', unsafe_allow_html=True)
 
-                # My 6 suggested questions (2-column layout)
+                # 6 suggested questions (2-column layout, clean text, no emojis)
                 c1, c2 = st.columns(2)
 
                 col1_questions = [
-                    ("What is my biggest risk?", "🛡️ What is my biggest risk?", "advisor_sq_risk"),
-                    ("What is my market opportunity?", "📊 What is my market opportunity?", "advisor_sq_market"),
-                    ("How can I improve my GTM?", "🚀 How can I improve my GTM?", "advisor_sq_gtm"),
+                    ("What is my biggest risk?", "What is my biggest risk?", "advisor_sq_risk"),
+                    ("What is my market opportunity?", "What is my market opportunity?", "advisor_sq_market"),
+                    ("How can I improve my GTM?", "How can I improve my GTM?", "advisor_sq_gtm"),
                 ]
 
                 col2_questions = [
-                    ("Who are my main competitors?", "⚔️ Who are my main competitors?", "advisor_sq_comp"),
-                    ("How can I improve my MVP?", "🛠️ How can I improve my MVP?", "advisor_sq_mvp"),
-                    ("What is my viability score?", "📈 What is my viability score?", "advisor_sq_score"),
+                    ("Who are my main competitors?", "Who are my main competitors?", "advisor_sq_comp"),
+                    ("How can I improve my MVP?", "How can I improve my MVP?", "advisor_sq_mvp"),
+                    ("What is my viability score?", "What is my viability score?", "advisor_sq_score"),
                 ]
 
                 with c1:
@@ -415,14 +415,13 @@ def render_advisor_chat(
                             if st.button(display_text, key=f"btn_{sq_key}"):
                                 handle_question_submit(raw_text)
 
-                # Context Badge / No active report warning
+                # Context Badge / No active report status
                 if current_state and current_state.final_report:
                     concept_text = current_state.idea.idea_text or "Current startup concept"
                     if len(concept_text) > 42:
                         concept_text = concept_text[:40] + "..."
                     st.markdown(
                         f'<div class="welcome-context-badge">'
-                        f'<span class="context-badge-icon">💡</span>'
                         f'<span>Consulting on: <strong>{html.escape(concept_text)}</strong></span>'
                         f'</div>',
                         unsafe_allow_html=True
@@ -430,7 +429,6 @@ def render_advisor_chat(
                 else:
                     st.markdown(
                         '<div class="welcome-context-badge warning">'
-                        '<span class="context-badge-icon">⚠️</span>'
                         '<span><strong>No active report.</strong> Validate an idea first to enable due diligence Q&A.</span>'
                         '</div>',
                         unsafe_allow_html=True
@@ -440,7 +438,7 @@ def render_advisor_chat(
             # -------------------------------------------------
             # ACTIVE CONVERSATION THREAD VIEW
             # -------------------------------------------------
-            with st.container(height=340, border=False, key="advisor_messages"):
+            with st.container(height=390, border=False, key="advisor_messages"):
                 for msg in st.session_state.chat_history:
                     role = msg.get("role", "user")
                     content = msg.get("content", "")
@@ -543,11 +541,18 @@ def render_advisor_chat(
                                 handle_question_submit(fu_text)
 
         # -----------------------------------------------------
-        # 4. BOTTOM INPUT AREA: Ask anything... + mic + send
+        # 4. BOTTOM COMPOSER: AI Advisor SVG Icon + Real Streamlit Input + Prominent Send
         # -----------------------------------------------------
         st.markdown("<div class='composer-wrapper'>", unsafe_allow_html=True)
         with st.form(key="advisor_input_form", clear_on_submit=True):
-            col_in, col_mic, col_btn = st.columns([5.2, 0.7, 1.1], vertical_alignment="center")
+            col_ico, col_in, col_btn = st.columns([0.8, 5.8, 1.4], vertical_alignment="center")
+            with col_ico:
+                st.markdown(
+                    f'<div class="composer-advisor-badge" title="AI Venture Advisor">'
+                    f'{icon_img_html}'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
             with col_in:
                 user_question = st.text_input(
                     "Advisor Question",
@@ -555,19 +560,8 @@ def render_advisor_chat(
                     key="advisor_question_input",
                     label_visibility="collapsed",
                 )
-            with col_mic:
-                st.markdown(
-                    '<div class="mic-icon-container" title="Voice Input">'
-                    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
-                    '<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>'
-                    '<path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>'
-                    '<line x1="12" y1="19" x2="12" y2="22"></line>'
-                    '</svg>'
-                    '</div>',
-                    unsafe_allow_html=True
-                )
             with col_btn:
-                submitted = st.form_submit_button("➔", help="Send question")
+                submitted = st.form_submit_button("Send", help="Send question")
 
         if submitted and user_question.strip():
             handle_question_submit(user_question.strip())
