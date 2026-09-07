@@ -344,9 +344,10 @@ div[data-testid="stPopoverBody"] {
    --------------------------------------------------------- */
 .st-key-advisor_welcome_view {
   margin: 0 !important;
-  padding: 0 !important;
+  padding: 0 4px 0 0 !important;
   display: flex !important;
   flex-direction: column !important;
+  overflow-y: auto !important;
 }
 
 .welcome-hero-container {
@@ -711,6 +712,7 @@ div[data-testid="stPopoverBody"] {
   padding-top: 6px !important;
   background: #FFFFFF !important;
   width: 100% !important;
+  flex-shrink: 0 !important;
 }
 
 .st-key-advisor_input_form {

@@ -5,6 +5,7 @@ Multi-Agent Startup Validation and Market Due Diligence Platform.
 
 import sys
 import os
+import html
 import streamlit as st
 
 # Ensure project root is on sys.path
@@ -100,10 +101,10 @@ def handle_validation_submission(form_data: dict):
 
 
 # ============================================================
-# 1. VALIDATE STARTUP PAGE (PRIMARY LANDING PAGE)
+# 1. VALIDATION PAGE (PRIMARY LANDING PAGE)
 # ============================================================
 
-if selected_page == "Validate Startup" or selected_page == "Dashboard":
+if selected_page in ["Validation", "Validate Startup", "Dashboard"]:
 
     render_header()
 
@@ -112,7 +113,7 @@ if selected_page == "Validate Startup" or selected_page == "Dashboard":
 
     # After Validation: Show Score Breakdown & Validation Report
     if state and state.final_report:
-        st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 18px;'></div>", unsafe_allow_html=True)
         CardComponents.render_kpi_metrics_row(state)
         st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
         CardComponents.render_dimension_progress_breakdown(state)
@@ -121,10 +122,10 @@ if selected_page == "Validate Startup" or selected_page == "Dashboard":
 
 
 # ============================================================
-# 2. VALIDATION HISTORY PAGE
+# 2. HISTORY PAGE
 # ============================================================
 
-elif selected_page == "Validation History":
+elif selected_page in ["History", "Validation History"]:
 
     render_top_navbar()
 
@@ -132,64 +133,116 @@ elif selected_page == "Validation History":
         '<div class="saas-card">'
         '<div class="saas-card-header">'
         '<div>'
-        '<div class="saas-card-label">DATABASE &amp; ADVISOR LOGS</div>'
-        '<div class="saas-title">Historical Validation &amp; Advisor Sessions</div>'
-        '<div class="saas-card-subtext">Access saved reports, follow-up strategic notes, and past due diligence conversations.</div>'
+        '<div class="saas-card-label">SESSION ARCHIVE &amp; LOGS</div>'
+        '<div class="saas-title">Validation &amp; Advisor History</div>'
+        '<div class="saas-card-subtext">Access saved due diligence reports, past validation scores, and AI Advisor conversations.</div>'
         '</div>'
         '</div>',
         unsafe_allow_html=True
     )
 
-    conversations = list_conversations()
-    if not conversations:
-        st.info("No saved validation sessions found in the database. Run a validation to create your first session.")
-    else:
-        for conv in conversations:
-            conv_id = conv.get("id")
-            conv_title = conv.get("title", "Untitled Session")
-            conv_sess = conv.get("session_id") or "N/A"
-            conv_date = conv.get("updated_at", "")[:19] or conv.get("created_at", "")[:19]
+    tab_val_hist, tab_adv_hist = st.tabs([
+        "Recent Validations",
+        "Advisor Conversations"
+    ])
 
-            # Count persisted messages
-            msgs = get_messages(conv_id)
-            msg_count = len(msgs)
+    with tab_val_hist:
+        saved_sessions = orchestrator.list_all_sessions()
+        if not saved_sessions:
+            st.info("No saved validation reports found. Run a validation to generate your first due diligence report.")
+        else:
+            for s_item in saved_sessions:
+                s_id = s_item.get("session_id", "session")
+                s_idea = s_item.get("idea", "Startup Idea")
+                s_score = s_item.get("score")
+                s_verdict = s_item.get("verdict") or "EVALUATED"
+                s_time = s_item.get("timestamp", "")[:19] or "Recent"
 
-            col_detail, col_actions = st.columns([4.8, 1.6], vertical_alignment="center")
+                # Truncate concept description cleanly
+                disp_idea = s_idea if len(s_idea) <= 90 else s_idea[:87] + "..."
 
-            with col_detail:
-                st.markdown(
-                    f'<div style="padding: 8px 0;">'
-                    f'<div style="font-size: 14px; font-weight: 700; color: #0F172A;">{conv_title}</div>'
-                    f'<div style="font-size: 12px; color: #64748B; margin-top: 2px;">'
-                    f'<span><strong>Session:</strong> <code>{conv_sess}</code></span> &bull; '
-                    f'<span><strong>Messages:</strong> {msg_count}</span> &bull; '
-                    f'<span><strong>Updated:</strong> {conv_date}</span>'
-                    f'</div>'
-                    f'</div>',
-                    unsafe_allow_html=True
-                )
+                score_badge = f'<span class="history-score-badge">{s_score}/100</span>' if s_score is not None else ""
+                verdict_badge = f'<span class="verdict-pill verdict-{s_verdict.lower()}">{s_verdict}</span>' if s_verdict else ""
 
-            with col_actions:
-                col_b1, col_b2 = st.columns(2)
-                with col_b1:
-                    if st.button("Consult", key=f"hist_chat_{conv_id}", use_container_width=True):
-                        st.session_state.active_conversation_id = conv_id
-                        st.session_state.advisor_open = True
-                        st.rerun()
-                with col_b2:
-                    if conv_sess and conv_sess != "N/A":
-                        if st.button("Load", key=f"hist_load_{conv_id}", use_container_width=True):
-                            restored = orchestrator.get_session_history(conv_sess)
-                            if restored:
-                                st.session_state.current_state = restored
-                                st.session_state.session_id = conv_sess
-                                st.session_state.active_conversation_id = conv_id
-                                st.success("Session state restored! Navigate to Reports or Validate Startup to view.")
-                                st.rerun()
+                col_det, col_act = st.columns([5.2, 1.4], vertical_alignment="center")
+                with col_det:
+                    st.markdown(
+                        f'<div style="padding: 6px 0;">'
+                        f'<div style="font-size: 14px; font-weight: 700; color: #0F172A;">{html.escape(disp_idea)}</div>'
+                        f'<div style="font-size: 12px; color: #64748B; margin-top: 4px; display: flex; align-items: center; gap: 8px;">'
+                        f'<span><strong>Session:</strong> <code>{s_id}</code></span> &bull; '
+                        f'<span>{s_time}</span> &bull; '
+                        f'{score_badge} {verdict_badge}'
+                        f'</div>'
+                        f'</div>',
+                        unsafe_allow_html=True
+                    )
+                with col_act:
+                    if st.button("View Report", key=f"hist_view_{s_id}", use_container_width=True):
+                        restored = orchestrator.get_session_history(s_id)
+                        if restored:
+                            st.session_state.current_state = restored
+                            st.session_state.session_id = s_id
+                            st.session_state.current_page = "Validation"
+                            st.rerun()
 
-            st.markdown("<div style='height: 1px; background: #E2E8F0; margin: 8px 0;'></div>", unsafe_allow_html=True)
+                st.markdown("<div style='height: 1px; background: #E2E8F0; margin: 6px 0;'></div>", unsafe_allow_html=True)
+
+    with tab_adv_hist:
+        conversations = list_conversations()
+        if not conversations:
+            st.info("No saved advisor conversations found.")
+        else:
+            for conv in conversations:
+                conv_id = conv.get("id")
+                conv_title = conv.get("title", "Untitled Conversation")
+                conv_sess = conv.get("session_id") or "N/A"
+                conv_date = conv.get("updated_at", "")[:19] or conv.get("created_at", "")[:19]
+
+                # Count persisted messages and get last snippet
+                msgs = get_messages(conv_id)
+                msg_count = len(msgs)
+                last_snippet = msgs[-1]["content"][:100] + "..." if msgs else "No messages recorded."
+
+                col_detail, col_actions = st.columns([4.8, 1.8], vertical_alignment="center")
+
+                with col_detail:
+                    st.markdown(
+                        f'<div style="padding: 6px 0;">'
+                        f'<div style="font-size: 14px; font-weight: 700; color: #0F172A;">{html.escape(conv_title)}</div>'
+                        f'<div style="font-size: 12px; color: #475569; margin: 2px 0;">{html.escape(last_snippet)}</div>'
+                        f'<div style="font-size: 11.5px; color: #64748B;">'
+                        f'<span><strong>Session:</strong> <code>{conv_sess}</code></span> &bull; '
+                        f'<span><strong>Messages:</strong> {msg_count}</span> &bull; '
+                        f'<span><strong>Updated:</strong> {conv_date}</span>'
+                        f'</div>'
+                        f'</div>',
+                        unsafe_allow_html=True
+                    )
+
+                with col_actions:
+                    col_b1, col_b2 = st.columns(2)
+                    with col_b1:
+                        if st.button("Consult", key=f"hist_chat_{conv_id}", use_container_width=True):
+                            st.session_state.active_conversation_id = conv_id
+                            st.session_state.advisor_open = True
+                            st.rerun()
+                    with col_b2:
+                        if conv_sess and conv_sess != "N/A":
+                            if st.button("Load", key=f"hist_load_{conv_id}", use_container_width=True):
+                                restored = orchestrator.get_session_history(conv_sess)
+                                if restored:
+                                    st.session_state.current_state = restored
+                                    st.session_state.session_id = conv_sess
+                                    st.session_state.active_conversation_id = conv_id
+                                    st.session_state.current_page = "Validation"
+                                    st.success("Session state restored! Navigating to Validation...")
+                                    st.rerun()
+
+                st.markdown("<div style='height: 1px; background: #E2E8F0; margin: 6px 0;'></div>", unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 # ============================================================

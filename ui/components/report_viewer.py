@@ -37,7 +37,7 @@ def render_report_viewer(state: StartupState, session_id: str = None) -> None:
 
     # Export Action Buttons (Clean Text-Only Buttons)
     col1, col2, col3 = st.columns(3)
-    
+
     # 1. PDF Export
     pdf_path = os.path.join(config.REPORTS_DIR, f"report_{sess_id}.pdf")
     try:
@@ -88,13 +88,15 @@ def render_report_viewer(state: StartupState, session_id: str = None) -> None:
     st.markdown("<div class='report-tabs-divider'></div>", unsafe_allow_html=True)
 
     # Report Tabs
-    tab_exec, tab_market, tab_comp, tab_mvp, tab_swot, tab_gtm = st.tabs([
+    tab_exec, tab_market, tab_comp, tab_risk, tab_swot, tab_mvp, tab_gtm, tab_sources = st.tabs([
         "Executive Summary",
-        "Market Analysis",
-        "Competition",
-        "MVP",
-        "SWOT & Risk",
-        "GTM Strategy"
+        "Market Opportunity",
+        "Competitors",
+        "Risks & Mitigation",
+        "SWOT Matrix",
+        "MVP Blueprint",
+        "GTM Strategy",
+        "Sources & Research"
     ])
 
     with tab_exec:
@@ -103,7 +105,7 @@ def render_report_viewer(state: StartupState, session_id: str = None) -> None:
     with tab_market:
         if state.market_analysis:
             CardComponents.render_market_card(state.market_analysis)
-            st.markdown('<div class="saas-card">', unsafe_allow_html=True)
+            st.markdown('<div class="saas-card" style="margin-top: 12px;">', unsafe_allow_html=True)
             fig_growth = ChartEngine.render_market_growth_trajectory(
                 state.market_analysis.tam_billions,
                 state.market_analysis.cagr_percentage
@@ -115,14 +117,10 @@ def render_report_viewer(state: StartupState, session_id: str = None) -> None:
         if state.competitor_analysis:
             CardComponents.render_competitors_card(state.competitor_analysis)
 
-    with tab_mvp:
-        if state.mvp_recommendation:
-            CardComponents.render_mvp_card(state.mvp_recommendation)
-
-    with tab_swot:
+    with tab_risk:
         if state.swot_analysis:
-            CardComponents.render_swot_risk_card(state.swot_analysis)
-            st.markdown('<div class="saas-card">', unsafe_allow_html=True)
+            CardComponents.render_risk_section(state.swot_analysis)
+            st.markdown('<div class="saas-card" style="margin-top: 12px;">', unsafe_allow_html=True)
             fig_risk = ChartEngine.render_risk_severity_pie(
                 state.swot_analysis.financial_risk,
                 state.swot_analysis.technical_risk,
@@ -131,8 +129,19 @@ def render_report_viewer(state: StartupState, session_id: str = None) -> None:
             st.plotly_chart(fig_risk, use_container_width=True)
             st.markdown('</div>', unsafe_allow_html=True)
 
+    with tab_swot:
+        if state.swot_analysis:
+            CardComponents.render_swot_risk_card(state.swot_analysis)
+
+    with tab_mvp:
+        if state.mvp_recommendation:
+            CardComponents.render_mvp_card(state.mvp_recommendation)
+
     with tab_gtm:
         if state.gtm_strategy:
             CardComponents.render_gtm_card(state.gtm_strategy)
+
+    with tab_sources:
+        CardComponents.render_sources_card(state.search_results)
 
     st.markdown("</div>", unsafe_allow_html=True)

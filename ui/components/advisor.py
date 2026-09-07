@@ -374,7 +374,7 @@ def render_advisor_chat(
             # -------------------------------------------------
             # WELCOME SCREEN VIEW
             # -------------------------------------------------
-            with st.container(key="advisor_welcome_view"):
+            with st.container(height=320, border=False, key="advisor_welcome_view"):
                 # AI Venture Advisor welcome message
                 welcome_header_html = (
                     '<div class="welcome-hero-container">'
