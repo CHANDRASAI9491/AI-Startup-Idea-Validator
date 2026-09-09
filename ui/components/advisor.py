@@ -321,6 +321,7 @@ def render_advisor_chat(
                 f'{icon_img_html}'
                 '<div>'
                 '<div class="advisor-header-title">AI Venture Advisor</div>'
+                '<div class="advisor-header-subtitle">Ask questions about your startup, market, competition, MVP, or strategy.</div>'
                 f'<div class="advisor-header-status {status_class}">'
                 f'<span class="status-indicator-dot"></span>{status_text}'
                 '</div>'
@@ -349,7 +350,7 @@ def render_advisor_chat(
                 active_title = active_title[:25] + "..."
             st.markdown(
                 f'<div class="chat-history-sub-header">'
-                f'<span class="history-label-tag">CHAT HISTORY</span>'
+                f'<span class="history-label-tag">CONVERSATION</span>'
                 f'<span class="history-active-title">• {html.escape(active_title)}</span>'
                 f'</div>',
                 unsafe_allow_html=True
@@ -380,27 +381,27 @@ def render_advisor_chat(
                     '<div class="welcome-hero-container">'
                     f'<div class="welcome-avatar-wrapper">{icon_img_html}</div>'
                     '<h2 class="welcome-title">AI Venture Advisor</h2>'
-                    '<p class="welcome-subtitle">Ask anything about your startup.</p>'
+                    '<p class="welcome-subtitle">Ask questions about your startup, market, competition, MVP, or strategy.</p>'
                     '</div>'
                 )
                 st.markdown(welcome_header_html, unsafe_allow_html=True)
 
                 # Suggested Questions Header
-                st.markdown('<div class="try-asking-label">SUGGESTED QUESTIONS</div>', unsafe_allow_html=True)
+                st.markdown('<div class="try-asking-label">SUGGESTED PROMPTS</div>', unsafe_allow_html=True)
 
-                # 6 suggested questions (2-column layout, clean text, no emojis)
+                # Exactly the 6 prompt suggestions requested by Section 17
                 c1, c2 = st.columns(2)
 
                 col1_questions = [
-                    ("What is my biggest risk?", "What is my biggest risk?", "advisor_sq_risk"),
-                    ("What is my market opportunity?", "What is my market opportunity?", "advisor_sq_market"),
-                    ("How can I improve my GTM?", "How can I improve my GTM?", "advisor_sq_gtm"),
+                    ("Is this market attractive?", "Is this market attractive?", "advisor_sq_mkt_attr"),
+                    ("Who are my biggest competitors?", "Who are my biggest competitors?", "advisor_sq_big_comp"),
+                    ("How can I differentiate?", "How can I differentiate?", "advisor_sq_diff"),
                 ]
 
                 col2_questions = [
-                    ("Who are my main competitors?", "Who are my main competitors?", "advisor_sq_comp"),
-                    ("How can I improve my MVP?", "How can I improve my MVP?", "advisor_sq_mvp"),
-                    ("What is my viability score?", "What is my viability score?", "advisor_sq_score"),
+                    ("What should my MVP include?", "What should my MVP include?", "advisor_sq_mvp_inc"),
+                    ("What are the biggest risks?", "What are the biggest risks?", "advisor_sq_big_risk"),
+                    ("How should I acquire my first customers?", "How should I acquire my first customers?", "advisor_sq_acq_cust"),
                 ]
 
                 with c1:

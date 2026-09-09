@@ -31,7 +31,8 @@ from ui.components.footer import render_footer
 # ============================================================
 
 st.set_page_config(
-    page_title="Development of AI Based Startup Idea Validator with Market Analysis Assistance",
+    page_title="AI Startup Idea Validator — SaaS Due Diligence Platform",
+    page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -57,6 +58,9 @@ if "session_id" not in st.session_state:
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
+if "current_page" not in st.session_state:
+    st.session_state.current_page = "Validation"
+
 
 # ============================================================
 # SIDEBAR NAVIGATION
@@ -81,12 +85,14 @@ def handle_validation_submission(form_data: dict):
         import uuid
         sess_id = st.session_state.get("session_id") or f"session_{str(uuid.uuid4())[:8]}"
 
+        st.session_state.startup_name = form_data.get("startup_name", "").strip()
+
         new_state = orchestrator.validate_idea(
             idea_text=form_data["idea_text"],
-            target_industry=form_data["target_industry"],
+            target_industry=form_data.get("target_industry", "Technology / SaaS"),
             target_audience=form_data["target_audience"],
             business_model=form_data["business_model"],
-            budget=form_data["budget"],
+            budget=form_data.get("budget", "Bootstrap ($5k - $50k)"),
             timeline=form_data["timeline"],
             session_id=sess_id,
             progress_callback=update_progress
@@ -95,6 +101,7 @@ def handle_validation_submission(form_data: dict):
         st.session_state.current_state = new_state
         st.session_state.session_id = sess_id
         st.session_state.chat_history = []
+        st.session_state.current_page = "Validation"
 
         st.success("Validation complete! Strategic due diligence report generated below.")
         st.rerun()
@@ -114,10 +121,6 @@ if selected_page in ["Validation", "Validate Startup", "Dashboard"]:
     # After Validation: Show Score Breakdown & Validation Report
     if state and state.final_report:
         st.markdown("<div style='height: 18px;'></div>", unsafe_allow_html=True)
-        CardComponents.render_kpi_metrics_row(state)
-        st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
-        CardComponents.render_dimension_progress_breakdown(state)
-        st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
         render_report_viewer(state, st.session_state.session_id)
 
 
@@ -142,14 +145,14 @@ elif selected_page in ["History", "Validation History"]:
     )
 
     tab_val_hist, tab_adv_hist = st.tabs([
-        "Recent Validations",
+        "Validation History",
         "Advisor Conversations"
     ])
 
     with tab_val_hist:
         saved_sessions = orchestrator.list_all_sessions()
         if not saved_sessions:
-            st.info("No saved validation reports found. Run a validation to generate your first due diligence report.")
+            st.info("No saved validation reports found. Run a validation on the Validation page to generate your first due diligence report.")
         else:
             for s_item in saved_sessions:
                 s_id = s_item.get("session_id", "session")
@@ -236,13 +239,11 @@ elif selected_page in ["History", "Validation History"]:
                                     st.session_state.session_id = conv_sess
                                     st.session_state.active_conversation_id = conv_id
                                     st.session_state.current_page = "Validation"
-                                    st.success("Session state restored! Navigating to Validation...")
                                     st.rerun()
 
                 st.markdown("<div style='height: 1px; background: #E2E8F0; margin: 6px 0;'></div>", unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True)
-
 
 
 # ============================================================
@@ -253,19 +254,77 @@ elif selected_page == "Reports":
 
     render_top_navbar()
 
+    st.markdown(
+        '<div class="saas-card">'
+        '<div class="saas-card-header">'
+        '<div>'
+        '<div class="saas-card-label">REPORTS REPOSITORY</div>'
+        '<div class="saas-title">Due Diligence Reports &amp; Dossiers</div>'
+        '<div class="saas-card-subtext">Inspect validated startup reports from memory and disk storage.</div>'
+        '</div>'
+        '</div>',
+        unsafe_allow_html=True
+    )
+
+    saved_sessions = orchestrator.list_all_sessions()
+
+    if saved_sessions:
+        st.markdown(
+            '<div style="font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 8px;">'
+            'SAVED VALIDATION SESSIONS'
+            '</div>',
+            unsafe_allow_html=True
+        )
+
+        session_map = {}
+        for s in saved_sessions:
+            s_id = s.get("session_id", "session")
+            s_idea = s.get("idea", "Startup Idea")
+            s_score = s.get("score")
+            label_text = f"{s_id} — {s_idea[:45]}... ({s_score}/100)" if s_score is not None else f"{s_id} — {s_idea[:45]}..."
+            session_map[label_text] = s_id
+
+        current_sess = st.session_state.get("session_id")
+        session_keys = list(session_map.keys())
+        default_idx = 0
+        for idx, k in enumerate(session_keys):
+            if session_map[k] == current_sess:
+                default_idx = idx
+                break
+
+        selected_label = st.selectbox(
+            "Select Validation Session",
+            options=session_keys,
+            index=default_idx,
+            label_visibility="collapsed",
+            key="reports_session_selector"
+        )
+        chosen_sess_id = session_map[selected_label]
+
+        if chosen_sess_id != st.session_state.get("session_id"):
+            restored = orchestrator.get_session_history(chosen_sess_id)
+            if restored:
+                st.session_state.current_state = restored
+                st.session_state.session_id = chosen_sess_id
+                state = restored
+                st.rerun()
+
     if not state or not state.final_report:
         st.markdown(
-            '<div class="saas-card" style="text-align: center; padding: 2.5rem 1.5rem;">'
+            '<div style="text-align: center; padding: 2.5rem 1.5rem; background: #FFFFFF; border-radius: 12px; border: 1px solid #E2E8F0; margin-top: 12px;">'
             '<div class="saas-title" style="margin-bottom: 8px;">No Active Validation Report</div>'
-            '<p style="color: #64748B; font-size: 14px; margin-bottom: 16px;">Validate a startup concept on the Validate Startup page to review comprehensive due diligence insights.</p>'
+            '<p style="color: #64748B; font-size: 14px; margin-bottom: 16px;">Validate a startup concept on the Validation page to review comprehensive due diligence insights.</p>'
             '</div>',
             unsafe_allow_html=True
         )
     else:
+        st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
         render_report_viewer(
             state,
             st.session_state.session_id
         )
+
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 # ============================================================
@@ -282,6 +341,7 @@ elif selected_page == "Settings":
         '<div>'
         '<div class="saas-card-label">CONFIGURATION</div>'
         '<div class="saas-title">Platform &amp; Model Parameters</div>'
+        '<div class="saas-card-subtext">Safe runtime environment and service configuration metadata.</div>'
         '</div>'
         '</div>',
         unsafe_allow_html=True
@@ -289,13 +349,28 @@ elif selected_page == "Settings":
 
     c1, c2 = st.columns(2)
     with c1:
-        st.markdown(f"**Gemini Model:** `{config.DEFAULT_MODEL}`")
-        st.markdown(f"**Search Engine:** `Tavily Web Search API`")
-        st.markdown(f"**Maximum Search Queries:** `{config.MAX_SEARCH_RESULTS}`")
+        st.markdown(
+            '<div class="saas-card" style="margin-bottom: 12px;">'
+            '<div style="font-size: 12px; font-weight: 700; color: #2563EB; margin-bottom: 8px;">AI &amp; SEARCH SERVICES</div>'
+            f'<div style="margin-bottom: 6px; font-size: 13px;"><strong>Gemini Model:</strong> <code>{html.escape(config.DEFAULT_MODEL)}</code></div>'
+            f'<div style="margin-bottom: 6px; font-size: 13px;"><strong>Gemini API Status:</strong> <span style="color: {"#059669" if config.is_gemini_available() else "#DC2626"}; font-weight: 600;">{"Operational" if config.is_gemini_available() else "Not Configured"}</span></div>'
+            f'<div style="margin-bottom: 6px; font-size: 13px;"><strong>Search Engine:</strong> <code>Tavily Intelligence API</code></div>'
+            f'<div style="margin-bottom: 6px; font-size: 13px;"><strong>Tavily API Status:</strong> <span style="color: {"#059669" if config.is_tavily_available() else "#DC2626"}; font-weight: 600;">{"Operational" if config.is_tavily_available() else "Not Configured"}</span></div>'
+            f'<div style="font-size: 13px;"><strong>Max Search Queries:</strong> <code>{config.MAX_SEARCH_RESULTS}</code></div>'
+            '</div>',
+            unsafe_allow_html=True
+        )
     with c2:
-        st.markdown(f"**Reports Storage:** `{config.REPORTS_DIR}`")
-        st.markdown(f"**Gemini API Status:** `{'Operational' if config.is_gemini_available() else 'Not Configured'}`")
-        st.markdown(f"**Tavily API Status:** `{'Operational' if config.is_tavily_available() else 'Not Configured'}`")
+        st.markdown(
+            '<div class="saas-card" style="margin-bottom: 12px;">'
+            '<div style="font-size: 12px; font-weight: 700; color: #2563EB; margin-bottom: 8px;">STORAGE &amp; PERSISTENCE</div>'
+            f'<div style="margin-bottom: 6px; font-size: 13px;"><strong>Database Engine:</strong> <code>SQLite (chat_history.db)</code></div>'
+            f'<div style="margin-bottom: 6px; font-size: 13px;"><strong>Reports Directory:</strong> <code>{html.escape(config.REPORTS_DIR)}</code></div>'
+            f'<div style="margin-bottom: 6px; font-size: 13px;"><strong>State Memory Store:</strong> <code>Session MemoryStore (JSON Cache)</code></div>'
+            f'<div style="font-size: 13px;"><strong>Export Formats:</strong> <code>PDF, Markdown, JSON</code></div>'
+            '</div>',
+            unsafe_allow_html=True
+        )
 
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -312,35 +387,36 @@ elif selected_page == "About":
         '<div class="saas-card">'
         '<div class="saas-card-header">'
         '<div>'
-        '<div class="saas-card-label">ARCHITECTURE</div>'
-        '<div class="saas-title">AI Startup Idea Validator Architecture</div>'
+        '<div class="saas-card-label">ARCHITECTURE &amp; TECHNOLOGY</div>'
+        '<div class="saas-title">AI Startup Idea Validator Platform</div>'
+        '<div class="saas-card-subtext">Autonomous multi-agent due diligence framework built with LangGraph, Deep Agents, and Gemini.</div>'
         '</div>'
         '</div>',
         unsafe_allow_html=True
     )
 
     st.markdown("""
-**AI Startup Idea Validator** is a multi-agent due diligence framework designed to evaluate early-stage venture concepts with real-time web research, market sizing, competitive analysis, risk quantification, and an interactive grounded advisor.
+### Enterprise AI Architecture
+The **AI Startup Idea Validator** is an autonomous multi-agent due diligence system designed to evaluate early-stage venture ideas using deterministic scoring and live market intelligence.
 
-### System Architecture
-- **Frontend:** Streamlit with Modern Custom SaaS CSS Design System
-- **Visualizations:** Plotly Chart Engine &amp; Custom Indicators
-- **Multi-Agent Orchestration:** LangGraph Workflow
-- **AI Language Model:** Google Gemini
-- **Web Intelligence:** Tavily Search API
-- **Scoring Engine:** Deterministic 8-Dimension Weighted Algorithm
-- **Chat Persistence:** SQLite Database
-- **Export Engine:** PDF, Markdown, and JSON State
+#### Technology Stack
+- **Multi-Agent Orchestration:** LangGraph state machine with Deep Agents
+- **AI Language Model:** Google Gemini (Structured outputs & reasoning)
+- **Web Intelligence:** Tavily Search API (Real-time market & competitor research)
+- **Scoring Engine:** Deterministic 8-dimension weighted model (100-point rubric)
+- **Persistence:** SQLite conversation database & MemoryStore JSON cache
+- **Frontend & Visualization:** Streamlit with custom SaaS light design system & Plotly charts
+- **Dossier Exports:** Automated PDF, Markdown, and JSON state generation
 
-### AI Agent Pipeline
-1. **Planner Agent:** Strategic research breakdown and hypothesis framing
-2. **Web Search Agent:** Tavily live intelligence and evidence gathering
-3. **Market Analysis Agent:** TAM / SAM / SOM calculation and growth drivers
-4. **Competitor Agent:** Incumbent analysis and defensible moat identification
-5. **SWOT &amp; Risk Agent:** 4-quadrant SWOT matrix and risk scoring
-6. **MVP Recommendation Agent:** V1 feature prioritization and architecture stack
-7. **Go-To-Market Agent:** Positioning, CAC estimation, and channel distribution
-8. **Report Agent:** Executive synthesis and overall viability verdict
+#### Autonomous Agent Pipeline
+1. **Hypothesis & Planning Agent:** Deconstructs problem, customer persona, and research hypotheses.
+2. **Web Search Agent:** Executes multi-query live market research via Tavily API.
+3. **Market Analysis Agent:** Estimates TAM, SAM, SOM, CAGR, and tailwind growth drivers.
+4. **Competitor Analysis Agent:** Maps direct/indirect incumbents and defensive moats.
+5. **SWOT & Risk Agent:** Generates 4-quadrant SWOT matrix and quantifies risk severities.
+6. **MVP Blueprint Agent:** Scopes prioritized V1 feature set and recommended technology stack.
+7. **Go-To-Market Agent:** Outlines ideal customer acquisition channels and launch strategies.
+8. **Report Synthesis & Scoring Engine:** Computes deterministic scores and produces executive summary.
     """)
 
     st.markdown("</div>", unsafe_allow_html=True)

@@ -18,12 +18,20 @@ def render_report_viewer(state: StartupState, session_id: str = None) -> None:
     scoring = report.scoring_breakdown
     sess_id = session_id or "session"
 
-    # Top 3-Card Score Overview (Ring, Dimension Progress Bars, Key Insight)
+    # 1. KPI Metrics Summary Cards (Viability, Market, Competitor, MVP Readiness)
+    CardComponents.render_kpi_metrics_row(state)
+    st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
+
+    # 2. Top Score Overview (Score Ring, Core Dimensions, Strategic Verdict & Explanation)
     CardComponents.render_score_overview_section(state)
+    st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
 
-    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+    # 3. Real Scoring Dimensions Breakdown (Strictly bound to actual ScoringBreakdown fields)
+    if scoring:
+        CardComponents.render_dimension_progress_breakdown(state)
+        st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
 
-    # Validation Report Container
+    # 4. Validation Report Container Card
     st.markdown(
         '<div class="saas-card report-container-card">'
         '<div class="saas-card-header report-header-row">'
@@ -35,7 +43,7 @@ def render_report_viewer(state: StartupState, session_id: str = None) -> None:
         unsafe_allow_html=True
     )
 
-    # Export Action Buttons (Clean Text-Only Buttons)
+    # 5. Export Action Buttons (Clean Text-Only Buttons, No Emojis)
     col1, col2, col3 = st.columns(3)
 
     # 1. PDF Export
@@ -87,7 +95,7 @@ def render_report_viewer(state: StartupState, session_id: str = None) -> None:
 
     st.markdown("<div class='report-tabs-divider'></div>", unsafe_allow_html=True)
 
-    # Report Tabs
+    # 6. Report Tabs (Exact 8 Requested Sections)
     tab_exec, tab_market, tab_comp, tab_risk, tab_swot, tab_mvp, tab_gtm, tab_sources = st.tabs([
         "Executive Summary",
         "Market Opportunity",

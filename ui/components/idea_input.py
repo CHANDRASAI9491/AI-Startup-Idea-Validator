@@ -7,9 +7,9 @@ def render_idea_input_form(on_submit_callback) -> None:
         '<div class="saas-card parameters-card">'
         '<div class="saas-card-header">'
         '<div>'
-        '<div class="saas-card-label">VENTURE ASSESSMENT</div>'
+        '<div class="saas-card-label">VENTURE DUE DILIGENCE ASSESSMENT</div>'
         '<div class="saas-title">Startup Idea Parameters</div>'
-        '<div class="saas-card-subtext">Provide your venture details to generate an evidence-grounded due diligence report.</div>'
+        '<div class="saas-card-subtext">Provide your venture details to generate an evidence-grounded due diligence report with real-time web research and deterministic scoring.</div>'
         '</div>'
         '</div>',
         unsafe_allow_html=True
@@ -19,32 +19,39 @@ def render_idea_input_form(on_submit_callback) -> None:
         col_name, col_stage = st.columns([1.2, 1])
         with col_name:
             startup_name = st.text_input(
-                "Startup Name (Optional)",
+                "Startup Name",
                 value=st.session_state.get("startup_name", ""),
-                placeholder="e.g. NextPulse AI, OmniFlow",
-                help="Optional venture name to brand your validation report."
+                placeholder="e.g. NextPulse AI, OmniFlow, LexiScan",
+                help="Venture name used to brand your validation analysis and export reports."
             )
         with col_stage:
             timeline = st.selectbox(
-                "Startup Stage / Target Timeline",
+                "Target Launch Timeline",
                 ["1 - 3 Months (Ideation / MVP)", "3 - 6 Months (Early Prototype)", "6+ Months (Scaling)"],
                 index=0,
-                help="Current development stage and targeted launch window."
+                help="Targeted launch window for your initial minimal viable product."
             )
 
         idea_text = st.text_area(
-            "Problem Statement & Product Concept",
+            "Startup Idea / Problem & Solution",
             value=st.session_state.get("last_idea_text", ""),
-            placeholder="Describe the specific problem, proposed product workflow, and primary value proposition for your customers...",
-            height=125,
-            help="Detail the customer friction, proposed solution, and unique mechanism."
+            placeholder="Describe the specific problem, proposed customer workflow, and primary value proposition for your target market...",
+            height=135,
+            help="Detail the customer friction, proposed mechanism, and unique value proposition."
         )
 
         col1, col2 = st.columns(2)
 
         with col1:
+            target_audience = st.text_input(
+                "Target Audience / ICP",
+                value=st.session_state.get("last_target_audience", ""),
+                placeholder="e.g. Early-stage B2B SaaS Founders, Series A engineering teams",
+                help="Who is the primary customer profile or ideal buyer for this solution?"
+            )
+
             target_industry = st.selectbox(
-                "Target Industry",
+                "Industry Sector",
                 [
                     "Artificial Intelligence & ML",
                     "Fintech & Payments",
@@ -56,19 +63,13 @@ def render_idea_input_form(on_submit_callback) -> None:
                     "CleanTech & Climate",
                     "Other"
                 ],
-                index=0
-            )
-
-            target_audience = st.text_input(
-                "Target Market / ICP",
-                value=st.session_state.get("last_target_audience", ""),
-                placeholder="e.g. Early-stage B2B SaaS Founders, Series A startups",
-                help="Who is the primary customer profile for this solution?"
+                index=0,
+                help="Primary market category for competitive benchmarking."
             )
 
         with col2:
             business_model = st.selectbox(
-                "Pricing / Business Model",
+                "Business Model",
                 [
                     "B2B SaaS / Subscription",
                     "B2C Subscription",
@@ -78,17 +79,19 @@ def render_idea_input_form(on_submit_callback) -> None:
                     "Freemium",
                     "Other"
                 ],
-                index=0
+                index=0,
+                help="Primary revenue and monetization model."
             )
 
             budget = st.selectbox(
                 "Initial Capital / Budget",
                 ["Bootstrap (< $10k)", "$10k - $50k", "$50k - $250k", "$250k+"],
-                index=0
+                index=0,
+                help="Estimated capital allocation for early validation and development."
             )
 
         st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
-        submit_button = st.form_submit_button("Validate Idea", use_container_width=True)
+        submit_button = st.form_submit_button("Validate Startup", use_container_width=True)
 
         if submit_button:
             if not idea_text or len(idea_text.strip()) < 15:
@@ -102,7 +105,7 @@ def render_idea_input_form(on_submit_callback) -> None:
                 st.session_state.last_idea_text = clean_idea
                 st.session_state.last_target_audience = target_audience.strip()
 
-                # Map timeline to standard value
+                # Map timeline to standard backend value
                 clean_timeline = "1 - 3 Months"
                 if "1 - 3" in timeline:
                     clean_timeline = "1 - 3 Months"
