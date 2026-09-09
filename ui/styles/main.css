@@ -73,119 +73,18 @@
 /* Widescreen Desktop Container Optimization */
 .main .block-container {
   max-width: 1400px !important;
-  padding-top: 1.25rem !important;
+  padding-top: 0.75rem !important;
   padding-bottom: 2.5rem !important;
   padding-left: 2rem !important;
   padding-right: 2rem !important;
   margin: 0 auto !important;
 }
 
-#MainMenu { visibility: hidden; }
-header { visibility: hidden; }
-footer { visibility: hidden; }
+#MainMenu { display: none !important; }
+header[data-testid="stHeader"],
+header { display: none !important; }
+footer { display: none !important; }
 
-/* ---------------------------------------------------------
-   CLEAN LIGHT TOP NAVIGATION BAR
-   --------------------------------------------------------- */
-.saas-top-navbar-wrapper,
-.saas-top-navbar {
-  background: #FFFFFF !important;
-  border: 1px solid #E2E8F0 !important;
-  border-radius: var(--radius-lg) !important;
-  padding: 10px 18px !important;
-  margin-bottom: 20px !important;
-  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04) !important;
-}
-
-.top-nav-brand {
-  display: flex !important;
-  align-items: center !important;
-  gap: 12px !important;
-}
-
-.brand-logo-gem {
-  width: 32px !important;
-  height: 32px !important;
-  border-radius: 8px !important;
-  background: #2563EB !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  color: #FFFFFF !important;
-  font-size: 15px !important;
-  font-weight: 800 !important;
-  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25) !important;
-  flex-shrink: 0 !important;
-}
-
-.brand-name {
-  font-size: 15px !important;
-  font-weight: 700 !important;
-  color: #0F172A !important;
-  letter-spacing: -0.01em !important;
-  display: block !important;
-  line-height: 1.2 !important;
-}
-
-.brand-badge {
-  font-size: 10.5px !important;
-  font-weight: 600 !important;
-  color: #2563EB !important;
-  letter-spacing: 0.04em !important;
-  text-transform: uppercase !important;
-}
-
-/* Top Navbar Button Styles */
-.saas-top-navbar-wrapper button {
-  height: 36px !important;
-  min-height: 36px !important;
-  font-size: 12.5px !important;
-  font-weight: 600 !important;
-  border-radius: 8px !important;
-  padding: 0 12px !important;
-  transition: all 0.15s ease !important;
-}
-
-.saas-top-navbar-wrapper button[kind="secondary"] {
-  background: #F8FAFC !important;
-  border: 1px solid #E2E8F0 !important;
-  color: #334155 !important;
-}
-
-.saas-top-navbar-wrapper button[kind="secondary"]:hover {
-  background: #F1F5F9 !important;
-  border-color: #CBD5E1 !important;
-  color: #0F172A !important;
-}
-
-.saas-top-navbar-wrapper button[kind="secondary"] * {
-  color: #334155 !important;
-  -webkit-text-fill-color: #334155 !important;
-}
-
-.saas-top-navbar-wrapper button[kind="primary"] {
-  background: #2563EB !important;
-  border: 1px solid #1D4ED8 !important;
-  color: #FFFFFF !important;
-  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25) !important;
-}
-
-.saas-top-navbar-wrapper button[kind="primary"] * {
-  color: #FFFFFF !important;
-  -webkit-text-fill-color: #FFFFFF !important;
-}
-
-.top-nav-link {
-  font-size: 13px !important;
-  font-weight: 500 !important;
-  color: #64748B !important;
-  cursor: pointer !important;
-  transition: color 0.15s ease !important;
-}
-
-.top-nav-link:hover {
-  color: #0F172A !important;
-}
 
 /* ---------------------------------------------------------
    LIGHT HERO SECTION & ANALYTICAL ILLUSTRATION

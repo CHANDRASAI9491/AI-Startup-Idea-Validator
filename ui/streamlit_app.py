@@ -17,7 +17,7 @@ from app.config import config
 from database.chat_history import list_conversations, get_messages
 
 from ui.components.styles import inject_custom_css
-from ui.components.header import render_header, render_top_navbar
+from ui.components.header import render_header
 from ui.components.sidebar import render_sidebar
 from ui.components.idea_input import render_idea_input_form
 from ui.components.progress import ValidationProgressMonitor
@@ -129,8 +129,6 @@ if selected_page in ["Validation", "Validate Startup", "Dashboard"]:
 # ============================================================
 
 elif selected_page in ["History", "Validation History"]:
-
-    render_top_navbar()
 
     st.markdown(
         '<div class="saas-card">'
@@ -252,8 +250,6 @@ elif selected_page in ["History", "Validation History"]:
 
 elif selected_page == "Reports":
 
-    render_top_navbar()
-
     st.markdown(
         '<div class="saas-card">'
         '<div class="saas-card-header">'
@@ -333,8 +329,6 @@ elif selected_page == "Reports":
 
 elif selected_page == "Settings":
 
-    render_top_navbar()
-
     st.markdown(
         '<div class="saas-card">'
         '<div class="saas-card-header">'
@@ -380,8 +374,6 @@ elif selected_page == "Settings":
 # ============================================================
 
 elif selected_page == "About":
-
-    render_top_navbar()
 
     st.markdown(
         '<div class="saas-card">'
