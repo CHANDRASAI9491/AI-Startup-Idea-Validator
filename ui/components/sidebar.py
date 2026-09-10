@@ -2,6 +2,11 @@ import html
 import streamlit as st
 
 
+def _on_sidebar_nav_change() -> None:
+    """Updates current_page when the sidebar radio selection changes."""
+    st.session_state.current_page = st.session_state.sidebar_navigation_radio
+
+
 def render_sidebar() -> str:
     """Renders the clean, compact sidebar navigation synchronized with application state."""
     with st.sidebar:
@@ -29,8 +34,8 @@ def render_sidebar() -> str:
         if current not in nav_options:
             current = "Validation"
 
-        # Ensure radio key state stays synchronized with top navbar state
-        if st.session_state.get("sidebar_navigation_radio") != current:
+        # Synchronize radio state if current_page was updated programmatically
+        if "sidebar_navigation_radio" not in st.session_state or st.session_state.sidebar_navigation_radio != current:
             st.session_state["sidebar_navigation_radio"] = current
 
         selected = st.radio(
@@ -38,7 +43,8 @@ def render_sidebar() -> str:
             nav_options,
             index=nav_options.index(current),
             label_visibility="collapsed",
-            key="sidebar_navigation_radio"
+            key="sidebar_navigation_radio",
+            on_change=_on_sidebar_nav_change
         )
         st.session_state.current_page = selected
 

@@ -1,5 +1,6 @@
 import os
 import base64
+# pyrefly: ignore [missing-import]
 import streamlit as st
 
 HERO_SVG_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "static", "images", "hero_analytics.svg"))
@@ -40,3 +41,44 @@ def render_header(session_state=None) -> None:
         '</div>'
     )
     st.markdown(hero_html, unsafe_allow_html=True)
+
+
+def render_landing_view(on_start_validation=None, on_load_example=None) -> None:
+    """Renders the primary landing view with hero, feature cards, and action buttons."""
+    render_header()
+
+    features_html = (
+        '<div class="landing-features-grid">'
+        '<div class="landing-feature-card">'
+        '<div class="landing-feature-icon icon-market">&#128200;</div>'
+        '<div class="landing-feature-title">Market Opportunity</div>'
+        '<p class="landing-feature-desc">Evaluate TAM, SAM, and SOM projections with CAGR and growth driver analysis.</p>'
+        '</div>'
+        '<div class="landing-feature-card">'
+        '<div class="landing-feature-icon icon-comp">&#9874;</div>'
+        '<div class="landing-feature-title">Competitive Moat</div>'
+        '<p class="landing-feature-desc">Map direct and indirect incumbents, feature matrices, and defensive differentiators.</p>'
+        '</div>'
+        '<div class="landing-feature-card">'
+        '<div class="landing-feature-icon icon-risk">&#9888;</div>'
+        '<div class="landing-feature-title">Risk &amp; SWOT</div>'
+        '<p class="landing-feature-desc">Quantified probability and impact risk scoring with actionable mitigation strategies.</p>'
+        '</div>'
+        '<div class="landing-feature-card">'
+        '<div class="landing-feature-icon icon-mvp">&#128640;</div>'
+        '<div class="landing-feature-title">MVP &amp; Roadmap</div>'
+        '<p class="landing-feature-desc">Prioritized V1 feature scope, modern architecture stack, and 4-week execution plan.</p>'
+        '</div>'
+        '</div>'
+    )
+    st.markdown(features_html, unsafe_allow_html=True)
+
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        if st.button("Start Validation", key="landing_start_val_btn", type="primary", use_container_width=True):
+            if on_start_validation:
+                on_start_validation()
+    with col2:
+        if st.button("Load Example Idea", key="landing_load_ex_btn", use_container_width=True):
+            if on_load_example:
+                on_load_example()

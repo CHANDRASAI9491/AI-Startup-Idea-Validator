@@ -53,33 +53,39 @@ class ValidationProgressMonitor:
             if s_id in self._completed_steps:
                 icon = "&#10003;"
                 status_class = "stage-completed"
-                badge = '<span style="color: #059669; font-weight: 600; font-size: 11px;">Completed</span>'
+                badge = '<span style="color: #059669; background: #ECFDF5; border: 1px solid #A7F3D0; font-weight: 700; font-size: 11px; padding: 2px 8px; border-radius: 12px;">Completed</span>'
                 border_color = "#10B981"
                 bg_color = "#F0FDF4"
                 text_color = "#0F172A"
+                icon_bg = "#10B981"
+                icon_color = "#FFFFFF"
             elif s_id == self._current_step:
                 icon = "&#9679;"
                 status_class = "stage-active"
-                badge = '<span style="color: #2563EB; font-weight: 600; font-size: 11px;">Running...</span>'
+                badge = '<span style="color: #2563EB; background: #EFF6FF; border: 1px solid #BFDBFE; font-weight: 700; font-size: 11px; padding: 2px 8px; border-radius: 12px;">Running</span>'
                 border_color = "#2563EB"
                 bg_color = "#EFF6FF"
                 text_color = "#1E3A8A"
+                icon_bg = "#2563EB"
+                icon_color = "#FFFFFF"
             else:
                 icon = f"{idx}"
                 status_class = "stage-pending"
-                badge = '<span style="color: #94A3B8; font-size: 11px;">Queued</span>'
+                badge = '<span style="color: #64748B; background: #F8FAFC; border: 1px solid #E2E8F0; font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 12px;">Pending</span>'
                 border_color = "#E2E8F0"
                 bg_color = "#FFFFFF"
                 text_color = "#64748B"
+                icon_bg = "#F1F5F9"
+                icon_color = "#64748B"
 
             item = (
                 f'<div style="display: flex; align-items: center; justify-content: space-between; '
                 f'padding: 8px 12px; margin-bottom: 6px; border-radius: 8px; border: 1px solid {border_color}; '
-                f'background: {bg_color};">'
+                f'background: {bg_color}; transition: all 0.2s ease;">'
                 f'<div style="display: flex; align-items: center; gap: 10px;">'
                 f'<span style="display: inline-flex; align-items: center; justify-content: center; '
-                f'width: 22px; height: 22px; border-radius: 50%; background: #E2E8F0; '
-                f'font-size: 11px; font-weight: 700; color: #334155;">{icon}</span>'
+                f'width: 22px; height: 22px; border-radius: 50%; background: {icon_bg}; '
+                f'font-size: 11px; font-weight: 700; color: {icon_color};">{icon}</span>'
                 f'<span style="font-size: 13px; font-weight: 600; color: {text_color};">{name}</span>'
                 f'</div>'
                 f'<div>{badge}</div>'

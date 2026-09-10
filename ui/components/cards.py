@@ -1,3 +1,4 @@
+import re
 import streamlit as st
 import html
 from urllib.parse import urlparse
@@ -11,6 +12,7 @@ from state.schema import (
     GTMStrategy,
     ValidationReport,
 )
+from services.scoring_engine import ScoringBreakdown
 
 
 def _get_score_status(score: int) -> tuple[str, str]:
@@ -300,6 +302,137 @@ class CardComponents:
             '</div>'
         )
         st.markdown(html_content, unsafe_allow_html=True)
+
+    @staticmethod
+    def render_key_takeaways(state: StartupState) -> None:
+        """Renders 3 compact takeaway cards immediately below the overall viability score."""
+        if not state:
+            return
+
+        # 1. Key Opportunity priority:
+        # 1. swot_analysis.opportunities[0]
+        # 2. market_analysis.key_growth_drivers[0]
+        # 3. final_report.key_takeaways[0]
+        key_opp = "Not available"
+        if state.swot_analysis and state.swot_analysis.opportunities and len(state.swot_analysis.opportunities) > 0:
+            if state.swot_analysis.opportunities[0] and state.swot_analysis.opportunities[0].strip():
+                key_opp = state.swot_analysis.opportunities[0].strip()
+        elif state.market_analysis and state.market_analysis.key_growth_drivers and len(state.market_analysis.key_growth_drivers) > 0:
+            if state.market_analysis.key_growth_drivers[0] and state.market_analysis.key_growth_drivers[0].strip():
+                key_opp = state.market_analysis.key_growth_drivers[0].strip()
+        elif state.final_report and state.final_report.key_takeaways and len(state.final_report.key_takeaways) > 0:
+            if state.final_report.key_takeaways[0] and state.final_report.key_takeaways[0].strip():
+                key_opp = state.final_report.key_takeaways[0].strip()
+
+        # 2. Biggest Risk priority:
+        # 1. swot_analysis.risk_matrix[0].risk_name
+        # 2. swot_analysis.threats[0]
+        # 3. existing final-report/scoring risk field only if it actually exists
+        biggest_risk = "Not available"
+        if state.swot_analysis and state.swot_analysis.risk_matrix and len(state.swot_analysis.risk_matrix) > 0:
+            rm = state.swot_analysis.risk_matrix[0]
+            if rm and hasattr(rm, "risk_name") and rm.risk_name and rm.risk_name.strip():
+                biggest_risk = rm.risk_name.strip()
+        elif state.swot_analysis and state.swot_analysis.threats and len(state.swot_analysis.threats) > 0:
+            if state.swot_analysis.threats[0] and state.swot_analysis.threats[0].strip():
+                biggest_risk = state.swot_analysis.threats[0].strip()
+        elif state.final_report and getattr(state.final_report, "risk_score", None) is not None:
+            biggest_risk = f"Overall Risk Score: {state.final_report.risk_score}/10"
+
+        # 3. Recommended Next Action:
+        # final_report.recommended_next_steps[0]
+        next_action = "Not available"
+        if state.final_report and state.final_report.recommended_next_steps and len(state.final_report.recommended_next_steps) > 0:
+            if state.final_report.recommended_next_steps[0] and state.final_report.recommended_next_steps[0].strip():
+                next_action = state.final_report.recommended_next_steps[0].strip()
+
+        opp_icon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>'
+        risk_icon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>'
+        action_icon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>'
+
+        takeaways_html = (
+            '<div class="takeaways-grid">'
+            '<div class="takeaway-card takeaway-opp">'
+            f'<div class="takeaway-label label-opp">{opp_icon} Key Opportunity</div>'
+            f'<div class="takeaway-body">{html.escape(key_opp)}</div>'
+            '</div>'
+            '<div class="takeaway-card takeaway-risk">'
+            f'<div class="takeaway-label label-risk">{risk_icon} Biggest Risk</div>'
+            f'<div class="takeaway-body">{html.escape(biggest_risk)}</div>'
+            '</div>'
+            '<div class="takeaway-card takeaway-action">'
+            f'<div class="takeaway-label label-action">{action_icon} Recommended Next Action</div>'
+            f'<div class="takeaway-body">{html.escape(next_action)}</div>'
+            '</div>'
+            '</div>'
+        )
+        st.markdown(takeaways_html, unsafe_allow_html=True)
+
+    @staticmethod
+    def render_score_methodology() -> None:
+        """Renders an expandable section explaining the score calculation dynamically from ScoringBreakdown."""
+        with st.expander("How the score is calculated", expanded=False):
+            # Dynamically inspect ScoringBreakdown model from services.scoring_engine
+            dimensions = []
+            for name, field_info in ScoringBreakdown.model_fields.items():
+                if name.endswith("_score") and name != "total_viability_score":
+                    max_pts = None
+                    if field_info.metadata:
+                        for meta_item in field_info.metadata:
+                            if hasattr(meta_item, "le"):
+                                max_pts = meta_item.le
+                                break
+                    if max_pts is None and field_info.description:
+                        m = re.search(r"Max\s+(\d+)", field_info.description)
+                        if m:
+                            max_pts = int(m.group(1))
+
+                    if max_pts is not None and max_pts <= 25:
+                        friendly_title = name.replace("_score", "").replace("_", " ").title()
+                        dimensions.append({
+                            "name": friendly_title,
+                            "max_points": max_pts,
+                            "weight_pct": f"{max_pts}%",
+                            "raw_name": name
+                        })
+
+            total_weight = sum(d["max_points"] for d in dimensions) if dimensions else 100
+
+            dim_rows = []
+            for d in dimensions:
+                dim_rows.append(
+                    f"<tr>"
+                    f"<td style='padding: 8px 12px; font-weight: 600; color: #0F172A; border-bottom: 1px solid #F1F5F9;'>{html.escape(d['name'])}</td>"
+                    f"<td style='padding: 8px 12px; text-align: center; color: #334155; border-bottom: 1px solid #F1F5F9;'>{d['max_points']} pts</td>"
+                    f"<td style='padding: 8px 12px; text-align: center; font-weight: 700; color: #2563EB; border-bottom: 1px solid #F1F5F9;'>{d['weight_pct']}</td>"
+                    f"</tr>"
+                )
+
+            table_html = (
+                f"<div style='margin-bottom: 10px; font-size: 13px; color: #475569; line-height: 1.5;'>"
+                f"The overall viability score is calculated using an objective, deterministic <strong>{total_weight}-point scoring matrix</strong> "
+                f"across <strong>{len(dimensions)} evaluation dimensions</strong> defined directly in the backend scoring engine. "
+                f"Each dimension contributes a fixed point ceiling to eliminate non-deterministic AI variance."
+                f"</div>"
+                f"<table style='width: 100%; border-collapse: collapse; font-size: 13px; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; overflow: hidden;'>"
+                f"<thead>"
+                f"<tr style='background: #F8FAFC; border-bottom: 2px solid #E2E8F0;'>"
+                f"<th style='padding: 8px 12px; text-align: left; font-size: 11.5px; font-weight: 700; color: #64748B; text-transform: uppercase;'>Dimension</th>"
+                f"<th style='padding: 8px 12px; text-align: center; font-size: 11.5px; font-weight: 700; color: #64748B; text-transform: uppercase;'>Max Points</th>"
+                f"<th style='padding: 8px 12px; text-align: center; font-size: 11.5px; font-weight: 700; color: #64748B; text-transform: uppercase;'>Weight</th>"
+                f"</tr>"
+                f"</thead>"
+                f"<tbody>"
+                f"{''.join(dim_rows)}"
+                f"<tr style='background: #F8FAFC; font-weight: 700;'>"
+                f"<td style='padding: 8px 12px; color: #0F172A;'>Total Viability Index</td>"
+                f"<td style='padding: 8px 12px; text-align: center; color: #0F172A;'>{total_weight} pts</td>"
+                f"<td style='padding: 8px 12px; text-align: center; color: #2563EB;'>100%</td>"
+                f"</tr>"
+                f"</tbody>"
+                f"</table>"
+            )
+            st.markdown(table_html, unsafe_allow_html=True)
 
     @staticmethod
     def render_executive_summary_tab(state: StartupState) -> None:

@@ -24,14 +24,22 @@ def render_report_viewer(state: StartupState, session_id: str = None) -> None:
 
     # 2. Top Score Overview (Score Ring, Core Dimensions, Strategic Verdict & Explanation)
     CardComponents.render_score_overview_section(state)
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+
+    # 3. Key Takeaways to Results (Immediately below overall viability score)
+    CardComponents.render_key_takeaways(state)
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+
+    # 4. Score Methodology (Dynamic read of actual ScoringBreakdown)
+    CardComponents.render_score_methodology()
     st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
 
-    # 3. Real Scoring Dimensions Breakdown (Strictly bound to actual ScoringBreakdown fields)
+    # 5. Real Scoring Dimensions Breakdown (Strictly bound to actual ScoringBreakdown fields)
     if scoring:
         CardComponents.render_dimension_progress_breakdown(state)
         st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
 
-    # 4. Validation Report Container Card
+    # 6. Validation Report Container Card
     st.markdown(
         '<div class="saas-card report-container-card">'
         '<div class="saas-card-header report-header-row">'
@@ -43,7 +51,8 @@ def render_report_viewer(state: StartupState, session_id: str = None) -> None:
         unsafe_allow_html=True
     )
 
-    # 5. Export Action Buttons (Clean Text-Only Buttons, No Emojis)
+    # 7. Export Action Buttons Presentation
+    st.markdown('<div class="export-header-title">DOWNLOAD REPORT</div>', unsafe_allow_html=True)
     col1, col2, col3 = st.columns(3)
 
     # 1. PDF Export
@@ -63,7 +72,7 @@ def render_report_viewer(state: StartupState, session_id: str = None) -> None:
 
     with col1:
         st.download_button(
-            label="Download PDF Report",
+            label="PDF",
             data=pdf_bytes,
             file_name=f"report_{sess_id}.pdf",
             mime="application/pdf",
@@ -75,7 +84,7 @@ def render_report_viewer(state: StartupState, session_id: str = None) -> None:
     md_content = FileTools.export_report_markdown(state, md_path)
     with col2:
         st.download_button(
-            label="Download Markdown",
+            label="Markdown",
             data=md_content,
             file_name=f"report_{sess_id}.md",
             mime="text/markdown",
@@ -86,7 +95,7 @@ def render_report_viewer(state: StartupState, session_id: str = None) -> None:
     json_str = state.model_dump_json(indent=2)
     with col3:
         st.download_button(
-            label="Download JSON State",
+            label="JSON",
             data=json_str,
             file_name=f"report_{sess_id}.json",
             mime="application/json",

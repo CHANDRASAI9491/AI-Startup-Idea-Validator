@@ -17,9 +17,9 @@ from app.config import config
 from database.chat_history import list_conversations, get_messages
 
 from ui.components.styles import inject_custom_css
-from ui.components.header import render_header
+from ui.components.header import render_header, render_landing_view
 from ui.components.sidebar import render_sidebar
-from ui.components.idea_input import render_idea_input_form
+from ui.components.idea_input import render_idea_input_form, load_example_startup_idea
 from ui.components.progress import ValidationProgressMonitor
 from ui.components.cards import CardComponents
 from ui.components.report_viewer import render_report_viewer
@@ -66,7 +66,8 @@ if "current_page" not in st.session_state:
 # SIDEBAR NAVIGATION
 # ============================================================
 
-selected_page = render_sidebar()
+render_sidebar()
+selected_page = st.session_state.current_page
 state: StartupState = st.session_state.current_state
 
 
@@ -113,10 +114,21 @@ def handle_validation_submission(form_data: dict):
 
 if selected_page in ["Validation", "Validate Startup", "Dashboard"]:
 
-    render_header()
+    show_form = st.session_state.get("show_validation_form", False) or bool(state and state.final_report)
 
-    # Startup Idea Parameters Input Form
-    render_idea_input_form(handle_validation_submission)
+    if not show_form:
+        def on_start():
+            st.session_state.show_validation_form = True
+            st.rerun()
+
+        def on_example():
+            load_example_startup_idea()
+            st.rerun()
+
+        render_landing_view(on_start_validation=on_start, on_load_example=on_example)
+    else:
+        render_header()
+        render_idea_input_form(handle_validation_submission)
 
     # After Validation: Show Score Breakdown & Validation Report
     if state and state.final_report:
@@ -392,24 +404,67 @@ elif selected_page == "About":
 The **AI Startup Idea Validator** is an autonomous multi-agent due diligence system designed to evaluate early-stage venture ideas using deterministic scoring and live market intelligence.
 
 #### Technology Stack
-- **Multi-Agent Orchestration:** LangGraph state machine with Deep Agents
+- **Multi-Agent Orchestration:** LangGraph state machine with Deep Agents framework
 - **AI Language Model:** Google Gemini (Structured outputs & reasoning)
-- **Web Intelligence:** Tavily Search API (Real-time market & competitor research)
+- **Web Intelligence:** Tavily Search API (Real-time live market & competitor research)
 - **Scoring Engine:** Deterministic 8-dimension weighted model (100-point rubric)
-- **Persistence:** SQLite conversation database & MemoryStore JSON cache
+- **Persistence:** SQLite conversation database (`chat_history.db`) & MemoryStore JSON cache
 - **Frontend & Visualization:** Streamlit with custom SaaS light design system & Plotly charts
 - **Dossier Exports:** Automated PDF, Markdown, and JSON state generation
+""", unsafe_allow_html=True)
 
-#### Autonomous Agent Pipeline
-1. **Hypothesis & Planning Agent:** Deconstructs problem, customer persona, and research hypotheses.
-2. **Web Search Agent:** Executes multi-query live market research via Tavily API.
-3. **Market Analysis Agent:** Estimates TAM, SAM, SOM, CAGR, and tailwind growth drivers.
-4. **Competitor Analysis Agent:** Maps direct/indirect incumbents and defensive moats.
-5. **SWOT & Risk Agent:** Generates 4-quadrant SWOT matrix and quantifies risk severities.
-6. **MVP Blueprint Agent:** Scopes prioritized V1 feature set and recommended technology stack.
-7. **Go-To-Market Agent:** Outlines ideal customer acquisition channels and launch strategies.
-8. **Report Synthesis & Scoring Engine:** Computes deterministic scores and produces executive summary.
-    """)
+    st.markdown("""
+### Architecture & Pipeline Flow
+The authoritative validation pipeline executes sequentially across 11 discrete stages:
+""", unsafe_allow_html=True)
+
+    stages_flow = [
+        ("Startup Idea", "Founder concept, industry category, ICP audience, budget, and timeline"),
+        ("Planning", "Strategic decomposition, research goals, and validation hypothesis formulation"),
+        ("Web Research", "Multi-query live market search via Tavily Search API for evidence retrieval"),
+        ("Market Analysis", "Market sizing (TAM / SAM / SOM), projected CAGR %, and target personas"),
+        ("Competitor Analysis", "Direct & indirect competitors, feature matrix, and defensibility moat"),
+        ("SWOT & Risk", "4-quadrant SWOT matrix, severity-scored risk register, and mitigation plan"),
+        ("MVP", "Core value proposition, Must/Should feature scope, and 4-week development roadmap"),
+        ("GTM", "Primary acquisition channels, positioning statement, pricing, and CAC estimates"),
+        ("Report", "Executive synthesis compiling qualitative and quantitative venture findings"),
+        ("Deterministic Scoring", "Objective 8-dimension weighted algorithm computing 0–100 viability score"),
+        ("Final Validation", "Complete validated dossier, strategic verdict, exports, and AI Advisor Q&A")
+    ]
+
+    flow_items = []
+    for idx, (stage_title, stage_desc) in enumerate(stages_flow):
+        arrow_html = '<div style="text-align: center; color: #2563EB; font-size: 16px; font-weight: 800; padding: 2px 0;">&darr;</div>' if idx < len(stages_flow) - 1 else ''
+        flow_items.append(
+            f'<div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 14px; margin-bottom: 2px;">'
+            f'<div style="display: flex; align-items: center; justify-content: space-between;">'
+            f'<span style="font-size: 13.5px; font-weight: 700; color: #0F172A;">{idx + 1}. {html.escape(stage_title)}</span>'
+            f'<span style="font-size: 11px; font-weight: 600; color: #2563EB; background: #EFF6FF; border: 1px solid #DBEAFE; padding: 1px 8px; border-radius: 10px;">Active Stage</span>'
+            f'</div>'
+            f'<div style="font-size: 12px; color: #64748B; margin-top: 3px;">{html.escape(stage_desc)}</div>'
+            f'</div>'
+            f'{arrow_html}'
+        )
+
+    st.markdown(f'<div style="margin: 12px 0 20px 0;">{"".join(flow_items)}</div>', unsafe_allow_html=True)
+
+    st.markdown("""
+### Agent Roles & Responsibilities
+Each autonomous agent in the system performs a dedicated function with typed data contracts:
+
+| Agent / Module | Repository Implementation | Core Responsibility |
+| :--- | :--- | :--- |
+| **Strategic Planner** | `tools/planning_tool.py` (`DeepAgentsPlanner`) | Deconstructs the core problem, customer persona, and formulates structured validation hypotheses. |
+| **Web Search Agent** | `tools/tavily_tool.py` (`TavilySearchTool`) | Executes 5 live query categories (trends, competitors, pain points, news, funding) via Tavily Search API. |
+| **Market Analysis Agent** | `agents/market_analysis_agent.py` (`MarketAnalysisAgent`) | Evaluates TAM, SAM, SOM, CAGR %, market tailwinds, and detailed target customer personas. |
+| **Competitor Agent** | `agents/competitor_agent.py` (`CompetitorAgent`) | Benchmarks direct and indirect incumbents, feature differentiation matrices, and defensibility moats. |
+| **SWOT & Risk Agent** | `agents/swot_risk_agent.py` (`SWOTRiskAgent`) | Formulates a 4-quadrant SWOT matrix and a quantitative probability &times; impact risk register with mitigations. |
+| **MVP Scoping Agent** | `agents/mvp_recommendation_agent.py` (`MVPRecommendationAgent`) | Scopes prioritized V1 features (Must/Should), modern tech architecture, and a 4-week execution roadmap. |
+| **GTM Strategy Agent** | `agents/gtm_strategy_agent.py` (`GTMStrategyAgent`) | Identifies primary customer acquisition channels, positioning statements, pricing tiers, and estimated CAC. |
+| **Report Synthesis Agent** | `agents/report_agent.py` (`ReportAgent`) | Compiles all agent findings into an executive report with strategic verdicts (PROCEED, PIVOT, CAUTION, STOP). |
+| **Deterministic Scoring Engine** | `services/scoring_engine.py` (`DeterministicScoringEngine`) | Computes an objective 8-dimension weighted score (0–100) using mathematical criteria to eliminate AI variance. |
+| **AI Venture Advisor** | `agents/conversational_advisor.py` (`ConversationalAdvisor`) | Interactive conversational mentor answering queries using report context, live web search, and SQLite persistence. |
+""", unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True)
 

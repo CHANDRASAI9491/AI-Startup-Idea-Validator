@@ -41,13 +41,13 @@ def _parse_advisor_sources(text: str) -> Tuple[str, List[Dict[str, str]]]:
     """
     sources_pattern = r"(?:###\s+(?:Additional Web Research|Sources|Web Sources))\s*\n([\s\S]*)"
     match = re.search(sources_pattern, text, re.IGNORECASE)
-    
+
     if not match:
         return text, []
 
     main_text = text[:match.start()].strip()
     sources_block = match.group(1).strip()
-    
+
     sources = []
     line_pattern = r"[-*]?\s*(?:\[(.*?)\])?(?:\s*[\(—\-:]\s*|\s+)?(https?://[^\s\)]+)"
     for line in sources_block.split("\n"):
@@ -284,7 +284,7 @@ def render_advisor_chat(
                         title = c.get("title", "Conversation")
                         if len(title) > 28:
                             title = title[:25] + "..."
-                        
+
                         c_item, c_del = st.columns([4.2, 1.2], vertical_alignment="center")
                         with c_item:
                             is_active = (cid == curr_id)
@@ -316,6 +316,26 @@ def render_advisor_chat(
                                 st.rerun()
 
         with col_hdr:
+            context_badges = []
+            if current_state:
+                if current_state.final_report:
+                    context_badges.append("✓ Startup report loaded")
+                if current_state.market_analysis:
+                    context_badges.append("✓ Market analysis available")
+                if current_state.competitor_analysis:
+                    context_badges.append("✓ Competitor analysis available")
+                if current_state.search_results and (
+                    (current_state.search_results.market_trends and len(current_state.search_results.market_trends) > 0)
+                    or (current_state.search_results.competitors and len(current_state.search_results.competitors) > 0)
+                ):
+                    context_badges.append("✓ Research sources available")
+
+            if context_badges:
+                badges_html = "".join([f'<span class="advisor-context-pill">{html.escape(b)}</span>' for b in context_badges])
+                context_row_html = f'<div class="advisor-context-badges-row">{badges_html}</div>'
+            else:
+                context_row_html = '<div class="advisor-context-badges-row"><span class="advisor-context-pill inactive">No active validation data attached</span></div>'
+
             hdr_html = (
                 '<div class="advisor-header-brand">'
                 f'{icon_img_html}'
@@ -325,6 +345,7 @@ def render_advisor_chat(
                 f'<div class="advisor-header-status {status_class}">'
                 f'<span class="status-indicator-dot"></span>{status_text}'
                 '</div>'
+                f'{context_row_html}'
                 '</div>'
                 '</div>'
             )
@@ -453,7 +474,7 @@ def render_advisor_chat(
                         )
                     else:
                         main_body, sources = _parse_advisor_sources(content)
-                        
+
                         st.markdown(
                             '<div class="chat-msg assistant-msg">'
                             '<div class="msg-author">AI Venture Advisor</div>'
@@ -461,7 +482,7 @@ def render_advisor_chat(
                             unsafe_allow_html=True
                         )
                         st.markdown(main_body)
-                        
+
                         # Render structured web research sources if present
                         if sources:
                             sources_html = [
@@ -481,7 +502,7 @@ def render_advisor_chat(
                                 )
                             sources_html.append('</div></div>')
                             st.markdown("".join(sources_html), unsafe_allow_html=True)
-                        
+
                         st.markdown("</div></div>", unsafe_allow_html=True)
 
                 # Context-aware follow-up question suggestions

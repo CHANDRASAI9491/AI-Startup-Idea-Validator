@@ -1,0 +1,11 @@
+flowchart TD
+    Idea([Startup Idea Input]) --> Plan[1. Hypothesis & Planning<br/>DeepAgentsPlanner]
+    Plan --> Web[2. Live Web Research<br/>Tavily Search Tool]
+    Web --> Market[3. Market Analysis<br/>TAM / SAM / SOM / CAGR]
+    Market --> Comp[4. Competitor Analysis<br/>Incumbents & Moat]
+    Comp --> SWOT[5. SWOT & Risk Analysis<br/>Matrix & Severities]
+    SWOT --> MVP[6. MVP Recommendation<br/>4-Week Roadmap & Tech Stack]
+    MVP --> GTM[7. Go-To-Market Strategy<br/>Channels & Pricing]
+    GTM --> Rep[8. Report Synthesis<br/>Executive Summary & Recommendations]
+    Rep --> Score[9. Deterministic Scoring Engine<br/>8-Dimension Weighted Rubric]
+    Score --> Final([10. Final Validated Dossier<br/>PDF/MD/JSON Exports & AI Advisor])
