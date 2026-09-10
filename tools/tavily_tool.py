@@ -2,7 +2,7 @@ import logging
 import json
 import urllib.request
 import urllib.parse
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from app.config import config
 from tools.retrieval_utils import RetrievalUtils, SearchResultItem
 
@@ -21,7 +21,7 @@ class TavilySearchTool:
         if self.api_key:
             # 1. Attempt Tavily Python SDK
             try:
-                from tavily import TavilyClient
+                from tavily import TavilyClient  # type: ignore
                 client = TavilyClient(api_key=self.api_key)
                 response = client.search(query=query, max_results=max_results)
                 for item in response.get("results", []):
@@ -78,8 +78,23 @@ class TavilySearchTool:
 
         return results
 
+    def perform_validation_search(
+        self,
+        idea_text: str,
+        industry: Optional[str] = "",
+        max_results: int = 3
+    ) -> Any:
+        """Execute structured multi-category web search across trends, competitors, and pain points."""
+        from services.search_service import SearchService
+        search_svc = SearchService(api_key=self.api_key)
+        return search_svc.execute_multi_category_search(
+            idea_text=idea_text,
+            industry=industry or "",
+            max_results=max_results
+        )
 
-from langchain_core.tools import tool
+
+from langchain_core.tools import tool  # type: ignore
 
 
 @tool

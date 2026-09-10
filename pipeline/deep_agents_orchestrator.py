@@ -1,9 +1,9 @@
 import logging
 import json
 from typing import Callable, Optional, List, Dict, Any
-from deepagents import create_deep_agent, SubAgent
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.messages import AIMessage
+from deepagents import create_deep_agent, SubAgent  # type: ignore
+from langchain_google_genai import ChatGoogleGenerativeAI  # type: ignore
+from langchain_core.messages import AIMessage  # type: ignore
 
 from state.schema import (
     StartupState,
@@ -352,7 +352,7 @@ class StartupValidatorDeepAgentsPipeline:
                 core_value_proposition=f"Automated AI validation engine delivering investor-grade evidence for '{state.idea.idea_text}'.",
                 tech_stack_frontend="Streamlit / Modern CSS Design System",
                 tech_stack_backend="Python 3.11+ / LangGraph",
-                tech_stack_database="PostgreSQL / SQLite Memory",
+                tech_stack_database="SQLite Persistent Memory",
                 tech_stack_ai="Google Gemini 2.5 Flash / Tavily Search API",
                 features=[
                     MVPFeature(

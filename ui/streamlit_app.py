@@ -6,7 +6,7 @@ Multi-Agent Startup Validation and Market Due Diligence Platform.
 import sys
 import os
 import html
-import streamlit as st
+import streamlit as st  # type: ignore
 
 # Ensure project root is on sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))

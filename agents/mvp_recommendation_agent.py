@@ -40,7 +40,7 @@ class MVPRecommendationAgent(BaseAgent):
                 core_value_proposition=f"Automated AI validation engine delivering investor-grade evidence for '{state.idea.idea_text}'.",
                 tech_stack_frontend="Streamlit / Modern CSS Design System",
                 tech_stack_backend="Python 3.11+ / LangGraph",
-                tech_stack_database="PostgreSQL / SQLite Memory",
+                tech_stack_database="SQLite Persistent Memory",
                 tech_stack_ai="Google Gemini 2.5 Flash / Tavily Search API",
                 features=[
                     MVPFeature(
