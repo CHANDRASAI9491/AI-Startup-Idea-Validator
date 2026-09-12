@@ -16,40 +16,45 @@ To run a specific module or test file:
 
 ```powershell
 # Run only scoring engine unit tests
-.venv\Scripts\python.exe -m pytest tests/test_scoring.py
+.venv\Scripts\python.exe -m pytest tests/test_scoring_engine.py
 
 # Run only agent tests
-.venv\Scripts\python.exe -m pytest tests/test_agents.py
+.venv\Scripts\python.exe -m pytest tests/test_market_agent.py tests/test_competitor_agent.py
 
-# Run only orchestrator tests
-.venv\Scripts\python.exe -m pytest tests/test_orchestrator.py
+# Run only integration and pipeline tests
+.venv\Scripts\python.exe -m pytest tests/test_deep_agents_integration.py tests/test_pipeline_e2e.py
 ```
 
 ---
 
 ## 2. Test Suite Coverage & Verification Results
 
-The automated test suite comprises **66 comprehensive unit and integration tests** validating:
+The automated test suite comprises **100 comprehensive unit and integration tests** validating:
 
-1. **Deterministic Scoring Engine (`tests/test_scoring.py`)**:
+1. **Deterministic Scoring Engine (`tests/test_scoring_engine.py`)**:
    - Boundary checks for all 8 dimensions (0 to max points).
    - Total score calculation and ceiling clamp (0 to 100).
-   - Strategic verdict mapping (`PROCEED`, `PIVOT`, `CAUTION`, `STOP`).
-   - Consistency of deterministic seed offsets.
-2. **State & Schema Serialization (`tests/test_schema.py`)**:
-   - Pydantic V2 model validation and serialization for all domain entities.
-   - Null-safety fallbacks for missing state attributes.
-3. **Agent & Pipeline Execution (`tests/test_agents.py` & `tests/test_orchestrator.py`)**:
-   - Prompt loading and prompt parameter substitution.
-   - Deep Agents orchestrator flow and stage callback propagation (`planner`, `web_search`, `market_analysis`, `competitor_analysis`, `swot_risk`, `mvp_recommendation`, `gtm_strategy`, `report`).
-   - Tavily search tool error handling and fallback mocking.
-4. **Advisory & Storage (`tests/test_advisor.py` & `tests/test_storage.py`)**:
-   - SQLite conversation creation, message saving, retrieval, and deletion.
-   - MemoryStore caching and session lookup.
-   - Intent classification heuristics and query routing.
+   - Strategic verdict mapping (`PROCEED`, `CAUTION`, `PIVOT`, `STOP`).
+   - Scoring determinism and punctuation invariance (no hash/seed pseudo-variance).
+   - Missing market evidence handling (unweighted baseline and limitation reporting).
+   - Missing competitor evidence handling and verified zero competitor handling.
+   - Score explainability and evidence limitation generation ("Why This Score?").
+2. **Search Services & Evidence Provenance (`tests/test_web_search.py`, `tests/test_retrieval_utils.py`)**:
+   - Real research retrieval preserving title, URL, snippet, query, category, and ISO UTC timestamp.
+   - Prevention of fabricated Tavily fallback data; honest empty-result handling.
+   - Preservation of source URLs in prompt context formatting without synthetic placeholder domains.
+3. **Multi-Agent Pipeline Execution & Analysis (`tests/test_deep_agents_*.py`, `tests/test_*_agent.py`, `tests/test_pipeline_e2e.py`)**:
+   - Market and competitor analysis parsing of real evidence and honest fallback when evidence is unavailable.
+   - Deep Agents orchestrator flow, callback propagation, and Pydantic state population.
+   - Unsupported-value prevention (no invented TAM, SAM, SOM, CAGR, or placeholder competitors).
+   - Grounded report generation with missing-evidence handling.
+4. **Conversational Advisory & Storage (`tests/test_conversational_advisor.py`, `tests/test_chat_history.py`)**:
+   - Intent classification heuristics, multi-turn follow-up inheritance, and grounded report context.
+   - Advisor missing-value handling (avoidance of `$NoneB` or `None%`).
+   - SQLite conversation creation, message saving, retrieval, session isolation, and cascade deletion.
 
 **Latest Test Execution Summary**:
-- **Result**: `66 passed in 389.59s`
+- **Result**: `100 passed`
 - **Pass Rate**: `100%`
 
 ---

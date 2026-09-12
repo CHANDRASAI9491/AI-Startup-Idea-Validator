@@ -26,10 +26,12 @@ The overall viability score is calculated on a 100-point scale across 8 weighted
 
 The overall score is mapped to a clear strategic recommendation:
 
-- **PROCEED** (&ge; 75 / 100): High market opportunity with manageable risks, clear differentiation, and strong MVP viability. Recommended for rapid prototype execution and founder validation.
-- **PIVOT** (60 &ndash; 74 / 100): Promising core concept with notable headwinds (e.g., crowded competition, high CAC, or unclear moat). Refine target ICP or adjust feature differentiation before heavy engineering.
-- **CAUTION** (45 &ndash; 59 / 100): Substantial execution, technical, or regulatory hurdles identified. Requires targeted de-risking and direct customer discovery prior to capital commitment.
-- **STOP** (&lt; 45 / 100): High structural friction, minimal addressable demand, or entrenched incumbent dominance. Re-evaluate core problem statement.
+- **PROCEED** (&ge; 78 / 100): High market opportunity with manageable risks, clear differentiation, and strong MVP viability. Recommended for rapid prototype execution and founder validation.
+- **CAUTION** (65 &ndash; 77 / 100): Promising core concept with notable headwinds or unverified market/competitor evidence. Requires targeted de-risking and direct customer discovery prior to heavy engineering or capital commitment.
+- **PIVOT** (50 &ndash; 64 / 100): Substantial execution, competitive, or structural friction identified. Refine target ICP, differentiation, or business model before proceeding.
+- **STOP** (&lt; 50 / 100): High structural friction, minimal addressable demand, or entrenched incumbent dominance. Re-evaluate core problem statement.
+
+The scoring engine is strictly deterministic: it does not use SHA-256 hash variance, seed offsets, or pseudo-random perturbations. Equivalent inputs with cosmetic punctuation or wording differences produce identical scores.
 
 ---
 
