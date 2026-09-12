@@ -1,5 +1,4 @@
 import re
-import hashlib
 import logging
 from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
@@ -48,12 +47,6 @@ class ScoringBreakdown(BaseModel):
 class DeterministicScoringEngine:
     """Deterministic evidence-driven scoring engine evaluating startup viability and investor readiness."""
 
-    @staticmethod
-    def _deterministic_seed_offset(text: str) -> int:
-        """Derives a deterministic integer offset (-3 to +3) from text content hashing."""
-        hash_val = int(hashlib.sha256(text.encode("utf-8")).hexdigest(), 16)
-        return (hash_val % 7) - 3
-
     @classmethod
     def calculate_scores(
         cls,
@@ -73,8 +66,6 @@ class DeterministicScoringEngine:
         industry_lower = target_industry.lower()
         reasoning = []
         limitations: List[str] = []
-
-        seed_offset = cls._deterministic_seed_offset(idea_text)
 
         # 1. MARKET OPPORTUNITY (Max 20)
         mkt_score = 10
@@ -104,7 +95,7 @@ class DeterministicScoringEngine:
                 elif cagr_percentage >= 8.0:
                     mkt_score += 2
 
-        mkt_score = max(min(mkt_score + (seed_offset % 2), 20), 4)
+        mkt_score = max(min(mkt_score, 20), 4)
 
         # 2. INNOVATION & DIFFERENTIATION (Max 15)
         inn_score = 7
@@ -121,7 +112,7 @@ class DeterministicScoringEngine:
         if "patent" in text_lower or "proprietary" in text_lower or "algorithm" in text_lower or "fine-tuned" in text_lower:
             inn_score += 2
 
-        inn_score = max(min(inn_score + seed_offset, 15), 2)
+        inn_score = max(min(inn_score, 15), 2)
 
         # 3. COMPETITION & MOAT (Max 15)
         comp_score = 10

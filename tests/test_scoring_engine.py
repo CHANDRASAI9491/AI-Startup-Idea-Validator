@@ -248,3 +248,75 @@ def test_historical_state_compatibility():
     assert modern_model.tam_billions is None
     assert modern_model.cagr_percentage is None
     assert "could not be established" in modern_model.market_size_summary
+
+
+def test_phase4_test_a_punctuation_does_not_change_score():
+    """Phase 4 Test A: Verify that punctuation alone does not alter any dimension or total score."""
+    desc_a = "AI medical coding automation platform"
+    desc_b = "AI medical coding automation platform."
+
+    score_a = DeterministicScoringEngine.calculate_scores(
+        idea_text=desc_a,
+        target_industry="Healthcare",
+        tam_billions=10.0,
+        sam_billions=2.0,
+        som_billions=0.1,
+        cagr_percentage=12.0,
+        direct_competitor_count=4,
+        moat_level="Medium",
+        financial_risk=5,
+        technical_risk=5,
+        regulatory_risk=4
+    )
+    score_b = DeterministicScoringEngine.calculate_scores(
+        idea_text=desc_b,
+        target_industry="Healthcare",
+        tam_billions=10.0,
+        sam_billions=2.0,
+        som_billions=0.1,
+        cagr_percentage=12.0,
+        direct_competitor_count=4,
+        moat_level="Medium",
+        financial_risk=5,
+        technical_risk=5,
+        regulatory_risk=4
+    )
+
+    assert score_a.total_viability_score == score_b.total_viability_score
+    assert score_a.innovation_score == score_b.innovation_score
+    assert score_a.market_opportunity_score == score_b.market_opportunity_score
+    assert score_a.verdict == score_b.verdict
+
+
+def test_phase4_test_b_same_fundamentals_produce_same_score():
+    """Phase 4 Test B: Verify that semantically equivalent descriptions with formatting differences produce identical scores."""
+    desc_clean = "B2B SaaS platform for enterprise cloud security orchestration"
+    desc_spaced = "  B2B SaaS platform for enterprise cloud security orchestration   \n"
+
+    score_1 = DeterministicScoringEngine.calculate_scores(
+        idea_text=desc_clean,
+        target_industry="Cybersecurity",
+        tam_billions=25.0,
+        cagr_percentage=15.0,
+        direct_competitor_count=2,
+        moat_level="Strong"
+    )
+    score_2 = DeterministicScoringEngine.calculate_scores(
+        idea_text=desc_spaced,
+        target_industry="Cybersecurity",
+        tam_billions=25.0,
+        cagr_percentage=15.0,
+        direct_competitor_count=2,
+        moat_level="Strong"
+    )
+
+    assert score_1.total_viability_score == score_2.total_viability_score
+    assert score_1.innovation_score == score_2.innovation_score
+    assert score_1.market_opportunity_score == score_2.market_opportunity_score
+    assert score_1.competition_score == score_2.competition_score
+    assert score_1.scalability_score == score_2.scalability_score
+    assert score_1.technical_feasibility_score == score_2.technical_feasibility_score
+    assert score_1.revenue_model_score == score_2.revenue_model_score
+    assert score_1.execution_risk_score == score_2.execution_risk_score
+    assert score_1.market_timing_score == score_2.market_timing_score
+    assert score_1.verdict == score_2.verdict
