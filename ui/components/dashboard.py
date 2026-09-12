@@ -48,7 +48,7 @@ def render_dashboard(orchestrator: ApplicationOrchestrator, active_state: Startu
         kpi1, kpi2, kpi3, kpi4 = st.columns(4)
         kpi1.metric("Overall Score", f"{report.overall_viability_score} / 100")
         kpi2.metric("Strategic Verdict", report.verdict)
-        kpi3.metric("Market TAM", f"${current_state.market_analysis.tam_billions}B" if current_state.market_analysis else "N/A")
+        kpi3.metric("Market TAM", f"${current_state.market_analysis.tam_billions}B" if (current_state.market_analysis and current_state.market_analysis.tam_billions is not None) else "Evidence unavailable")
         kpi4.metric("Risk Level", f"{current_state.swot_analysis.overall_risk_score} / 10" if current_state.swot_analysis else "N/A")
 
         st.markdown("<br/>", unsafe_allow_html=True)

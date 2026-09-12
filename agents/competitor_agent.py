@@ -34,45 +34,13 @@ class CompetitorAgent(BaseAgent):
                 except Exception as e:
                     logger.warning(f"CompetitorAnalysis parsing error: {e}")
 
-            # Fallback heuristic calculation if LLM output unavailable or invalid
+            # Honest unavailable representation if LLM output unavailable or invalid
             state.competitor_analysis = CompetitorAnalysis(
-                direct_competitors=[
-                    CompetitorItem(
-                        name="Incumbent Core SaaS",
-                        url="https://example.com/incumbent",
-                        description=f"Established incumbent platform in {state.idea.target_industry}",
-                        key_features=["Basic reporting", "Manual dashboard"],
-                        pricing_model="Enterprise ($149/mo)",
-                        strengths=["Brand awareness", "Large sales team"],
-                        weaknesses=["High pricing", "Slow product iteration"]
-                    ),
-                    CompetitorItem(
-                        name="Legacy Tooling Solution",
-                        url="https://example.org/legacy",
-                        description="Legacy desktop and spreadsheet workflow solution",
-                        key_features=["Templates", "File exports"],
-                        pricing_model="Perpetual license",
-                        strengths=["Install base"],
-                        weaknesses=["No AI automation", "No cloud sync"]
-                    )
-                ],
-                indirect_competitors=[
-                    CompetitorItem(
-                        name="Custom Spreadsheets / Manual Workflows",
-                        url="https://example.com/manual",
-                        description="Internal manual team processes and custom spreadsheets",
-                        pricing_model="Internal labor cost",
-                        strengths=["Low upfront software cost"],
-                        weaknesses=["High human error rate", "Non-scalable"]
-                    )
-                ],
-                feature_comparison_matrix={
-                    "AI Automation": {"Us": "Yes", "Incumbent Core": "Partial"},
-                    "Cloud Synchronization": {"Us": "Yes", "Incumbent Core": "Yes"},
-                    "Real-time Analytics": {"Us": "Yes", "Incumbent Core": "No"}
-                },
-                market_positioning_summary=f"Positions as an AI-first automated alternative in the {state.idea.target_industry} space.",
-                moat_assessment="Defensible workflow automation, proprietary data loops, and rapid time-to-value."
+                direct_competitors=[],
+                indirect_competitors=[],
+                feature_comparison_matrix={},
+                market_positioning_summary="No verified competitors identified from available research.",
+                moat_assessment="Defensibility cannot be evaluated without verified competitor evidence."
             )
         except Exception as e:
             logger.error(f"Error in CompetitorAgent: {e}")

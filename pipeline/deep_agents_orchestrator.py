@@ -203,33 +203,15 @@ class StartupValidatorDeepAgentsPipeline:
                 logger.warning(f"MarketAnalysis schema validation error: {me}")
 
         if not state.market_analysis:
-            # Dynamic market sizing based on idea text length and industry scope
-            text_factor = min(len(state.idea.idea_text), 150) / 10.0
-            tam_val = round(12.0 + text_factor, 1)
-            sam_val = round(tam_val * 0.25, 1)
-            som_val = round(sam_val * 0.1, 1)
-            cagr_val = round(10.0 + (text_factor * 0.5), 1)
-            readiness_val = int(min(70 + text_factor, 95))
-
             state.market_analysis = MarketAnalysis(
-                tam_billions=tam_val,
-                sam_billions=sam_val,
-                som_billions=som_val,
-                market_size_summary=f"Dynamic market analysis for '{state.idea.idea_text}' in {state.idea.target_industry}: TAM ${tam_val}B, SAM ${sam_val}B, SOM ${som_val}B.",
-                cagr_percentage=cagr_val,
-                key_growth_drivers=[
-                    "Accelerated digital workflow adoption",
-                    f"Rising demand for specialized {state.idea.target_industry} solutions",
-                    "Increasing market willingness to pay for automation"
-                ],
-                target_personas=[
-                    TargetPersona(
-                        role=state.idea.target_audience or "Primary Decision Maker",
-                        pain_points=["High operational overhead", "Manual workflow bottlenecks"],
-                        willingness_to_pay="High ($49 - $299/month)"
-                    )
-                ],
-                market_readiness_score=readiness_val
+                tam_billions=None,
+                sam_billions=None,
+                som_billions=None,
+                market_size_summary="Market size could not be established from available research.",
+                cagr_percentage=None,
+                key_growth_drivers=[],
+                target_personas=[],
+                market_readiness_score=None
             )
         notify("market_analysis", "completed")
 
@@ -243,42 +225,11 @@ class StartupValidatorDeepAgentsPipeline:
 
         if not state.competitor_analysis:
             state.competitor_analysis = CompetitorAnalysis(
-                direct_competitors=[
-                    CompetitorItem(
-                        name=f"Primary {state.idea.target_industry} Competitor",
-                        url="https://example.com/competitor1",
-                        description=f"Established provider in {state.idea.target_industry}",
-                        key_features=["Core workflow dashboard", "Standard exports"],
-                        pricing_model="Tiered Subscription ($99/mo)",
-                        strengths=["Market brand equity", "Existing user base"],
-                        weaknesses=["High pricing", "Slower AI innovation cycle"]
-                    ),
-                    CompetitorItem(
-                        name=f"Secondary {state.idea.target_industry} Provider",
-                        url="https://example.org/competitor2",
-                        description=f"Niche software vendor in {state.idea.target_industry}",
-                        key_features=["Basic analytics"],
-                        pricing_model="Custom quote",
-                        strengths=["Industry relationships"],
-                        weaknesses=["No end-to-end AI automation"]
-                    )
-                ],
-                indirect_competitors=[
-                    CompetitorItem(
-                        name="Internal Manual Process & Custom Spreadsheets",
-                        url="https://example.com/manual-process",
-                        description="Status quo manual team workflows",
-                        pricing_model="Internal labor cost",
-                        strengths=["Zero upfront software license fee"],
-                        weaknesses=["Prone to human error", "Non-scalable"]
-                    )
-                ],
-                feature_comparison_matrix={
-                    "AI Automation": {"Us": "Yes", f"Primary {state.idea.target_industry} Competitor": "Partial"},
-                    "Real-time Analytics": {"Us": "Yes", f"Primary {state.idea.target_industry} Competitor": "No"}
-                },
-                market_positioning_summary=f"Positions as an AI-first automated alternative for {state.idea.target_audience or 'target users'}.",
-                moat_assessment="Defensible workflow automation, proprietary data loops, and rapid time-to-value."
+                direct_competitors=[],
+                indirect_competitors=[],
+                feature_comparison_matrix={},
+                market_positioning_summary="No verified competitors identified from available research.",
+                moat_assessment="Defensibility cannot be evaluated without verified competitor evidence."
             )
         notify("competitor_analysis", "completed")
 
@@ -410,18 +361,36 @@ class StartupValidatorDeepAgentsPipeline:
 
         # 6. Final Executive Report Synthesis & Deterministic Scoring Engine
         notify("report", "in_progress")
+        # Determine verified competitor count vs missing evidence
+        comp_count = None
+        moat_val = "Medium"
+        if state.competitor_analysis:
+            moat_val = state.competitor_analysis.moat_assessment or "Medium"
+            if state.competitor_analysis.direct_competitors:
+                comp_count = len(state.competitor_analysis.direct_competitors)
+            elif "No verified competitors" not in (state.competitor_analysis.market_positioning_summary or ""):
+                comp_count = 0
+            else:
+                comp_count = None
+
         scoring_breakdown = DeterministicScoringEngine.calculate_scores(
             idea_text=state.idea.idea_text,
             target_industry=state.idea.target_industry or "Technology / SaaS",
-            tam_billions=state.market_analysis.tam_billions,
-            sam_billions=state.market_analysis.sam_billions,
-            som_billions=state.market_analysis.som_billions,
-            cagr_percentage=state.market_analysis.cagr_percentage,
-            direct_competitor_count=len(state.competitor_analysis.direct_competitors),
-            moat_level=state.competitor_analysis.moat_assessment,
+            tam_billions=state.market_analysis.tam_billions if state.market_analysis else None,
+            sam_billions=state.market_analysis.sam_billions if state.market_analysis else None,
+            som_billions=state.market_analysis.som_billions if state.market_analysis else None,
+            cagr_percentage=state.market_analysis.cagr_percentage if state.market_analysis else None,
+            direct_competitor_count=comp_count,
+            moat_level=moat_val,
             financial_risk=state.swot_analysis.financial_risk,
             technical_risk=state.swot_analysis.technical_risk,
             regulatory_risk=state.swot_analysis.regulatory_risk
+        )
+
+        tam_takeaway = (
+            f"Target Market TAM of ${state.market_analysis.tam_billions}B with projected CAGR of {state.market_analysis.cagr_percentage}%."
+            if (state.market_analysis and state.market_analysis.tam_billions is not None)
+            else "Target Market sizing could not be established from available research."
         )
 
         state.final_report = ValidationReport(
@@ -440,7 +409,7 @@ class StartupValidatorDeepAgentsPipeline:
             confidence_score=scoring_breakdown.overall_confidence_score,
             key_takeaways=[
                 f"Deterministically scored overall viability index of {scoring_breakdown.total_viability_score}/100 based on an 8-dimension weighted matrix.",
-                f"Target Market TAM of ${state.market_analysis.tam_billions}B with projected CAGR of {state.market_analysis.cagr_percentage}%.",
+                tam_takeaway,
                 f"Strategic verdict classified as '{scoring_breakdown.verdict}'."
             ],
             recommended_next_steps=[

@@ -49,14 +49,14 @@ class TargetPersona(BaseModel):
 
 
 class MarketAnalysis(BaseModel):
-    tam_billions: float = Field(default=10.0, description="Total Addressable Market in $B")
-    sam_billions: float = Field(default=2.5, description="Serviceable Addressable Market in $B")
-    som_billions: float = Field(default=0.1, description="Serviceable Obtainable Market in $B")
-    market_size_summary: str = Field(default="", description="Summary of market scope and numbers")
-    cagr_percentage: float = Field(default=12.5, description="Compound Annual Growth Rate %")
+    tam_billions: Optional[float] = Field(default=None, description="Total Addressable Market in $B")
+    sam_billions: Optional[float] = Field(default=None, description="Serviceable Addressable Market in $B")
+    som_billions: Optional[float] = Field(default=None, description="Serviceable Obtainable Market in $B")
+    market_size_summary: str = Field(default="Market size could not be established from available research.", description="Summary of market scope and numbers")
+    cagr_percentage: Optional[float] = Field(default=None, description="Compound Annual Growth Rate %")
     key_growth_drivers: List[str] = Field(default_factory=list)
     target_personas: List[TargetPersona] = Field(default_factory=list)
-    market_readiness_score: int = Field(default=75, description="0-100 Market Readiness score")
+    market_readiness_score: Optional[int] = Field(default=None, description="0-100 Market Readiness score")
 
 
 class CompetitorItem(BaseModel):

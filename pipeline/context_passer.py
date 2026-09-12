@@ -23,11 +23,20 @@ class ContextPasser:
 
         if state.market_analysis:
             m = state.market_analysis
-            summary_lines.append(f"Market Sizing: TAM=${m.tam_billions}B, SAM=${m.sam_billions}B, SOM=${m.som_billions}B, CAGR={m.cagr_percentage}%")
+            if m.tam_billions is not None:
+                summary_lines.append(f"Market Sizing: TAM=${m.tam_billions}B, SAM=${m.sam_billions}B, SOM=${m.som_billions}B, CAGR={m.cagr_percentage}%")
+            else:
+                summary_lines.append("Market Sizing: Market size could not be established from available research.")
 
         if state.competitor_analysis:
             c = state.competitor_analysis
-            summary_lines.append(f"Competitive Moat: {c.moat_assessment}")
+            if c.direct_competitors:
+                comp_names = ", ".join(comp.name for comp in c.direct_competitors)
+                summary_lines.append(f"Verified Competitors: {comp_names}")
+            else:
+                summary_lines.append("Verified Competitors: No verified competitors identified from available research.")
+            if c.moat_assessment:
+                summary_lines.append(f"Competitive Moat: {c.moat_assessment}")
 
         if state.swot_analysis:
             s = state.swot_analysis

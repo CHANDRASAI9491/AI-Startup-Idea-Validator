@@ -75,19 +75,27 @@ class FileTools:
                 lines.append(f"- {q}")
 
         if market:
+            tam_str = f"${market.tam_billions}B" if getattr(market, "tam_billions", None) is not None else "Evidence unavailable"
+            sam_str = f"${market.sam_billions}B" if getattr(market, "sam_billions", None) is not None else "Evidence unavailable"
+            som_str = f"${market.som_billions}B" if getattr(market, "som_billions", None) is not None else "Evidence unavailable"
+            cagr_str = f"{market.cagr_percentage}%" if getattr(market, "cagr_percentage", None) is not None else "Evidence unavailable"
+            readiness_str = f"{market.market_readiness_score}/100" if getattr(market, "market_readiness_score", None) is not None else "Evidence unavailable"
             lines.extend([
                 "\n---",
                 "## 1. Market Sizing and Growth Analysis",
-                f"- **Total Addressable Market (TAM):** ${market.tam_billions}B",
-                f"- **Serviceable Addressable Market (SAM):** ${market.sam_billions}B",
-                f"- **Serviceable Obtainable Market (SOM):** ${market.som_billions}B",
-                f"- **Projected CAGR:** {market.cagr_percentage}%",
-                f"- **Market Readiness Score:** {market.market_readiness_score}/100",
+                f"- **Total Addressable Market (TAM):** {tam_str}",
+                f"- **Serviceable Addressable Market (SAM):** {sam_str}",
+                f"- **Serviceable Obtainable Market (SOM):** {som_str}",
+                f"- **Projected CAGR:** {cagr_str}",
+                f"- **Market Readiness Score:** {readiness_str}",
                 f"\n**Market Scope Summary:** {market.market_size_summary}",
                 "\n**Primary Growth Drivers:**"
             ])
-            for driver in market.key_growth_drivers:
-                lines.append(f"- {driver}")
+            if getattr(market, "key_growth_drivers", None):
+                for driver in market.key_growth_drivers:
+                    lines.append(f"- {driver}")
+            else:
+                lines.append("- No verified growth drivers established from available research.")
 
         if comp:
             lines.extend([
@@ -97,8 +105,11 @@ class FileTools:
                 f"**Competitive Moat:** {comp.moat_assessment}",
                 "\n### Direct Competitors:"
             ])
-            for c in comp.direct_competitors:
-                lines.append(f"- **{c.name}** ({c.pricing_model}): {c.description}")
+            if getattr(comp, "direct_competitors", None):
+                for c in comp.direct_competitors:
+                    lines.append(f"- **{c.name}** ({c.pricing_model}): {c.description}")
+            else:
+                lines.append("- No verified competitors identified from available research.")
 
         if swot:
             lines.extend([
@@ -637,11 +648,11 @@ class FileTools:
             # -------------------------------------------------------------
             story.append(Paragraph("4. Market Opportunity &amp; Sizing Metrics", h1_style))
             if market:
-                tam_str = f"${market.tam_billions}B" if getattr(market, "tam_billions", None) is not None else "Not available"
-                sam_str = f"${market.sam_billions}B" if getattr(market, "sam_billions", None) is not None else "Not available"
-                som_str = f"${market.som_billions}B" if getattr(market, "som_billions", None) is not None else "Not available"
-                cagr_str = f"{market.cagr_percentage}%" if getattr(market, "cagr_percentage", None) is not None else "Not available"
-                readiness_str = f"{market.market_readiness_score}/100" if getattr(market, "market_readiness_score", None) is not None else "Not available"
+                tam_str = f"${market.tam_billions}B" if getattr(market, "tam_billions", None) is not None else "Evidence unavailable"
+                sam_str = f"${market.sam_billions}B" if getattr(market, "sam_billions", None) is not None else "Evidence unavailable"
+                som_str = f"${market.som_billions}B" if getattr(market, "som_billions", None) is not None else "Evidence unavailable"
+                cagr_str = f"{market.cagr_percentage}%" if getattr(market, "cagr_percentage", None) is not None else "Evidence unavailable"
+                readiness_str = f"{market.market_readiness_score}/100" if getattr(market, "market_readiness_score", None) is not None else "Evidence unavailable"
 
                 m_metrics_data = [
                     [
@@ -704,7 +715,7 @@ class FileTools:
                     ]))
                     story.append(p_table)
             else:
-                story.append(Paragraph("Market opportunity data not available.", body_muted))
+                story.append(Paragraph("Market size could not be established from available research.", body_muted))
 
             story.append(PageBreak())
 
@@ -761,9 +772,9 @@ class FileTools:
                     ]))
                     story.append(comp_table)
                 else:
-                    story.append(Paragraph("No individual competitors registered.", body_muted))
+                    story.append(Paragraph("No verified competitors identified from available research.", body_muted))
             else:
-                story.append(Paragraph("Competitor intelligence data not available.", body_muted))
+                story.append(Paragraph("No verified competitors identified from available research.", body_muted))
 
             story.append(Spacer(1, 10))
 

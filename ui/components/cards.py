@@ -50,7 +50,12 @@ def _is_safe_url(url: str) -> bool:
         return False
     try:
         parsed = urlparse(url.strip())
-        return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            return False
+        # Disallow synthetic placeholder domains
+        if parsed.netloc.lower() in {"example.com", "example.org", "www.example.com", "www.example.org"}:
+            return False
+        return True
     except Exception:
         return False
 
@@ -455,10 +460,16 @@ class CardComponents:
         next_steps_items = "".join([f"<li>{html.escape(step)}</li>" for step in next_steps]) if next_steps else "<li style='color: #94A3B8; font-style: italic;'>No recommended next steps provided.</li>"
 
         tam_val = getattr(market, "tam_billions", None) if market else None
-        tam_display = f"${tam_val:.1f}B" if tam_val is not None else "Not available"
+        tam_display = f"${tam_val:.1f}B" if tam_val is not None else "Evidence unavailable"
 
         direct_comps = getattr(comp, "direct_competitors", []) if comp else []
-        comp_count_str = str(len(direct_comps)) if direct_comps else "0 identified"
+        comp_pos = getattr(comp, "market_positioning_summary", "") if comp else ""
+        if direct_comps:
+            comp_count_str = str(len(direct_comps))
+        elif "No verified competitors" in comp_pos:
+            comp_count_str = "Evidence unavailable"
+        else:
+            comp_count_str = "0 identified"
 
         mvp_score_str = str(report.mvp_score) if getattr(report, "mvp_score", None) is not None else "Not available"
         funding_prob_str = f"{report.funding_probability}%" if getattr(report, "funding_probability", None) is not None else "Not available"
@@ -522,10 +533,10 @@ class CardComponents:
         drivers = getattr(market, "key_growth_drivers", []) or []
         personas = getattr(market, "target_personas", []) or []
 
-        tam_str = f"${tam:.1f}B" if tam is not None else "Not available"
-        sam_str = f"${sam:.1f}B" if sam is not None else "Not available"
-        som_str = f"${som:.2f}B" if som is not None else "Not available"
-        cagr_str = f"{cagr:.1f}%" if cagr is not None else "Not available"
+        tam_str = f"${tam:.1f}B" if tam is not None else "Evidence unavailable"
+        sam_str = f"${sam:.1f}B" if sam is not None else "Evidence unavailable"
+        som_str = f"${som:.2f}B" if som is not None else "Evidence unavailable"
+        cagr_str = f"{cagr:.1f}%" if cagr is not None else "Evidence unavailable"
 
         growth_html = "".join([f"<li>{html.escape(g)}</li>" for g in drivers]) if drivers else "<li style='color: #94A3B8; font-style: italic;'>No growth drivers identified.</li>"
 
@@ -543,7 +554,15 @@ class CardComponents:
         if not personas_html:
             personas_html = "<li style='color: #94A3B8; font-style: italic;'>No target personas recorded in analysis.</li>"
 
-        overview_html = f'<p class="body-text">{html.escape(overview)}</p>' if overview else ""
+        if not overview or "Market size could not be established" in overview or (tam is None and cagr is None):
+            overview_html = (
+                '<div style="text-align: center; padding: 1.25rem 1rem; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 8px; margin: 12px 0;">'
+                '<div style="font-size: 14px; font-weight: 600; color: #64748B; margin-bottom: 4px;">Market size could not be established from available research.</div>'
+                '<div style="font-size: 12px; color: #94A3B8;">Web intelligence did not identify verified market sizing figures for this concept.</div>'
+                '</div>'
+            )
+        else:
+            overview_html = f'<p class="body-text">{html.escape(overview)}</p>'
 
         html_content = (
             '<div class="saas-card">'
@@ -657,7 +676,15 @@ class CardComponents:
         for c in indirect:
             cards_html.append(_render_comp_item(c, "Indirect / Alternative"))
 
-        competitors_grid = "".join(cards_html) if cards_html else "<p class='body-text' style='color: #64748B;'>No competitor records identified in analysis.</p>"
+        if not cards_html:
+            competitors_grid = (
+                '<div style="text-align: center; padding: 2.5rem 1.5rem; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 8px; margin: 1rem 0;">'
+                '<div style="font-size: 15px; font-weight: 600; color: #64748B; margin-bottom: 4px;">No verified competitors identified from available research.</div>'
+                '<div style="font-size: 13px; color: #94A3B8;">Web intelligence did not identify verified direct or indirect competitors for this specific concept.</div>'
+                '</div>'
+            )
+        else:
+            competitors_grid = "".join(cards_html)
 
         pos_html = f'<div class="saas-card" style="margin-bottom: 0;"><div class="saas-card-label">MARKET POSITIONING</div><p class="body-text" style="margin-top: 6px;">{html.escape(pos_summary)}</p></div>' if pos_summary else ""
         moat_html = f'<div class="saas-card" style="margin-bottom: 0;"><div class="saas-card-label">DEFENSIBLE MOAT ASSESSMENT</div><p class="body-text" style="margin-top: 6px;">{html.escape(moat)}</p></div>' if moat else ""

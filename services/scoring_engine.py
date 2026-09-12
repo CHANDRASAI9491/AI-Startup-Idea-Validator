@@ -58,11 +58,11 @@ class DeterministicScoringEngine:
         cls,
         idea_text: str,
         target_industry: str,
-        tam_billions: float = 10.0,
-        sam_billions: float = 2.5,
-        som_billions: float = 0.1,
-        cagr_percentage: float = 12.5,
-        direct_competitor_count: int = 3,
+        tam_billions: Optional[float] = None,
+        sam_billions: Optional[float] = None,
+        som_billions: Optional[float] = None,
+        cagr_percentage: Optional[float] = None,
+        direct_competitor_count: Optional[int] = None,
         moat_level: str = "Medium",
         financial_risk: int = 5,
         technical_risk: int = 5,
@@ -76,22 +76,29 @@ class DeterministicScoringEngine:
 
         # 1. MARKET OPPORTUNITY (Max 20)
         mkt_score = 10
-        if tam_billions >= 50.0:
-            mkt_score += 6
-            reasoning.append(f"Massive total addressable market (${tam_billions}B TAM) provides high revenue ceiling (+6 market score).")
-        elif tam_billions >= 10.0:
-            mkt_score += 4
-            reasoning.append(f"Substantial market size (${tam_billions}B TAM) supports expansion (+4 market score).")
-        elif tam_billions >= 2.0:
-            mkt_score += 2
+        if tam_billions is None and cagr_percentage is None:
+            reasoning.append("Market size could not be verified from available research; market opportunity unweighted.")
         else:
-            reasoning.append(f"Niche addressable market (${tam_billions}B TAM) limits multi-billion growth potential.")
+            if tam_billions is not None:
+                if tam_billions >= 50.0:
+                    mkt_score += 6
+                    reasoning.append(f"Massive total addressable market (${tam_billions}B TAM) provides high revenue ceiling (+6 market score).")
+                elif tam_billions >= 10.0:
+                    mkt_score += 4
+                    reasoning.append(f"Substantial market size (${tam_billions}B TAM) supports expansion (+4 market score).")
+                elif tam_billions >= 2.0:
+                    mkt_score += 2
+                else:
+                    reasoning.append(f"Niche addressable market (${tam_billions}B TAM) limits multi-billion growth potential.")
+            else:
+                reasoning.append("TAM market size could not be verified from available research.")
 
-        if cagr_percentage >= 15.0:
-            mkt_score += 4
-            reasoning.append(f"High industry CAGR of {cagr_percentage}% indicates strong market tailwinds (+4 market score).")
-        elif cagr_percentage >= 8.0:
-            mkt_score += 2
+            if cagr_percentage is not None:
+                if cagr_percentage >= 15.0:
+                    mkt_score += 4
+                    reasoning.append(f"High industry CAGR of {cagr_percentage}% indicates strong market tailwinds (+4 market score).")
+                elif cagr_percentage >= 8.0:
+                    mkt_score += 2
 
         mkt_score = max(min(mkt_score + (seed_offset % 2), 20), 4)
 
@@ -114,14 +121,17 @@ class DeterministicScoringEngine:
 
         # 3. COMPETITION & MOAT (Max 15)
         comp_score = 10
-        if direct_competitor_count <= 2:
-            comp_score += 4
-            reasoning.append(f"Low direct competitor density ({direct_competitor_count} incumbents) offers first-mover space (+4 competition score).")
-        elif direct_competitor_count >= 6:
-            comp_score -= 4
-            reasoning.append(f"Saturated market with {direct_competitor_count}+ direct competitors (-4 competition score).")
+        if direct_competitor_count is None:
+            reasoning.append("Competitive landscape could not be verified from available research.")
+        else:
+            if direct_competitor_count <= 2:
+                comp_score += 4
+                reasoning.append(f"Low direct competitor density ({direct_competitor_count} incumbents) offers first-mover space (+4 competition score).")
+            elif direct_competitor_count >= 6:
+                comp_score -= 4
+                reasoning.append(f"Saturated market with {direct_competitor_count}+ direct competitors (-4 competition score).")
 
-        if moat_level.lower() in ["strong", "high", "defensible"]:
+        if moat_level and moat_level.lower() in ["strong", "high", "defensible"]:
             comp_score += 3
 
         comp_score = max(min(comp_score, 15), 2)
