@@ -507,3 +507,65 @@ def test_short_followup_questions_intent():
     for short_q in ["Why?", "How?", "Can I reduce it?", "How can I improve it?", "What about that?", "Explain more."]:
         intent = advisor.classify_intent(short_q, chat_history=risk_history)
         assert intent == "risk", f"Failed for '{short_q}', got '{intent}'"
+
+
+# 25. Fallback with missing market evidence must not contain $NoneB or None%
+def test_conversational_advisor_fallback_missing_market_evidence(sample_startup_state):
+    advisor = ConversationalAdvisor()
+    state_missing = StartupState(
+        idea=sample_startup_state.idea,
+        final_report=sample_startup_state.final_report,
+        market_analysis=MarketAnalysis(
+            tam_billions=None,
+            sam_billions=None,
+            som_billions=None,
+            cagr_percentage=None,
+            market_size_summary="Market size could not be established from available research."
+        )
+    )
+    fallback = advisor.generate_grounded_fallback("What is the TAM and market size?", "market", state_missing)
+    assert "$NoneB" not in fallback
+    assert "None%" not in fallback
+    assert "NoneB" not in fallback
+    assert "Market sizing could not be established from available research." in fallback
+
+
+# 26. Fallback with real market evidence must preserve exact numbers
+def test_conversational_advisor_fallback_real_market_evidence(sample_startup_state):
+    advisor = ConversationalAdvisor()
+    fallback = advisor.generate_grounded_fallback("What is the TAM and market size?", "market", sample_startup_state)
+    assert "$25.0B" in fallback
+    assert "$5.0B" in fallback
+    assert "$0.5B" in fallback
+    assert "18.5%" in fallback
+
+
+# 27. Build report context with missing market evidence must not contain $NoneB or None%
+def test_conversational_advisor_build_context_missing_market_evidence(sample_startup_state):
+    advisor = ConversationalAdvisor()
+    state_missing = StartupState(
+        idea=sample_startup_state.idea,
+        final_report=sample_startup_state.final_report,
+        market_analysis=MarketAnalysis(
+            tam_billions=None,
+            sam_billions=None,
+            som_billions=None,
+            cagr_percentage=None
+        )
+    )
+    context = advisor.build_report_context("market", state_missing)
+    assert "$NoneB" not in context
+    assert "None%" not in context
+    assert "NoneB" not in context
+    assert "Evidence unavailable" in context
+
+
+# 28. Build report context with real market evidence must contain real numbers
+def test_conversational_advisor_build_context_real_market_evidence(sample_startup_state):
+    advisor = ConversationalAdvisor()
+    context = advisor.build_report_context("market", sample_startup_state)
+    assert "$25.0B" in context
+    assert "$5.0B" in context
+    assert "$0.5B" in context
+    assert "18.5%" in context
+
