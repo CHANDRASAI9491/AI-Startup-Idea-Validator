@@ -813,6 +813,8 @@ class CardComponents:
                 title = getattr(itm, "title", "Web Intelligence Source")
                 url = getattr(itm, "url", "")
                 snippet = getattr(itm, "snippet", "")
+                query = getattr(itm, "query", "")
+                retrieved_at = getattr(itm, "retrieved_at", "")
                 domain = urlparse(url).netloc.replace("www.", "") if url else "web"
 
                 link_action = ""
@@ -825,6 +827,15 @@ class CardComponents:
                         f'</a>'
                     )
 
+                meta_parts = []
+                if query:
+                    meta_parts.append(f'<div style="font-size: 11px; color: #64748B; margin-top: 4px;"><strong>Query:</strong> {html.escape(query)}</div>')
+                if retrieved_at:
+                    clean_ts = str(retrieved_at).replace("T", " ")[:19]
+                    meta_parts.append(f'<div style="font-size: 10px; color: #94A3B8; margin-top: 2px;">Retrieved: {html.escape(clean_ts)} UTC</div>')
+
+                meta_html = f'<div style="margin-top: 6px; padding-top: 4px; border-top: 1px dashed #E2E8F0;">{"".join(meta_parts)}</div>' if meta_parts else ""
+
                 source_cards.append(
                     '<div class="tavily-source-card">'
                     '<div class="source-card-top">'
@@ -833,14 +844,16 @@ class CardComponents:
                     '</div>'
                     f'<div class="source-card-title">{html.escape(title)}</div>'
                     f'<div class="source-card-snippet">{html.escape(snippet)}</div>'
+                    f'{meta_html}'
                     f'<div class="source-card-footer">{link_action}</div>'
                     '</div>'
                 )
 
         if not source_cards:
             grid_html = (
-                '<div style="text-align: center; padding: 2rem; color: #64748B;">'
-                'No live web research records stored for this session.'
+                '<div style="text-align: center; padding: 2.5rem 1.5rem; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 8px; margin: 1rem 0;">'
+                '<div style="font-size: 15px; font-weight: 600; color: #64748B; margin-bottom: 4px;">Insufficient evidence / No live research available</div>'
+                '<div style="font-size: 13px; color: #94A3B8;">Live web research returned no external sources for this concept.</div>'
                 '</div>'
             )
         else:

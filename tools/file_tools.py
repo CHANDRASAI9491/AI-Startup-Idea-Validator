@@ -134,6 +134,38 @@ class FileTools:
                 "\n**Customer Acquisition Channels:** " + ", ".join(gtm.primary_acquisition_channels),
             ])
 
+        if state.search_results:
+            sources_lines = []
+            categories = [
+                ("Market Trends", getattr(state.search_results, "market_trends", [])),
+                ("Competitors", getattr(state.search_results, "competitors", [])),
+                ("Customer Pain Points", getattr(state.search_results, "customer_pain_points", [])),
+                ("Industry News", getattr(state.search_results, "industry_news", [])),
+                ("Funding & Deals", getattr(state.search_results, "funding", []))
+            ]
+            seen_u = set()
+            for cat_name, cat_items in categories:
+                for itm in cat_items:
+                    u = getattr(itm, "url", "").strip()
+                    if u and u not in seen_u:
+                        seen_u.add(u)
+                        q_str = f" [Query: {itm.query}]" if getattr(itm, "query", None) else ""
+                        ts_str = f" (Retrieved: {itm.retrieved_at[:19]} UTC)" if getattr(itm, "retrieved_at", None) else ""
+                        sources_lines.append(f"- **[{itm.title}]({u})** ({cat_name}){q_str}{ts_str}: {itm.snippet}")
+
+            if sources_lines:
+                lines.extend([
+                    "\n---",
+                    "## 6. Research Sources & Grounding Evidence"
+                ])
+                lines.extend(sources_lines)
+            else:
+                lines.extend([
+                    "\n---",
+                    "## 6. Research Sources & Grounding Evidence",
+                    "Insufficient evidence / No live research available."
+                ])
+
         content = "\n".join(lines)
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(content)

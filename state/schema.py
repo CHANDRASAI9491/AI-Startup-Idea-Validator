@@ -29,6 +29,9 @@ class SearchResultItem(BaseModel):
     title: str = Field(..., description="Result title")
     url: str = Field(..., description="Source URL")
     snippet: str = Field(..., description="Content snippet")
+    query: Optional[str] = Field(default="", description="Search query used to retrieve this result")
+    category: Optional[str] = Field(default="", description="Research category")
+    retrieved_at: Optional[str] = Field(default="", description="Actual ISO retrieval timestamp")
 
 
 class WebSearchResults(BaseModel):
