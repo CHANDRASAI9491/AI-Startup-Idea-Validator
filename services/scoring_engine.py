@@ -42,6 +42,7 @@ class ScoringBreakdown(BaseModel):
 
     verdict: str = Field(default="PROCEED", description="PROCEED, PIVOT, CAUTION, STOP")
     reasoning_why: List[str] = Field(default_factory=list, description="Explainable reasoning points")
+    evidence_limitations: List[str] = Field(default_factory=list, description="Explicit research evidence limitations")
 
 
 class DeterministicScoringEngine:
@@ -71,6 +72,7 @@ class DeterministicScoringEngine:
         text_lower = idea_text.lower()
         industry_lower = target_industry.lower()
         reasoning = []
+        limitations: List[str] = []
 
         seed_offset = cls._deterministic_seed_offset(idea_text)
 
@@ -78,6 +80,7 @@ class DeterministicScoringEngine:
         mkt_score = 10
         if tam_billions is None and cagr_percentage is None:
             reasoning.append("Market size could not be verified from available research; market opportunity unweighted.")
+            limitations.append("Market size could not be verified from available research.")
         else:
             if tam_billions is not None:
                 if tam_billions >= 50.0:
@@ -92,6 +95,7 @@ class DeterministicScoringEngine:
                     reasoning.append(f"Niche addressable market (${tam_billions}B TAM) limits multi-billion growth potential.")
             else:
                 reasoning.append("TAM market size could not be verified from available research.")
+                limitations.append("Market size could not be verified from available research.")
 
             if cagr_percentage is not None:
                 if cagr_percentage >= 15.0:
@@ -123,6 +127,7 @@ class DeterministicScoringEngine:
         comp_score = 10
         if direct_competitor_count is None:
             reasoning.append("Competitive landscape could not be verified from available research.")
+            limitations.append("Competitive landscape could not be verified from available research.")
         else:
             if direct_competitor_count <= 2:
                 comp_score += 4
@@ -220,5 +225,6 @@ class DeterministicScoringEngine:
             startup_health_index=startup_health,
             overall_confidence_score=confidence,
             verdict=verdict,
-            reasoning_why=reasoning
+            reasoning_why=reasoning,
+            evidence_limitations=limitations
         )

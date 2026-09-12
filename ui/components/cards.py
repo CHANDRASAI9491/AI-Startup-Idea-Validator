@@ -213,15 +213,55 @@ class CardComponents:
 
         dim_list_html = "".join(rows)
 
+        # Score drivers from reasoning_why
+        drivers_html = ""
+        if scoring and getattr(scoring, "reasoning_why", None):
+            driver_items = "".join([
+                f'<li style="margin-bottom: 6px; color: #334155; font-size: 13px; line-height: 1.5;">{html.escape(r)}</li>'
+                for r in scoring.reasoning_why
+            ])
+            drivers_html = (
+                '<div style="margin-top: 1.25rem; border-top: 1px solid #F1F5F9; padding-top: 1rem;">'
+                '<div class="saas-card-label" style="margin-bottom: 0.5rem;">SCORE DRIVERS &amp; RATIONALE</div>'
+                f'<ul style="margin: 0; padding-left: 1.25rem;">{driver_items}</ul>'
+                '</div>'
+            )
+
+        # Evidence limitations
+        limitations_html = ""
+        if scoring:
+            limitations = getattr(scoring, "evidence_limitations", []) or []
+            if limitations:
+                lim_items = "".join([
+                    f'<li style="margin-bottom: 4px; color: #92400E; font-size: 12.5px; line-height: 1.5;">{html.escape(lim)}</li>'
+                    for lim in limitations
+                ])
+                warning_icon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2.5" style="vertical-align: -2px; margin-right: 5px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>'
+                limitations_html = (
+                    '<div style="margin-top: 1rem; padding: 10px 14px; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px;">'
+                    f'<div style="font-size: 11.5px; font-weight: 700; color: #92400E; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">{warning_icon}Evidence Limitations</div>'
+                    f'<ul style="margin: 0; padding-left: 1.25rem;">{lim_items}</ul>'
+                    '</div>'
+                )
+            else:
+                check_icon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" style="vertical-align: -2px; margin-right: 6px;"><polyline points="20 6 9 17 4 12"></polyline></svg>'
+                limitations_html = (
+                    '<div style="margin-top: 1rem; padding: 8px 12px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 6px; font-size: 12px; color: #64748B;">'
+                    f'{check_icon}No major evidence limitations identified.'
+                    '</div>'
+                )
+
         html_content = (
             '<div class="saas-card dimension-bars-card">'
             '<div class="saas-card-header" style="margin-bottom: 1rem;">'
             '<div>'
-            '<div class="saas-card-label">STRATEGIC WEIGHTED METRICS</div>'
+            '<div class="saas-card-label">WHY THIS SCORE? &bull; STRATEGIC WEIGHTED METRICS</div>'
             '<div class="saas-title" style="font-size: 1.15rem;">Deterministic Score Matrix Breakdown</div>'
             '</div>'
             '</div>'
             f'<div class="dimension-bars-list">{dim_list_html}</div>'
+            f'{drivers_html}'
+            f'{limitations_html}'
             '</div>'
         )
         st.markdown(html_content, unsafe_allow_html=True)
