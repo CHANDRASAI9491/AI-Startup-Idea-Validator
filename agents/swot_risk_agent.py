@@ -34,62 +34,10 @@ class SWOTRiskAgent(BaseAgent):
                 except Exception as e:
                     logger.warning(f"SWOTAnalysis parsing error: {e}")
 
-            # Fallback heuristic calculation if LLM output unavailable or invalid
-            state.swot_analysis = SWOTAnalysis(
-                strengths=[
-                    "High-margin software revenue model",
-                    "Proprietary AI automation workflow",
-                    "Fast time-to-value for target users"
-                ],
-                weaknesses=[
-                    "Early-stage brand recognition",
-                    "Initial marketing & acquisition pipeline requirement"
-                ],
-                opportunities=[
-                    f"Rapid growth in enterprise {state.idea.target_industry} demand",
-                    "API integrations and partnership ecosystem"
-                ],
-                threats=[
-                    "Incumbents attempting feature cloning",
-                    "Evolving AI compliance & data privacy rules"
-                ],
-                financial_risk=5,
-                technical_risk=4,
-                regulatory_risk=3,
-                overall_risk_score=4,
-                risk_matrix=[
-                    RiskItem(
-                        risk_name="Initial Customer Acquisition Cost (CAC)",
-                        category="Financial",
-                        probability=3,
-                        impact=4,
-                        severity_score=12,
-                        mitigation_strategy="Deploy product-led growth (PLG) freemium funnel and targeted outbounds."
-                    ),
-                    RiskItem(
-                        risk_name="Incumbent Feature Parity Response",
-                        category="Market",
-                        probability=3,
-                        impact=3,
-                        severity_score=9,
-                        mitigation_strategy="Focus on specialized niche features and superior user experience."
-                    ),
-                    RiskItem(
-                        risk_name="Data Privacy & Security Boundaries",
-                        category="Regulatory",
-                        probability=2,
-                        impact=3,
-                        severity_score=6,
-                        mitigation_strategy="Implement SOC2 compliance framework and zero-retention API policies."
-                    )
-                ],
-                risk_mitigation_plan=[
-                    "Focus initial release strictly on high-impact core features",
-                    "Establish clear customer feedback and iteration channels",
-                    "Maintain lean operating expenditure during pre-PMF validation phase"
-                ]
-            )
+            # If LLM output is unavailable or invalid, do not fabricate SWOT/risk metrics
+            state.swot_analysis = None
         except Exception as e:
             logger.error(f"Error in SWOTRiskAgent: {e}")
             state.error = f"SWOTRiskAgent error: {str(e)}"
+            state.swot_analysis = None
         return state

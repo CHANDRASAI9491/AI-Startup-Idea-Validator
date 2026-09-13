@@ -69,9 +69,14 @@ def test_deep_agents_pipeline_execution():
     assert state.planning_output is not None
     assert state.market_analysis is not None
     assert state.competitor_analysis is not None
-    assert state.swot_analysis is not None
-    assert state.mvp_recommendation is not None
-    assert state.gtm_strategy is not None
+    if getattr(state, "deep_result", None):
+        assert state.swot_analysis is not None
+        assert state.mvp_recommendation is not None
+        assert state.gtm_strategy is not None
+    else:
+        assert state.swot_analysis is None
+        assert state.mvp_recommendation is None
+        assert state.gtm_strategy is None
     assert state.final_report is not None
     assert 0 <= state.final_report.overall_viability_score <= 100
     assert state.final_report.verdict in ["PROCEED", "PIVOT", "CAUTION", "STOP"]
@@ -190,10 +195,115 @@ def test_orchestrator_honest_fallback_no_fabricated_data():
     all_urls = [c.url for c in state.competitor_analysis.direct_competitors + state.competitor_analysis.indirect_competitors]
     assert not any("example.com" in u or "example.org" in u for u in all_urls)
 
+    # SWOT, MVP, and GTM must be None (no fabricated operational fallbacks)
+    assert state.swot_analysis is None
+    assert state.mvp_recommendation is None
+    assert state.gtm_strategy is None
+
     # Report takeaways must not claim a fabricated TAM
     assert state.final_report is not None
     assert any("could not be established" in t for t in state.final_report.key_takeaways)
     assert not any("$None" in t for t in state.final_report.key_takeaways)
+    # Limitation must be present for SWOT
+    assert any("SWOT and risk analysis could not be verified" in lim for lim in state.final_report.scoring_breakdown.evidence_limitations)
+
+
+def test_web_research_failure_not_reported_as_completed(monkeypatch):
+    """Verify that when web research fails or throws an exception, it is marked as failed,
+    NOT marked as completed, search_results is None, and an explicit limitation is added."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(idea_text="AI Failure Test", target_industry="Technology")
+
+    # Mock tavily to raise an exception simulating network/API failure
+    def mock_perform_validation_search(*args, **kwargs):
+        raise ConnectionError("Tavily API connection failed")
+
+    monkeypatch.setattr(pipeline.tavily, "perform_validation_search", mock_perform_validation_search)
+
+    steps = []
+    def progress_callback(step, status):
+        steps.append((step, status))
+
+    state = pipeline.run(idea, progress_callback=progress_callback)
+
+    # 1. Must record ("web_search", "failed"), NOT ("web_search", "completed")
+    assert ("web_search", "failed") in steps
+    assert ("web_search", "completed") not in steps
+
+    # 2. search_results must be None
+    assert state.search_results is None
+
+    # 3. Limitations must explicitly include live web research unavailable
+    assert state.final_report is not None
+    assert state.final_report.scoring_breakdown is not None
+    limitations = state.final_report.scoring_breakdown.evidence_limitations
+    assert any("Live web research was unavailable" in lim for lim in limitations)
+
+
+def test_deep_agent_result_populates_swot_mvp_gtm_when_successful():
+    """Verify that when deep_agent structured_response contains SWOT, MVP, and GTM,
+    they are successfully mapped into StartupState without using fallback."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(idea_text="Custom AI Startup", target_industry="EdTech")
+
+    fake_custom_payload = {
+        "swot_analysis": {
+            "strengths": ["Proprietary dynamic dataset"],
+            "weaknesses": ["Small team size"],
+            "opportunities": ["Untapped enterprise segment"],
+            "threats": ["Incumbent expansion"],
+            "financial_risk": 3,
+            "technical_risk": 2,
+            "regulatory_risk": 1,
+            "overall_risk_score": 2,
+            "risk_matrix": [],
+            "risk_mitigation_plan": ["Hire senior architects"]
+        },
+        "mvp_recommendation": {
+            "core_value_proposition": "Automated lesson planning in under 3 minutes",
+            "features": [
+                {
+                    "feature_name": "Lesson Generator",
+                    "description": "Generates curriculums",
+                    "priority": "Must Have",
+                    "estimated_days": 7
+                }
+            ],
+            "target_timeline_weeks": 4,
+            "tech_stack_frontend": "SvelteKit",
+            "tech_stack_backend": "FastAPI",
+            "tech_stack_database": "PostgreSQL",
+            "tech_stack_ai": "Claude 3.5 Sonnet",
+            "four_week_roadmap": {"Week 1": "Setup DB"},
+            "key_metrics_kpis": ["Weekly Active Teachers"]
+        },
+        "gtm_strategy": {
+            "positioning_statement": "The premier AI curriculum assistant for educators.",
+            "primary_acquisition_channels": ["EdTech conferences", "Teacher subreddits"],
+            "pricing_strategy": "Freemium with $12/month teacher tier",
+            "launch_tactics": ["Beta testing with 50 schools"],
+            "estimated_cac_summary": "$25 per teacher"
+        }
+    }
+
+    fake_deep_result = {
+        "structured_response": fake_custom_payload
+    }
+
+    state = StartupState(idea=idea)
+    pipeline._map_deep_result_to_state(state, fake_deep_result, lambda s, st: None)
+
+    assert state.swot_analysis is not None
+    assert state.swot_analysis.strengths == ["Proprietary dynamic dataset"]
+    assert state.swot_analysis.financial_risk == 3
+
+    assert state.mvp_recommendation is not None
+    assert state.mvp_recommendation.core_value_proposition == "Automated lesson planning in under 3 minutes"
+    assert state.mvp_recommendation.tech_stack_frontend == "SvelteKit"
+
+    assert state.gtm_strategy is not None
+    assert state.gtm_strategy.pricing_strategy == "Freemium with $12/month teacher tier"
+    assert state.gtm_strategy.estimated_cac_summary == "$25 per teacher"
 
 
 def test_report_generation_with_missing_evidence(tmp_path):

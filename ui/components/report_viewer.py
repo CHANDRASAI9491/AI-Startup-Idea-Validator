@@ -142,6 +142,8 @@ def render_report_viewer(state: StartupState, session_id: str = None) -> None:
     with tab_comp:
         if state.competitor_analysis:
             CardComponents.render_competitors_card(state.competitor_analysis)
+        else:
+            st.info("Competitor analysis data could not be verified from available research.")
 
     with tab_risk:
         if state.swot_analysis:
@@ -152,20 +154,29 @@ def render_report_viewer(state: StartupState, session_id: str = None) -> None:
                 state.swot_analysis.technical_risk,
                 state.swot_analysis.regulatory_risk
             )
-            st.plotly_chart(fig_risk, use_container_width=True)
+            if fig_risk is not None:
+                st.plotly_chart(fig_risk, use_container_width=True)
             st.markdown('</div>', unsafe_allow_html=True)
+        else:
+            st.info("Risk analysis data could not be verified from available research.")
 
     with tab_swot:
         if state.swot_analysis:
             CardComponents.render_swot_risk_card(state.swot_analysis)
+        else:
+            st.info("SWOT matrix data could not be verified from available research.")
 
     with tab_mvp:
         if state.mvp_recommendation:
             CardComponents.render_mvp_card(state.mvp_recommendation)
+        else:
+            st.info("MVP blueprint data could not be verified from available research.")
 
     with tab_gtm:
         if state.gtm_strategy:
             CardComponents.render_gtm_card(state.gtm_strategy)
+        else:
+            st.info("Go-To-Market strategy data could not be verified from available research.")
 
     with tab_sources:
         CardComponents.render_sources_card(state.search_results)

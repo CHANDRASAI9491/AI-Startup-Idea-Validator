@@ -114,7 +114,7 @@ def test_database_initialization(temp_db_path):
 
 
 # ============================================================
-# 2. CONVERSATION CREATION & RETRIEVAL TESTS
+# 2. CONVERSATION CREATION & RETRIEVAL TESTS (OWNERSHIP-ENFORCED)
 # ============================================================
 
 def test_create_and_get_conversation(temp_db_path):
@@ -123,7 +123,7 @@ def test_create_and_get_conversation(temp_db_path):
     assert isinstance(conv_id, str)
     assert len(conv_id) > 0
 
-    conv = get_conversation(conv_id, db_path=temp_db_path)
+    conv = get_conversation(conv_id, session_id="sess_123", db_path=temp_db_path)
     assert conv is not None
     assert conv["id"] == conv_id
     assert conv["title"] == "Healthcare Discussion"
@@ -131,60 +131,91 @@ def test_create_and_get_conversation(temp_db_path):
     assert "created_at" in conv
     assert "updated_at" in conv
 
+    # Accessing with incorrect session_id returns None
+    assert get_conversation(conv_id, session_id="other_sess", db_path=temp_db_path) is None
+    assert get_conversation(conv_id, session_id=None, db_path=temp_db_path) is None
+
 
 def test_default_conversation_title(temp_db_path):
     """Verify default conversation title is 'New Conversation'."""
-    conv_id = create_conversation(db_path=temp_db_path)
-    conv = get_conversation(conv_id, db_path=temp_db_path)
+    conv_id = create_conversation(session_id="sess_default", db_path=temp_db_path)
+    conv = get_conversation(conv_id, session_id="sess_default", db_path=temp_db_path)
     assert conv["title"] == "New Conversation"
 
 
+def test_create_conversation_requires_session_id(temp_db_path):
+    """Verify create_conversation raises ValueError when session_id is missing or empty."""
+    with pytest.raises(ValueError, match="session_id is required"):
+        create_conversation(title="Test", session_id=None, db_path=temp_db_path)
+
+    with pytest.raises(ValueError, match="session_id is required"):
+        create_conversation(title="Test", session_id="", db_path=temp_db_path)
+
+    with pytest.raises(ValueError, match="session_id is required"):
+        create_conversation(title="Test", session_id="   ", db_path=temp_db_path)
+
+
 def test_list_conversations_ordering_and_filtering(temp_db_path):
-    """Verify list_conversations orders by updated_at descending and supports session filtering."""
+    """Verify list_conversations orders by updated_at descending and strictly filters by session_id."""
     c1 = create_conversation(title="Chat 1", session_id="sess_A", db_path=temp_db_path)
     c2 = create_conversation(title="Chat 2", session_id="sess_B", db_path=temp_db_path)
     c3 = create_conversation(title="Chat 3", session_id="sess_A", db_path=temp_db_path)
 
-    # All conversations
-    all_convs = list_conversations(db_path=temp_db_path)
-    assert len(all_convs) == 3
-    assert [c["id"] for c in all_convs] == [c3, c2, c1]
+    # Calling list_conversations without session_id returns empty list (no global leakage)
+    assert list_conversations(db_path=temp_db_path) == []
+    assert list_conversations(session_id="", db_path=temp_db_path) == []
 
-    # Filtered by session_id
+    # Filtered strictly by session_id
     sess_a_convs = list_conversations(session_id="sess_A", db_path=temp_db_path)
     assert len(sess_a_convs) == 2
     assert [c["id"] for c in sess_a_convs] == [c3, c1]
 
+    sess_b_convs = list_conversations(session_id="sess_B", db_path=temp_db_path)
+    assert len(sess_b_convs) == 1
+    assert [c["id"] for c in sess_b_convs] == [c2]
+
 
 def test_update_conversation_title_and_timestamp(temp_db_path):
-    """Verify updating title and timestamp works properly."""
-    conv_id = create_conversation(title="Old Title", db_path=temp_db_path)
-    initial_conv = get_conversation(conv_id, db_path=temp_db_path)
+    """Verify updating title and timestamp strictly enforces session ownership."""
+    conv_id = create_conversation(title="Old Title", session_id="sess_owner", db_path=temp_db_path)
+    initial_conv = get_conversation(conv_id, session_id="sess_owner", db_path=temp_db_path)
 
-    updated = update_conversation_title(conv_id, "Updated Title", db_path=temp_db_path)
+    # Unauthorized session update fails
+    assert update_conversation_title(conv_id, "Hacked Title", session_id="sess_other", db_path=temp_db_path) is False
+    assert get_conversation(conv_id, session_id="sess_owner", db_path=temp_db_path)["title"] == "Old Title"
+
+    # Authorized update succeeds
+    updated = update_conversation_title(conv_id, "Updated Title", session_id="sess_owner", db_path=temp_db_path)
     assert updated is True
 
-    conv = get_conversation(conv_id, db_path=temp_db_path)
+    conv = get_conversation(conv_id, session_id="sess_owner", db_path=temp_db_path)
     assert conv["title"] == "Updated Title"
 
     # Timestamp update
-    ts_updated = update_conversation_timestamp(conv_id, db_path=temp_db_path)
+    assert update_conversation_timestamp(conv_id, session_id="sess_other", db_path=temp_db_path) is False
+    ts_updated = update_conversation_timestamp(conv_id, session_id="sess_owner", db_path=temp_db_path)
     assert ts_updated is True
 
 
 def test_delete_conversation_and_cascade(temp_db_path):
-    """Verify deleting a conversation cascades and deletes its messages."""
-    conv_id = create_conversation(title="To Delete", db_path=temp_db_path)
-    save_message(conv_id, "user", "Hello", db_path=temp_db_path)
-    save_message(conv_id, "assistant", "Hi there!", db_path=temp_db_path)
+    """Verify deleting a conversation cascades and deletes its messages when authorized."""
+    conv_id = create_conversation(title="To Delete", session_id="sess_owner", db_path=temp_db_path)
+    save_message(conv_id, "sess_owner", "user", "Hello", db_path=temp_db_path)
+    save_message(conv_id, "sess_owner", "assistant", "Hi there!", db_path=temp_db_path)
 
-    assert len(get_messages(conv_id, db_path=temp_db_path)) == 2
+    assert len(get_messages(conv_id, session_id="sess_owner", db_path=temp_db_path)) == 2
 
-    deleted = delete_conversation(conv_id, db_path=temp_db_path)
+    # Attempt deletion by another session fails
+    assert delete_conversation(conv_id, session_id="sess_other", db_path=temp_db_path) is False
+    assert get_conversation(conv_id, session_id="sess_owner", db_path=temp_db_path) is not None
+    assert len(get_messages(conv_id, session_id="sess_owner", db_path=temp_db_path)) == 2
+
+    # Owner deletes
+    deleted = delete_conversation(conv_id, session_id="sess_owner", db_path=temp_db_path)
     assert deleted is True
 
-    assert get_conversation(conv_id, db_path=temp_db_path) is None
-    assert len(get_messages(conv_id, db_path=temp_db_path)) == 0
+    assert get_conversation(conv_id, session_id="sess_owner", db_path=temp_db_path) is None
+    assert len(get_messages(conv_id, session_id="sess_owner", db_path=temp_db_path)) == 0
 
 
 # ============================================================
@@ -193,14 +224,14 @@ def test_delete_conversation_and_cascade(temp_db_path):
 
 def test_save_and_retrieve_messages(temp_db_path):
     """Verify saving user and assistant messages and retrieving them in chronological order."""
-    conv_id = create_conversation(title="Q&A", db_path=temp_db_path)
+    conv_id = create_conversation(title="Q&A", session_id="sess_owner", db_path=temp_db_path)
 
-    m1_id = save_message(conv_id, "user", "What is the market size?", db_path=temp_db_path)
-    m2_id = save_message(conv_id, "assistant", "TAM is $25B.", db_path=temp_db_path)
-    m3_id = save_message(conv_id, "user", "Who are the competitors?", db_path=temp_db_path)
-    m4_id = save_message(conv_id, "assistant", "Key competitors are LegalFly and Ironclad.", db_path=temp_db_path)
+    m1_id = save_message(conv_id, "sess_owner", "user", "What is the market size?", db_path=temp_db_path)
+    m2_id = save_message(conv_id, "sess_owner", "assistant", "TAM is $25B.", db_path=temp_db_path)
+    m3_id = save_message(conv_id, "sess_owner", "user", "Who are the competitors?", db_path=temp_db_path)
+    m4_id = save_message(conv_id, "sess_owner", "assistant", "Key competitors are LegalFly and Ironclad.", db_path=temp_db_path)
 
-    msgs = get_messages(conv_id, db_path=temp_db_path)
+    msgs = get_messages(conv_id, session_id="sess_owner", db_path=temp_db_path)
     assert len(msgs) == 4
     assert msgs[0]["role"] == "user"
     assert msgs[0]["content"] == "What is the market size?"
@@ -213,42 +244,42 @@ def test_save_and_retrieve_messages(temp_db_path):
 
 def test_save_message_invalid_role(temp_db_path):
     """Verify save_message rejects invalid roles."""
-    conv_id = create_conversation(db_path=temp_db_path)
+    conv_id = create_conversation(session_id="sess_owner", db_path=temp_db_path)
 
     with pytest.raises(ValueError, match="Invalid message role"):
-        save_message(conv_id, "system", "System prompt", db_path=temp_db_path)
+        save_message(conv_id, "sess_owner", "system", "System prompt", db_path=temp_db_path)
 
     with pytest.raises(ValueError, match="Invalid message role"):
-        save_message(conv_id, "admin", "Admin message", db_path=temp_db_path)
+        save_message(conv_id, "sess_owner", "admin", "Admin message", db_path=temp_db_path)
 
 
 def test_save_message_empty_content(temp_db_path):
     """Verify save_message rejects empty or whitespace-only content."""
-    conv_id = create_conversation(db_path=temp_db_path)
+    conv_id = create_conversation(session_id="sess_owner", db_path=temp_db_path)
 
     with pytest.raises(ValueError, match="Message content cannot be empty"):
-        save_message(conv_id, "user", "", db_path=temp_db_path)
+        save_message(conv_id, "sess_owner", "user", "", db_path=temp_db_path)
 
     with pytest.raises(ValueError, match="Message content cannot be empty"):
-        save_message(conv_id, "assistant", "   ", db_path=temp_db_path)
+        save_message(conv_id, "sess_owner", "assistant", "   ", db_path=temp_db_path)
 
 
 def test_save_message_nonexistent_conversation(temp_db_path):
-    """Verify save_message raises ValueError when conversation does not exist."""
+    """Verify save_message raises ValueError when conversation does not exist or does not belong to session."""
     with pytest.raises(ValueError, match="does not exist"):
-        save_message("nonexistent-conv-id", "user", "Hello", db_path=temp_db_path)
+        save_message("nonexistent-conv-id", "sess_owner", "user", "Hello", db_path=temp_db_path)
 
 
 def test_messages_chronological_order_with_limit(temp_db_path):
     """Verify get_messages with limit returns the most recent N messages in chronological order."""
-    conv_id = create_conversation(db_path=temp_db_path)
+    conv_id = create_conversation(session_id="sess_owner", db_path=temp_db_path)
 
     for i in range(1, 11):
         role = "user" if i % 2 == 1 else "assistant"
-        save_message(conv_id, role, f"Message {i}", db_path=temp_db_path)
+        save_message(conv_id, "sess_owner", role, f"Message {i}", db_path=temp_db_path)
 
     # Total 10 messages, request limit 4
-    limited_msgs = get_messages(conv_id, limit=4, db_path=temp_db_path)
+    limited_msgs = get_messages(conv_id, session_id="sess_owner", limit=4, db_path=temp_db_path)
     assert len(limited_msgs) == 4
     # Must be messages 7, 8, 9, 10 in chronological order
     assert [m["content"] for m in limited_msgs] == [
@@ -260,17 +291,17 @@ def test_messages_chronological_order_with_limit(temp_db_path):
 
 
 def test_multiple_conversations_isolation(temp_db_path):
-    """Verify messages from Conversation A never leak into Conversation B."""
-    conv_a = create_conversation(title="Chat A", db_path=temp_db_path)
-    conv_b = create_conversation(title="Chat B", db_path=temp_db_path)
+    """Verify messages from Conversation A never leak into Conversation B within the same session."""
+    conv_a = create_conversation(title="Chat A", session_id="sess_owner", db_path=temp_db_path)
+    conv_b = create_conversation(title="Chat B", session_id="sess_owner", db_path=temp_db_path)
 
-    save_message(conv_a, "user", "Question for A", db_path=temp_db_path)
-    save_message(conv_a, "assistant", "Answer for A", db_path=temp_db_path)
+    save_message(conv_a, "sess_owner", "user", "Question for A", db_path=temp_db_path)
+    save_message(conv_a, "sess_owner", "assistant", "Answer for A", db_path=temp_db_path)
 
-    save_message(conv_b, "user", "Question for B", db_path=temp_db_path)
+    save_message(conv_b, "sess_owner", "user", "Question for B", db_path=temp_db_path)
 
-    msgs_a = get_messages(conv_a, db_path=temp_db_path)
-    msgs_b = get_messages(conv_b, db_path=temp_db_path)
+    msgs_a = get_messages(conv_a, session_id="sess_owner", db_path=temp_db_path)
+    msgs_b = get_messages(conv_b, session_id="sess_owner", db_path=temp_db_path)
 
     assert len(msgs_a) == 2
     assert len(msgs_b) == 1
@@ -284,18 +315,23 @@ def test_multiple_conversations_isolation(temp_db_path):
 
 def test_empty_conversation_safe(temp_db_path):
     """Verify querying an empty conversation returns empty list without error."""
-    conv_id = create_conversation(db_path=temp_db_path)
-    msgs = get_messages(conv_id, db_path=temp_db_path)
+    conv_id = create_conversation(session_id="sess_owner", db_path=temp_db_path)
+    msgs = get_messages(conv_id, session_id="sess_owner", db_path=temp_db_path)
     assert msgs == []
 
 
 def test_invalid_conversation_id_safe(temp_db_path):
     """Verify querying an invalid conversation ID behaves safely."""
-    assert get_conversation("invalid-id", db_path=temp_db_path) is None
-    assert get_conversation("", db_path=temp_db_path) is None
-    assert get_messages("invalid-id", db_path=temp_db_path) == []
-    assert get_messages("", db_path=temp_db_path) == []
-    assert delete_conversation("invalid-id", db_path=temp_db_path) is False
+    assert get_conversation("invalid-id", session_id="sess_1", db_path=temp_db_path) is None
+    assert get_conversation("", session_id="sess_1", db_path=temp_db_path) is None
+    assert get_conversation("invalid-id", session_id="", db_path=temp_db_path) is None
+    assert get_conversation("invalid-id", session_id=None, db_path=temp_db_path) is None
+    assert get_messages("invalid-id", session_id="sess_1", db_path=temp_db_path) == []
+    assert get_messages("", session_id="sess_1", db_path=temp_db_path) == []
+    assert get_messages("invalid-id", session_id="", db_path=temp_db_path) == []
+    assert get_messages("invalid-id", session_id=None, db_path=temp_db_path) == []
+    assert delete_conversation("invalid-id", session_id="sess_1", db_path=temp_db_path) is False
+    assert delete_conversation("invalid-id", session_id="", db_path=temp_db_path) is False
 
 
 def test_generate_title_from_message():
@@ -303,7 +339,7 @@ def test_generate_title_from_message():
     assert generate_title_from_message("") == "New Conversation"
     assert generate_title_from_message("   ") == "New Conversation"
 
-    # Requirement 1 exact examples
+    # Requirement exact examples
     assert generate_title_from_message("What is my viability score?") == "My Viability Score"
     assert generate_title_from_message("Who are my main competitors?") == "Who Are My Main Competitors"
     assert generate_title_from_message("What is the biggest risk?") == "Biggest Risk"
@@ -325,9 +361,9 @@ def test_generate_title_from_message():
 
 
 def test_chat_history_db_class_wrapper(temp_db_path):
-    """Verify ChatHistoryDB object-oriented wrapper class works identically."""
-    db = ChatHistoryDB(db_path=temp_db_path)
-    conv_id = db.create_conversation(title="OOP Chat", session_id="s1")
+    """Verify ChatHistoryDB object-oriented wrapper class works with session ownership."""
+    db = ChatHistoryDB(session_id="s1", db_path=temp_db_path)
+    conv_id = db.create_conversation(title="OOP Chat")
 
     db.save_message(conv_id, "user", "Hello OOP")
     db.save_message(conv_id, "assistant", "Hi OOP")
@@ -338,6 +374,7 @@ def test_chat_history_db_class_wrapper(temp_db_path):
 
     conv = db.get_conversation(conv_id)
     assert conv["title"] == "OOP Chat"
+    assert conv["session_id"] == "s1"
 
     convs = db.list_conversations()
     assert len(convs) == 1
@@ -354,13 +391,13 @@ def test_database_persistence_across_reconnections(tmp_path):
     db_file = str(tmp_path / "persistent_chat.db")
 
     # Session 1: Create conversation and messages
-    db1 = ChatHistoryDB(db_path=db_file)
+    db1 = ChatHistoryDB(session_id="sess_p", db_path=db_file)
     c_id = db1.create_conversation(title="Persistent Chat")
     db1.save_message(c_id, "user", "Message before restart")
     db1.save_message(c_id, "assistant", "Answer before restart")
 
-    # Session 2: Fresh instance pointing to same file
-    db2 = ChatHistoryDB(db_path=db_file)
+    # Session 2: Fresh instance pointing to same file with same session_id
+    db2 = ChatHistoryDB(session_id="sess_p", db_path=db_file)
     convs = db2.list_conversations()
     assert len(convs) == 1
     assert convs[0]["id"] == c_id
@@ -379,7 +416,7 @@ def test_database_persistence_across_reconnections(tmp_path):
 def test_persistent_history_passed_to_advisor_context(temp_db_path, sample_advisor_state):
     """Verify SQLite persistent history enables multi-turn follow-up intent inheritance in Advisor."""
     advisor = ConversationalAdvisor()
-    db = ChatHistoryDB(db_path=temp_db_path)
+    db = ChatHistoryDB(session_id="sess_adv", db_path=temp_db_path)
 
     # 1. Turn 1: User asks about biggest risk
     conv_id = db.create_conversation(title="New Conversation")
@@ -427,7 +464,7 @@ def test_persistent_history_passed_to_advisor_context(temp_db_path, sample_advis
 
 def test_new_chat_and_switching_lifecycle(temp_db_path):
     """Verify creating a new chat, switching conversations, and ensuring no message leakage."""
-    db = ChatHistoryDB(db_path=temp_db_path)
+    db = ChatHistoryDB(session_id="sess_life", db_path=temp_db_path)
 
     # 1. Create first conversation and send messages
     conv1 = db.create_conversation(title="New Conversation")
@@ -469,7 +506,7 @@ def test_new_chat_and_switching_lifecycle(temp_db_path):
 
 def test_delete_selected_conversation_flow(temp_db_path):
     """Verify deleting the currently selected conversation cleans it up and leaves other conversations intact."""
-    db = ChatHistoryDB(db_path=temp_db_path)
+    db = ChatHistoryDB(session_id="sess_del", db_path=temp_db_path)
 
     c1 = db.create_conversation(title="Chat 1")
     db.save_message(c1, "user", "Hello 1")
@@ -488,3 +525,129 @@ def test_delete_selected_conversation_flow(temp_db_path):
     assert len(remaining) == 1
     assert remaining[0]["id"] == c1
     assert len(db.get_messages(c1)) == 1
+
+
+# ============================================================
+# 6. MANDATORY MULTI-USER ISOLATION TEST CASES (CASES A - J)
+# ============================================================
+
+def test_mandatory_isolation_cases_a_through_j(temp_db_path):
+    """
+    Directly validates Mandatory Isolation Test Cases A through J:
+      A. Session A creates conversation A.
+      B. Session B creates conversation B.
+      C. list_conversations(session_A) returns only conversation A.
+      D. list_conversations(session_B) returns only conversation B.
+      E. Session B cannot get conversation A.
+      F. Session B cannot get messages from conversation A.
+      G. Session B cannot append a message to conversation A.
+      H. Session B cannot delete conversation A.
+      I. Session A can still read, append to, and delete its own conversation.
+      J. Existing single-session conversation/history behavior continues working.
+    """
+    session_a = "session_alice_123"
+    session_b = "session_bob_456"
+
+    # --- Case A: Session A creates conversation A ---
+    conv_a = create_conversation(
+        title="Alice Startup Discussion",
+        session_id=session_a,
+        db_path=temp_db_path,
+    )
+    assert conv_a is not None and len(conv_a) > 0
+    save_message(conv_a, session_a, "user", "Alice's proprietary idea", db_path=temp_db_path)
+    save_message(conv_a, session_a, "assistant", "Alice analysis results", db_path=temp_db_path)
+
+    # --- Case B: Session B creates conversation B ---
+    conv_b = create_conversation(
+        title="Bob FinTech Discussion",
+        session_id=session_b,
+        db_path=temp_db_path,
+    )
+    assert conv_b is not None and len(conv_b) > 0
+    save_message(conv_b, session_b, "user", "Bob's private fintech pitch", db_path=temp_db_path)
+    save_message(conv_b, session_b, "assistant", "Bob market valuation", db_path=temp_db_path)
+
+    # --- Case C: list_conversations(session_A) returns only conversation A ---
+    list_a = list_conversations(session_id=session_a, db_path=temp_db_path)
+    assert len(list_a) == 1
+    assert list_a[0]["id"] == conv_a
+    assert list_a[0]["title"] == "Alice Startup Discussion"
+    assert list_a[0]["session_id"] == session_a
+
+    # --- Case D: list_conversations(session_B) returns only conversation B ---
+    list_b = list_conversations(session_id=session_b, db_path=temp_db_path)
+    assert len(list_b) == 1
+    assert list_b[0]["id"] == conv_b
+    assert list_b[0]["title"] == "Bob FinTech Discussion"
+    assert list_b[0]["session_id"] == session_b
+
+    # --- Case E: Session B cannot get conversation A ---
+    assert get_conversation(conv_a, session_id=session_b, db_path=temp_db_path) is None
+
+    # --- Case F: Session B cannot get messages from conversation A ---
+    msgs_a_from_b = get_messages(conv_a, session_id=session_b, db_path=temp_db_path)
+    assert msgs_a_from_b == []
+
+    # --- Case G: Session B cannot append a message to conversation A ---
+    with pytest.raises(ValueError, match="does not exist"):
+        save_message(
+            conv_a,
+            session_b,
+            "user",
+            "Malicious message injected by Bob",
+            db_path=temp_db_path,
+        )
+
+    # Verify messages in conversation A remain untouched (still 2)
+    msgs_a_owner = get_messages(conv_a, session_id=session_a, db_path=temp_db_path)
+    assert len(msgs_a_owner) == 2
+    assert [m["content"] for m in msgs_a_owner] == ["Alice's proprietary idea", "Alice analysis results"]
+
+    # --- Case H: Session B cannot delete conversation A ---
+    delete_attempt = delete_conversation(conv_a, session_id=session_b, db_path=temp_db_path)
+    assert delete_attempt is False
+    # Conversation A still exists and is accessible by session A
+    assert get_conversation(conv_a, session_id=session_a, db_path=temp_db_path) is not None
+
+    # --- Case I: Session A can still read, append to, and delete its own conversation ---
+    # 1. Session A reads conversation A
+    conv_a_read = get_conversation(conv_a, session_id=session_a, db_path=temp_db_path)
+    assert conv_a_read is not None
+    assert conv_a_read["id"] == conv_a
+
+    # 2. Session A appends to conversation A
+    new_msg_id = save_message(conv_a, session_a, "user", "Alice follow-up question", db_path=temp_db_path)
+    assert new_msg_id > 0
+    msgs_a_after_append = get_messages(conv_a, session_id=session_a, db_path=temp_db_path)
+    assert len(msgs_a_after_append) == 3
+    assert msgs_a_after_append[-1]["content"] == "Alice follow-up question"
+
+    # 3. Session A deletes its own conversation A
+    delete_success = delete_conversation(conv_a, session_id=session_a, db_path=temp_db_path)
+    assert delete_success is True
+    assert get_conversation(conv_a, session_id=session_a, db_path=temp_db_path) is None
+    assert get_messages(conv_a, session_id=session_a, db_path=temp_db_path) == []
+    assert len(list_conversations(session_id=session_a, db_path=temp_db_path)) == 0
+
+    # Conversation B was unaffected by Alice deleting conversation A
+    assert get_conversation(conv_b, session_id=session_b, db_path=temp_db_path) is not None
+    assert len(get_messages(conv_b, session_id=session_b, db_path=temp_db_path)) == 2
+
+    # --- Case J: Existing single-session conversation/history behavior continues working ---
+    db_single = ChatHistoryDB(session_id="session_single", db_path=temp_db_path)
+    c_single = db_single.create_conversation(title="Single Session Workflow")
+    db_single.save_message(c_single, "user", "Single session prompt")
+    db_single.save_message(c_single, "assistant", "Single session answer")
+
+    single_convs = db_single.list_conversations()
+    assert len(single_convs) == 1
+    assert single_convs[0]["id"] == c_single
+
+    single_msgs = db_single.get_messages(c_single)
+    assert len(single_msgs) == 2
+    assert single_msgs[0]["content"] == "Single session prompt"
+    assert single_msgs[1]["content"] == "Single session answer"
+
+    assert db_single.delete_conversation(c_single) is True
+    assert db_single.list_conversations() == []

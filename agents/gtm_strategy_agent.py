@@ -31,23 +31,10 @@ class GTMStrategyAgent(BaseAgent):
                 except Exception as e:
                     logger.warning(f"GTMStrategy parsing error: {e}")
 
-            # Fallback heuristic calculation if LLM output unavailable or invalid
-            state.gtm_strategy = GTMStrategy(
-                primary_acquisition_channels=[
-                    "Product-Led Growth (PLG) freemium self-serve funnel",
-                    "Targeted LinkedIn B2B outbound campaign",
-                    "SEO & thought-leadership content marketing"
-                ],
-                pricing_strategy="Freemium entry tier with $49/mo Pro and $199/mo Enterprise team plans.",
-                positioning_statement=f"The fastest AI-driven strategic validation platform for {state.idea.target_audience or 'modern founders'}.",
-                launch_tactics=[
-                    "Product Hunt launchpad campaign",
-                    "Venture capital incubator & accelerator partnerships",
-                    "Targeted founder community focus groups"
-                ],
-                estimated_cac_summary="Estimated initial CAC of $35 - $65 per paid subscriber with a 4-month payback period."
-            )
+            # If LLM output is unavailable or invalid, do not fabricate GTM assumptions
+            state.gtm_strategy = None
         except Exception as e:
             logger.error(f"Error in GTMStrategyAgent: {e}")
             state.error = f"GTMStrategyAgent error: {str(e)}"
+            state.gtm_strategy = None
         return state

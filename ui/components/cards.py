@@ -955,10 +955,10 @@ class CardComponents:
         if not features_html:
             features_html = "<li style='color: #94A3B8; font-style: italic;'>No prioritized MVP features identified.</li>"
 
-        fe = html.escape(str(getattr(mvp, "tech_stack_frontend", "Streamlit / Modern CSS")))
-        be = html.escape(str(getattr(mvp, "tech_stack_backend", "Python / LangGraph")))
-        db = html.escape(str(getattr(mvp, "tech_stack_database", "PostgreSQL / SQLite")))
-        ai = html.escape(str(getattr(mvp, "tech_stack_ai", "Google Gemini & Tavily")))
+        fe = html.escape(str(getattr(mvp, "tech_stack_frontend", "") or "Not specified"))
+        be = html.escape(str(getattr(mvp, "tech_stack_backend", "") or "Not specified"))
+        db = html.escape(str(getattr(mvp, "tech_stack_database", "") or "Not specified"))
+        ai = html.escape(str(getattr(mvp, "tech_stack_ai", "") or "Not specified"))
 
         # 4-Week Roadmap: only render if actual roadmap exists in the data
         roadmap = getattr(mvp, "four_week_roadmap", {}) or {}
