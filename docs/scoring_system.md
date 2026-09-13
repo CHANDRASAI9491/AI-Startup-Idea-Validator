@@ -43,4 +43,4 @@ In addition to the 8 core dimensions, the scoring engine calculates secondary in
 - **Funding Probability** (0–100%): Projected likelihood of attracting early-stage venture backing based on market size and team roadmap.
 - **Product-Market Fit (PMF) Index** (0–100): Gauges urgency of customer pain points relative to solution value proposition.
 - **Startup Health Index** (0–100): Composite index balancing market readiness, risk severity, and timeline feasibility.
-- **Overall Confidence Score** (0–100%): Reflects data density, source verification count, and cross-metric alignment.
+- **Overall Confidence Score** (0–100%): Evidence-based metric strictly derived from validation completeness across live web research (25 pts), market sizing evidence (20 pts), competitive landscape verification (20 pts), SWOT/risk analysis (15 pts), MVP technical scope (10 pts), and GTM strategy (10 pts), bounded between 20% and 95% (capped at 65% when live web research is unavailable).

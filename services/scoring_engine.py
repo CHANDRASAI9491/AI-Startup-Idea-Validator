@@ -60,12 +60,30 @@ class DeterministicScoringEngine:
         moat_level: str = "Medium",
         financial_risk: int = 5,
         technical_risk: int = 5,
-        regulatory_risk: int = 4
+        regulatory_risk: int = 4,
+        has_web_research: Optional[bool] = None,
+        has_swot: Optional[bool] = None,
+        has_mvp: Optional[bool] = None,
+        has_gtm: Optional[bool] = None
     ) -> ScoringBreakdown:
         text_lower = idea_text.lower()
         industry_lower = target_industry.lower()
         reasoning = []
         limitations: List[str] = []
+
+        # Resolve evidence availability flags
+        if has_web_research is None:
+            # If market and competitor evidence are both completely missing, live web research was unavailable
+            has_web_research = not (tam_billions is None and cagr_percentage is None and direct_competitor_count is None)
+
+        if has_swot is None:
+            has_swot = True
+
+        if has_mvp is None:
+            has_mvp = True
+
+        if has_gtm is None:
+            has_gtm = True
 
         # 1. MARKET OPPORTUNITY (Max 20)
         mkt_score = 10
@@ -193,7 +211,52 @@ class DeterministicScoringEngine:
         tech_complexity = max(min(technical_risk, 10), 1)
         growth_potential = int((mkt_score + scale_score) / 35.0 * 100)
         startup_health = int((total_viability + investor_readiness) / 2.0)
-        confidence = 90 if len(idea_text) > 100 else 75
+        # EVIDENCE-BASED CONFIDENCE CALCULATION (0-100%)
+        # Strictly derived from the completeness and verification of empirical validation evidence
+        # rather than the character length of the startup idea description.
+        confidence_points = 0
+
+        # 1. Live Web Research Grounding (25 pts max)
+        # Verifies that live external data was retrieved to ground market and competitor intelligence
+        if has_web_research:
+            confidence_points += 25
+
+        # 2. Market Sizing Evidence (20 pts max)
+        # TAM establishes total ceiling (12 pts), SAM/SOM establishes segment (3 pts), CAGR establishes growth rate (5 pts)
+        if tam_billions is not None:
+            confidence_points += 12
+        if sam_billions is not None or som_billions is not None:
+            confidence_points += 3
+        if cagr_percentage is not None:
+            confidence_points += 5
+
+        # 3. Competitive Landscape Evidence (20 pts max)
+        # Verified competitor count (15 pts) - NOTE: direct_competitor_count == 0 is valid evidence (first mover)
+        # Evaluated defensible moat level (5 pts)
+        if direct_competitor_count is not None:
+            confidence_points += 15
+        if moat_level and moat_level.lower() in ["strong", "high", "defensible", "medium", "low"]:
+            confidence_points += 5
+
+        # 4. SWOT & Enterprise Risk Evidence (15 pts max)
+        if has_swot:
+            confidence_points += 15
+
+        # 5. MVP Technical Scope Evidence (10 pts max)
+        if has_mvp:
+            confidence_points += 10
+
+        # 6. Go-To-Market Strategy Evidence (10 pts max)
+        if has_gtm:
+            confidence_points += 10
+
+        # Caps and constraints:
+        # If live web research is missing or failed, cap confidence at 65% (unverified in real time)
+        if not has_web_research:
+            confidence_points = min(confidence_points, 65)
+
+        # Enforce sensible realistic bounds (20% to 95%)
+        confidence = max(min(int(confidence_points), 95), 20)
 
         return ScoringBreakdown(
             market_opportunity_score=mkt_score,

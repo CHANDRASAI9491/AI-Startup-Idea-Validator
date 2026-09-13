@@ -47,7 +47,11 @@ class ReportAgent(BaseAgent):
                 moat_level=moat,
                 financial_risk=fin_risk,
                 technical_risk=tech_risk,
-                regulatory_risk=reg_risk
+                regulatory_risk=reg_risk,
+                has_web_research=bool(state.search_results),
+                has_swot=state.swot_analysis is not None,
+                has_mvp=state.mvp_recommendation is not None,
+                has_gtm=state.gtm_strategy is not None
             )
 
             context_summary = ContextPasser.extract_summary(state)
