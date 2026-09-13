@@ -24,6 +24,7 @@ class ValidationProgressMonitor:
 
     def __init__(self):
         self._completed_steps: Set[str] = set()
+        self._failed_steps: Set[str] = set()
         self._current_step: Optional[str] = None
         self.status_box = None
         self.pipeline_placeholder = None
@@ -58,6 +59,15 @@ class ValidationProgressMonitor:
                 bg_color = "#F0FDF4"
                 text_color = "#0F172A"
                 icon_bg = "#10B981"
+                icon_color = "#FFFFFF"
+            elif s_id in self._failed_steps:
+                icon = "&#10007;"
+                status_class = "stage-failed"
+                badge = '<span style="color: #DC2626; background: #FEF2F2; border: 1px solid #FECACA; font-weight: 700; font-size: 11px; padding: 2px 8px; border-radius: 12px;">Unavailable</span>'
+                border_color = "#F87171"
+                bg_color = "#FEF2F2"
+                text_color = "#991B1B"
+                icon_bg = "#EF4444"
                 icon_color = "#FFFFFF"
             elif s_id == self._current_step:
                 icon = "&#9679;"
@@ -95,9 +105,10 @@ class ValidationProgressMonitor:
 
         total = len(self.STAGES)
         done = len(self._completed_steps)
+        failed = len(self._failed_steps)
         summary_bar = (
             f'<div style="margin-bottom: 12px; font-size: 12px; color: #475569; font-weight: 600;">'
-            f'Pipeline Progress: {done} / {total} stages complete'
+            f'Pipeline Progress: {done} completed, {failed} unavailable / {total} total stages'
             f'</div>'
         )
 
@@ -135,9 +146,21 @@ class ValidationProgressMonitor:
                 if self._current_step == step_id:
                     self._current_step = None
 
-                if len(self._completed_steps) >= len(self.STAGES):
+                if len(self._completed_steps) + len(self._failed_steps) >= len(self.STAGES):
                     self.status_box.update(
                         label="Validation complete — Strategic due diligence report generated.",
+                        state="complete",
+                        expanded=False,
+                    )
+                self._render_stepper()
+            elif status in ("failed", "unavailable", "error"):
+                self._failed_steps.add(step_id)
+                if self._current_step == step_id:
+                    self._current_step = None
+
+                if len(self._completed_steps) + len(self._failed_steps) >= len(self.STAGES):
+                    self.status_box.update(
+                        label="Validation complete (with research limitations) — Strategic due diligence report generated.",
                         state="complete",
                         expanded=False,
                     )

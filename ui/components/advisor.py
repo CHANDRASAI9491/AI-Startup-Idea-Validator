@@ -97,6 +97,11 @@ def render_advisor_chat(
     current_state: Optional[StartupState] = state or st.session_state.get("current_state")
     current_session_id: Optional[str] = st.session_state.get("session_id")
 
+    if not current_session_id:
+        import uuid
+        current_session_id = f"session_{str(uuid.uuid4())[:8]}"
+        st.session_state.session_id = current_session_id
+
     if not current_state and current_session_id:
         current_state = orchestrator.get_session_history(current_session_id)
         if current_state:
@@ -104,18 +109,14 @@ def render_advisor_chat(
 
     # Ensure current state is synced to orchestrator memory under session_id
     if current_state and current_state.final_report:
-        if not current_session_id:
-            import uuid
-            current_session_id = f"session_{str(uuid.uuid4())[:8]}"
-            st.session_state.session_id = current_session_id
         orchestrator.memory.save_state(current_session_id, current_state)
 
-    # Validate or initialize active_conversation_id
-    conv_list = list_conversations()
+    # Validate or initialize active_conversation_id scoped strictly to current_session_id
+    conv_list = list_conversations(session_id=current_session_id)
     active_conv_id = st.session_state.get("active_conversation_id")
 
     if active_conv_id:
-        existing_conv = get_conversation(active_conv_id)
+        existing_conv = get_conversation(active_conv_id, session_id=current_session_id)
         if not existing_conv:
             active_conv_id = None
 
@@ -127,12 +128,12 @@ def render_advisor_chat(
                 title="New Conversation",
                 session_id=current_session_id
             )
-            conv_list = list_conversations()
+            conv_list = list_conversations(session_id=current_session_id)
         st.session_state.active_conversation_id = active_conv_id
 
-    # Load messages from SQLite for the active conversation
+    # Load messages from SQLite strictly for the current session's active conversation
     if active_conv_id:
-        persisted_msgs = get_messages(active_conv_id)
+        persisted_msgs = get_messages(active_conv_id, session_id=current_session_id)
         st.session_state.chat_history = [
             {"role": m["role"], "content": m["content"]} for m in persisted_msgs
         ]
@@ -168,34 +169,33 @@ def render_advisor_chat(
             return
 
         curr_conv_id = st.session_state.get("active_conversation_id")
+        conv_meta = None
+        if curr_conv_id:
+            conv_meta = get_conversation(curr_conv_id, session_id=current_session_id)
+            if not conv_meta:
+                curr_conv_id = None
+
         if not curr_conv_id:
             curr_conv_id = create_conversation(
                 title="New Conversation",
-                session_id=st.session_state.get("session_id")
+                session_id=current_session_id
             )
             st.session_state.active_conversation_id = curr_conv_id
+            conv_meta = get_conversation(curr_conv_id, session_id=current_session_id)
 
-        # Re-resolve active state
+        # Re-resolve active state for current session
         rep_state = state or st.session_state.get("current_state")
-        rep_sess_id = st.session_state.get("session_id")
+        rep_sess_id = current_session_id
 
         if not rep_state and rep_sess_id:
             rep_state = orchestrator.get_session_history(rep_sess_id)
 
-        # Check if conversation is associated with a specific session_id in SQLite
-        conv_meta = get_conversation(curr_conv_id)
-        if conv_meta and conv_meta.get("session_id"):
-            conv_sess_id = conv_meta.get("session_id")
-            saved_state = orchestrator.get_session_history(conv_sess_id)
-            if saved_state and saved_state.final_report:
-                rep_state = saved_state
-                rep_sess_id = conv_sess_id
-
         if not rep_state or not rep_state.final_report:
             try:
-                save_message(curr_conv_id, "user", q_clean)
+                save_message(curr_conv_id, current_session_id, "user", q_clean)
                 save_message(
                     curr_conv_id,
+                    current_session_id,
                     "assistant",
                     "No active validation report is available. Please validate a startup idea first."
                 )
@@ -205,25 +205,21 @@ def render_advisor_chat(
             return
 
         # Ensure session is registered in memory
-        if not rep_sess_id:
-            import uuid
-            rep_sess_id = f"session_{str(uuid.uuid4())[:8]}"
-            st.session_state.session_id = rep_sess_id
         orchestrator.memory.save_state(rep_sess_id, rep_state)
 
-        # 1. Save user message to SQLite
+        # 1. Save user message to SQLite with session ownership verification
         try:
-            save_message(curr_conv_id, "user", q_clean)
+            save_message(curr_conv_id, current_session_id, "user", q_clean)
         except Exception:
             pass
 
         # 2. Update conversation title if default
         if conv_meta and (conv_meta.get("title") in ["New Conversation", "Untitled Chat", ""] or not conv_meta.get("title")):
             new_title = generate_title_from_message(q_clean)
-            update_conversation_title(curr_conv_id, new_title)
+            update_conversation_title(curr_conv_id, new_title, session_id=current_session_id)
 
-        # 3. Retrieve bounded history (up to 20 messages in chronological order)
-        history_msgs = get_messages(curr_conv_id, limit=20)
+        # 3. Retrieve bounded history (up to 20 messages in chronological order) scoped to session
+        history_msgs = get_messages(curr_conv_id, session_id=current_session_id, limit=20)
         history_snapshot = [{"role": m["role"], "content": m["content"]} for m in history_msgs]
 
         # 4. Check if query triggers web search
@@ -246,9 +242,9 @@ def render_advisor_chat(
         if not answer or not answer.strip():
             answer = "I apologize, but I could not generate a response. Please try rephrasing your question."
 
-        # 5. Save assistant answer to SQLite
+        # 5. Save assistant answer to SQLite with session ownership verification
         try:
-            save_message(curr_conv_id, "assistant", answer)
+            save_message(curr_conv_id, current_session_id, "assistant", answer)
         except Exception:
             pass
 
@@ -274,7 +270,7 @@ def render_advisor_chat(
             # Top-Left History Icon Button with Dropdown List of Conversations
             with st.popover("🕒", help="Chat History & Saved Conversations"):
                 st.markdown("<div class='history-popover-title'>Saved Conversations</div>", unsafe_allow_html=True)
-                history_list = list_conversations()
+                history_list = list_conversations(session_id=current_session_id)
                 if not history_list:
                     st.markdown("<p style='font-size: 11px; color: #64748B; padding: 4px 0;'>No saved conversations found.</p>", unsafe_allow_html=True)
                 else:
@@ -293,23 +289,23 @@ def render_advisor_chat(
                                 st.session_state.active_conversation_id = cid
                                 st.session_state.chat_history = [
                                     {"role": m["role"], "content": m["content"]}
-                                    for m in get_messages(cid)
+                                    for m in get_messages(cid, session_id=current_session_id)
                                 ]
                                 st.rerun()
                         with c_del:
                             if st.button("🗑", key=f"pop_del_{cid}", help="Delete this chat"):
-                                delete_conversation(cid)
-                                remaining = list_conversations()
+                                delete_conversation(cid, session_id=current_session_id)
+                                remaining = list_conversations(session_id=current_session_id)
                                 if remaining:
                                     st.session_state.active_conversation_id = remaining[0]["id"]
                                     st.session_state.chat_history = [
                                         {"role": m["role"], "content": m["content"]}
-                                        for m in get_messages(remaining[0]["id"])
+                                        for m in get_messages(remaining[0]["id"], session_id=current_session_id)
                                     ]
                                 else:
                                     new_id = create_conversation(
                                         title="New Conversation",
-                                        session_id=st.session_state.get("session_id")
+                                        session_id=current_session_id
                                     )
                                     st.session_state.active_conversation_id = new_id
                                     st.session_state.chat_history = []
@@ -365,7 +361,7 @@ def render_advisor_chat(
 
         with col_sub_lbl:
             active_cid = st.session_state.get("active_conversation_id")
-            active_meta = get_conversation(active_cid) if active_cid else None
+            active_meta = get_conversation(active_cid, session_id=current_session_id) if active_cid else None
             active_title = active_meta.get("title", "New Conversation") if active_meta else "New Conversation"
             if len(active_title) > 28:
                 active_title = active_title[:25] + "..."
@@ -381,7 +377,7 @@ def render_advisor_chat(
             if st.button("+ New Chat", key="advisor_new_chat", help="Start new fresh conversation"):
                 new_id = create_conversation(
                     title="New Conversation",
-                    session_id=st.session_state.get("session_id")
+                    session_id=current_session_id
                 )
                 st.session_state.active_conversation_id = new_id
                 st.session_state.chat_history = []

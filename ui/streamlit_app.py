@@ -52,8 +52,9 @@ orchestrator = get_orchestrator()
 if "current_state" not in st.session_state:
     st.session_state.current_state = None
 
-if "session_id" not in st.session_state:
-    st.session_state.session_id = None
+if "session_id" not in st.session_state or not st.session_state.session_id:
+    import uuid
+    st.session_state.session_id = f"session_{str(uuid.uuid4())[:8]}"
 
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
@@ -202,9 +203,10 @@ elif selected_page in ["History", "Validation History"]:
                 st.markdown("<div style='height: 1px; background: #E2E8F0; margin: 6px 0;'></div>", unsafe_allow_html=True)
 
     with tab_adv_hist:
-        conversations = list_conversations()
+        curr_sess = st.session_state.get("session_id")
+        conversations = list_conversations(session_id=curr_sess) if curr_sess else []
         if not conversations:
-            st.info("No saved advisor conversations found.")
+            st.info("No saved advisor conversations found for this session.")
         else:
             for conv in conversations:
                 conv_id = conv.get("id")
@@ -212,8 +214,8 @@ elif selected_page in ["History", "Validation History"]:
                 conv_sess = conv.get("session_id") or "N/A"
                 conv_date = conv.get("updated_at", "")[:19] or conv.get("created_at", "")[:19]
 
-                # Count persisted messages and get last snippet
-                msgs = get_messages(conv_id)
+                # Count persisted messages and get last snippet strictly for this session
+                msgs = get_messages(conv_id, session_id=curr_sess)
                 msg_count = len(msgs)
                 last_snippet = msgs[-1]["content"][:100] + "..." if msgs else "No messages recorded."
 
@@ -241,7 +243,7 @@ elif selected_page in ["History", "Validation History"]:
                             st.session_state.advisor_open = True
                             st.rerun()
                     with col_b2:
-                        if conv_sess and conv_sess != "N/A":
+                        if conv_sess and conv_sess == curr_sess:
                             if st.button("Load", key=f"hist_load_{conv_id}", use_container_width=True):
                                 restored = orchestrator.get_session_history(conv_sess)
                                 if restored:

@@ -127,14 +127,30 @@ class StartupValidatorDeepAgentsPipeline:
 
             # Perform live web search for market and competitor subagent intelligence
             notify("web_search", "in_progress")
+            search_failed = False
             try:
                 state.search_results = self.tavily.perform_validation_search(
                     idea_text=idea.idea_text,
                     industry=idea.target_industry
                 )
+                if not state.search_results or not (
+                    getattr(state.search_results, "market_trends", None)
+                    or getattr(state.search_results, "competitors", None)
+                    or getattr(state.search_results, "customer_pain_points", None)
+                    or getattr(state.search_results, "industry_news", None)
+                    or getattr(state.search_results, "funding", None)
+                ):
+                    search_failed = True
             except Exception as e:
                 logger.warning(f"Web search step warning: {e}")
-            notify("web_search", "completed")
+                search_failed = True
+                state.search_results = None
+
+            if search_failed:
+                notify("web_search", "failed")
+                logger.warning("Web search failed or returned no results. Intelligence marked as unavailable.")
+            else:
+                notify("web_search", "completed")
 
             # SINGLE AUTHORITATIVE PRODUCTION PATH: Invoke Official Deep Agent Graph & Capture Result
             deep_result: Optional[Dict[str, Any]] = None
@@ -240,55 +256,10 @@ class StartupValidatorDeepAgentsPipeline:
                 state.swot_analysis = SWOTAnalysis.model_validate(parsed_json["swot_analysis"])
             except Exception as se:
                 logger.warning(f"SWOTAnalysis schema validation error: {se}")
-
-        if not state.swot_analysis:
-            state.swot_analysis = SWOTAnalysis(
-                strengths=[
-                    "High-margin subscription software revenue model",
-                    "Proprietary AI automation workflow",
-                    "Fast time-to-value for target users"
-                ],
-                weaknesses=[
-                    "Early-stage brand awareness",
-                    "Customer acquisition channel build-out requirement"
-                ],
-                opportunities=[
-                    f"Rapid growth in sector demand for {state.idea.target_industry}",
-                    "Strategic API partnerships & integration ecosystem"
-                ],
-                threats=[
-                    "Established players adding automated features",
-                    "Evolving AI regulatory & privacy compliance standard"
-                ],
-                financial_risk=5,
-                technical_risk=4,
-                regulatory_risk=3,
-                overall_risk_score=4,
-                risk_matrix=[
-                    RiskItem(
-                        risk_name="Customer Acquisition Cost (CAC) Escalation",
-                        category="Financial",
-                        probability=3,
-                        impact=4,
-                        severity_score=12,
-                        mitigation_strategy="Deploy product-led growth (PLG) freemium funnel and targeted outbounds."
-                    ),
-                    RiskItem(
-                        risk_name="Incumbent Feature Response",
-                        category="Market",
-                        probability=3,
-                        impact=3,
-                        severity_score=9,
-                        mitigation_strategy="Focus on specialized niche capabilities and superior UX."
-                    )
-                ],
-                risk_mitigation_plan=[
-                    "Scope v1 strictly around core high-friction pain points",
-                    "Establish tight customer feedback loops",
-                    "Maintain capital efficiency during pre-PMF validation"
-                ]
-            )
-        notify("swot_risk", "completed")
+                state.swot_analysis = None
+        else:
+            state.swot_analysis = None
+        notify("swot_risk", "completed" if state.swot_analysis else "unavailable")
 
         # 4. MVP Recommendation Mapping
         notify("mvp_recommendation", "in_progress")
@@ -297,41 +268,10 @@ class StartupValidatorDeepAgentsPipeline:
                 state.mvp_recommendation = MVPRecommendation.model_validate(parsed_json["mvp_recommendation"])
             except Exception as me:
                 logger.warning(f"MVPRecommendation schema validation error: {me}")
-
-        if not state.mvp_recommendation:
-            state.mvp_recommendation = MVPRecommendation(
-                core_value_proposition=f"Automated AI validation engine delivering investor-grade evidence for '{state.idea.idea_text}'.",
-                tech_stack_frontend="Streamlit / Modern CSS Design System",
-                tech_stack_backend="Python 3.11+ / LangGraph",
-                tech_stack_database="SQLite Persistent Memory",
-                tech_stack_ai="Google Gemini 2.5 Flash / Tavily Search API",
-                features=[
-                    MVPFeature(
-                        feature_name="Concept & Industry Input",
-                        priority="Must Have",
-                        estimated_days=3,
-                        description="Form interface supporting industry, target customer, and budget settings."
-                    ),
-                    MVPFeature(
-                        feature_name="Multi-Agent Pipeline Execution",
-                        priority="Must Have",
-                        estimated_days=7,
-                        description="Deep Agents workflow coordinating research, market analysis, and risk scoring."
-                    )
-                ],
-                four_week_roadmap={
-                    "Week 1": "Core architecture, schema models, and Tavily Search integration",
-                    "Week 2": "LangGraph multi-agent pipeline & deterministic scoring engine",
-                    "Week 3": "Streamlit SaaS UI design system & Plotly charts",
-                    "Week 4": "Multi-format PDF/MD export, grounded Q&A advisor, & user testing"
-                },
-                key_metrics_kpis=[
-                    "Report Generation Completion Rate (%)",
-                    "Time-to-Report (< 30 seconds)",
-                    "Advisor Q&A Session Engagement"
-                ]
-            )
-        notify("mvp_recommendation", "completed")
+                state.mvp_recommendation = None
+        else:
+            state.mvp_recommendation = None
+        notify("mvp_recommendation", "completed" if state.mvp_recommendation else "unavailable")
 
         # 5. GTM Strategy Mapping
         notify("gtm_strategy", "in_progress")
@@ -340,24 +280,10 @@ class StartupValidatorDeepAgentsPipeline:
                 state.gtm_strategy = GTMStrategy.model_validate(parsed_json["gtm_strategy"])
             except Exception as ge:
                 logger.warning(f"GTMStrategy schema validation error: {ge}")
-
-        if not state.gtm_strategy:
-            state.gtm_strategy = GTMStrategy(
-                primary_acquisition_channels=[
-                    "Product-Led Growth (PLG) freemium self-serve funnel",
-                    "Targeted LinkedIn B2B outbound campaign",
-                    "SEO & thought-leadership content marketing"
-                ],
-                pricing_strategy="Freemium entry tier with $49/mo Pro and $199/mo Enterprise team plans.",
-                positioning_statement=f"The fastest AI-driven strategic validation platform for {state.idea.target_audience or 'modern founders'}.",
-                launch_tactics=[
-                    "Product Hunt launchpad campaign",
-                    "Venture capital incubator & accelerator partnerships",
-                    "Targeted founder community focus groups"
-                ],
-                estimated_cac_summary="Estimated initial CAC of $35 - $65 per paid subscriber with a 4-month payback period."
-            )
-        notify("gtm_strategy", "completed")
+                state.gtm_strategy = None
+        else:
+            state.gtm_strategy = None
+        notify("gtm_strategy", "completed" if state.gtm_strategy else "unavailable")
 
         # 6. Final Executive Report Synthesis & Deterministic Scoring Engine
         notify("report", "in_progress")
@@ -373,6 +299,10 @@ class StartupValidatorDeepAgentsPipeline:
             else:
                 comp_count = None
 
+        fin_risk = state.swot_analysis.financial_risk if state.swot_analysis else 5
+        tech_risk = state.swot_analysis.technical_risk if state.swot_analysis else 5
+        reg_risk = state.swot_analysis.regulatory_risk if state.swot_analysis else 4
+
         scoring_breakdown = DeterministicScoringEngine.calculate_scores(
             idea_text=state.idea.idea_text,
             target_industry=state.idea.target_industry or "Technology / SaaS",
@@ -382,10 +312,16 @@ class StartupValidatorDeepAgentsPipeline:
             cagr_percentage=state.market_analysis.cagr_percentage if state.market_analysis else None,
             direct_competitor_count=comp_count,
             moat_level=moat_val,
-            financial_risk=state.swot_analysis.financial_risk,
-            technical_risk=state.swot_analysis.technical_risk,
-            regulatory_risk=state.swot_analysis.regulatory_risk
+            financial_risk=fin_risk,
+            technical_risk=tech_risk,
+            regulatory_risk=reg_risk
         )
+
+        if not state.swot_analysis:
+            scoring_breakdown.evidence_limitations.append("SWOT and risk analysis could not be verified from available research.")
+
+        if not state.search_results:
+            scoring_breakdown.evidence_limitations.append("Live web research was unavailable; market and competitor intelligence could not be verified in real time.")
 
         tam_takeaway = (
             f"Target Market TAM of ${state.market_analysis.tam_billions}B with projected CAGR of {state.market_analysis.cagr_percentage}%."

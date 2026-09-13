@@ -124,6 +124,12 @@ class FileTools:
                 "**Opportunities:** " + ", ".join(swot.opportunities),
                 "**Threats:** " + ", ".join(swot.threats),
             ])
+        else:
+            lines.extend([
+                "\n---",
+                "## 3. SWOT Analysis and Risk Evaluation",
+                "Evidence unavailable: SWOT and risk analysis could not be verified from available research."
+            ])
 
         if mvp:
             lines.extend([
@@ -135,6 +141,12 @@ class FileTools:
             ])
             for feat in mvp.features:
                 lines.append(f"- [{feat.priority}] **{feat.feature_name}** ({feat.estimated_days} days): {feat.description}")
+        else:
+            lines.extend([
+                "\n---",
+                "## 4. Minimum Viable Product (MVP) Specifications",
+                "Evidence unavailable: MVP recommendations could not be established from available research."
+            ])
 
         if gtm:
             lines.extend([
@@ -143,6 +155,12 @@ class FileTools:
                 f"**Positioning Statement:** {gtm.positioning_statement}",
                 f"**Pricing Architecture:** {gtm.pricing_strategy}",
                 "\n**Customer Acquisition Channels:** " + ", ".join(gtm.primary_acquisition_channels),
+            ])
+        else:
+            lines.extend([
+                "\n---",
+                "## 5. Go-To-Market (GTM) Strategy",
+                "Evidence unavailable: GTM strategy could not be established from available research."
             ])
 
         if state.search_results:
@@ -176,6 +194,12 @@ class FileTools:
                     "## 6. Research Sources & Grounding Evidence",
                     "Insufficient evidence / No live research available."
                 ])
+        else:
+            lines.extend([
+                "\n---",
+                "## 6. Research Sources & Grounding Evidence",
+                "Evidence unavailable: Live web research was unavailable or failed."
+            ])
 
         content = "\n".join(lines)
         with open(output_path, "w", encoding="utf-8") as f:

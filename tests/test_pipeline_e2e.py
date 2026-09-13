@@ -20,9 +20,14 @@ def test_end_to_end_validation_pipeline():
     assert state.final_report.verdict in ["PROCEED", "PIVOT", "CAUTION", "STOP"]
     assert state.market_analysis is not None
     assert state.competitor_analysis is not None
-    assert state.swot_analysis is not None
-    assert state.mvp_recommendation is not None
-    assert state.gtm_strategy is not None
+    if getattr(state, "deep_result", None):
+        assert state.swot_analysis is not None
+        assert state.mvp_recommendation is not None
+        assert state.gtm_strategy is not None
+    else:
+        assert state.swot_analysis is None
+        assert state.mvp_recommendation is None
+        assert state.gtm_strategy is None
 
     # Test Q&A Advisor
     answer = orchestrator.ask_advisor("test_e2e_session", "What is the biggest risk?", [])

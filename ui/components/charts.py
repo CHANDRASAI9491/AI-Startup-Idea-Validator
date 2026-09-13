@@ -147,10 +147,16 @@ class ChartEngine:
         return fig
 
     @staticmethod
-    def render_risk_severity_pie(fin_risk: int, tech_risk: int, reg_risk: int) -> go.Figure:
-        """Renders a Risk Category Breakdown Pie Chart."""
+    def render_risk_severity_pie(fin_risk: Optional[int], tech_risk: Optional[int], reg_risk: Optional[int]) -> Optional[go.Figure]:
+        """Renders a Risk Category Breakdown Pie Chart. Returns None if risks are unquantified."""
+        f_val = fin_risk or 0
+        t_val = tech_risk or 0
+        r_val = reg_risk or 0
+        if f_val == 0 and t_val == 0 and r_val == 0:
+            return None
+
         labels = ['Financial Risk', 'Technical Risk', 'Regulatory & Market Risk']
-        values = [fin_risk, tech_risk, reg_risk]
+        values = [f_val, t_val, r_val]
         colors = ['#EF4444', '#F59E0B', '#2563EB']
 
         fig = go.Figure(go.Pie(

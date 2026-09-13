@@ -108,10 +108,10 @@ class MVPFeature(BaseModel):
 
 class MVPRecommendation(BaseModel):
     core_value_proposition: str = ""
-    tech_stack_frontend: str = "Streamlit / Modern CSS"
-    tech_stack_backend: str = "Python 3.11+ / LangGraph"
-    tech_stack_database: str = "PostgreSQL"
-    tech_stack_ai: str = "Google Gemini 2.5 Flash / Tavily Search API"
+    tech_stack_frontend: str = ""
+    tech_stack_backend: str = ""
+    tech_stack_database: str = ""
+    tech_stack_ai: str = ""
     features: List[MVPFeature] = Field(default_factory=list)
     four_week_roadmap: Dict[str, str] = Field(default_factory=dict)
     key_metrics_kpis: List[str] = Field(default_factory=list)
