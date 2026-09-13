@@ -17,7 +17,7 @@ Respond ONLY with a JSON object matching this schema:
 {
   "executive_summary": "Comprehensive strategic evaluation indicating strong market potential and defensibility...",
   "key_takeaways": [
-    "High TAM volume ($15.0B) provides strong expansion headroom",
+    "Validated market demand indicates meaningful expansion potential",
     "Deep AI integration offers competitive defensibility",
     "Predictable B2B subscription revenue model supports high margins"
   ],

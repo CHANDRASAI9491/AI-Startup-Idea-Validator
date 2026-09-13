@@ -1,5 +1,4 @@
 import re
-import hashlib
 import logging
 from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
@@ -42,27 +41,22 @@ class ScoringBreakdown(BaseModel):
 
     verdict: str = Field(default="PROCEED", description="PROCEED, PIVOT, CAUTION, STOP")
     reasoning_why: List[str] = Field(default_factory=list, description="Explainable reasoning points")
+    evidence_limitations: List[str] = Field(default_factory=list, description="Explicit research evidence limitations")
 
 
 class DeterministicScoringEngine:
     """Deterministic evidence-driven scoring engine evaluating startup viability and investor readiness."""
-
-    @staticmethod
-    def _deterministic_seed_offset(text: str) -> int:
-        """Derives a deterministic integer offset (-3 to +3) from text content hashing."""
-        hash_val = int(hashlib.sha256(text.encode("utf-8")).hexdigest(), 16)
-        return (hash_val % 7) - 3
 
     @classmethod
     def calculate_scores(
         cls,
         idea_text: str,
         target_industry: str,
-        tam_billions: float = 10.0,
-        sam_billions: float = 2.5,
-        som_billions: float = 0.1,
-        cagr_percentage: float = 12.5,
-        direct_competitor_count: int = 3,
+        tam_billions: Optional[float] = None,
+        sam_billions: Optional[float] = None,
+        som_billions: Optional[float] = None,
+        cagr_percentage: Optional[float] = None,
+        direct_competitor_count: Optional[int] = None,
         moat_level: str = "Medium",
         financial_risk: int = 5,
         technical_risk: int = 5,
@@ -71,29 +65,37 @@ class DeterministicScoringEngine:
         text_lower = idea_text.lower()
         industry_lower = target_industry.lower()
         reasoning = []
-
-        seed_offset = cls._deterministic_seed_offset(idea_text)
+        limitations: List[str] = []
 
         # 1. MARKET OPPORTUNITY (Max 20)
         mkt_score = 10
-        if tam_billions >= 50.0:
-            mkt_score += 6
-            reasoning.append(f"Massive total addressable market (${tam_billions}B TAM) provides high revenue ceiling (+6 market score).")
-        elif tam_billions >= 10.0:
-            mkt_score += 4
-            reasoning.append(f"Substantial market size (${tam_billions}B TAM) supports expansion (+4 market score).")
-        elif tam_billions >= 2.0:
-            mkt_score += 2
+        if tam_billions is None and cagr_percentage is None:
+            reasoning.append("Market size could not be verified from available research; market opportunity unweighted.")
+            limitations.append("Market size could not be verified from available research.")
         else:
-            reasoning.append(f"Niche addressable market (${tam_billions}B TAM) limits multi-billion growth potential.")
+            if tam_billions is not None:
+                if tam_billions >= 50.0:
+                    mkt_score += 6
+                    reasoning.append(f"Massive total addressable market (${tam_billions}B TAM) provides high revenue ceiling (+6 market score).")
+                elif tam_billions >= 10.0:
+                    mkt_score += 4
+                    reasoning.append(f"Substantial market size (${tam_billions}B TAM) supports expansion (+4 market score).")
+                elif tam_billions >= 2.0:
+                    mkt_score += 2
+                else:
+                    reasoning.append(f"Niche addressable market (${tam_billions}B TAM) limits multi-billion growth potential.")
+            else:
+                reasoning.append("TAM market size could not be verified from available research.")
+                limitations.append("Market size could not be verified from available research.")
 
-        if cagr_percentage >= 15.0:
-            mkt_score += 4
-            reasoning.append(f"High industry CAGR of {cagr_percentage}% indicates strong market tailwinds (+4 market score).")
-        elif cagr_percentage >= 8.0:
-            mkt_score += 2
+            if cagr_percentage is not None:
+                if cagr_percentage >= 15.0:
+                    mkt_score += 4
+                    reasoning.append(f"High industry CAGR of {cagr_percentage}% indicates strong market tailwinds (+4 market score).")
+                elif cagr_percentage >= 8.0:
+                    mkt_score += 2
 
-        mkt_score = max(min(mkt_score + (seed_offset % 2), 20), 4)
+        mkt_score = max(min(mkt_score, 20), 4)
 
         # 2. INNOVATION & DIFFERENTIATION (Max 15)
         inn_score = 7
@@ -110,18 +112,22 @@ class DeterministicScoringEngine:
         if "patent" in text_lower or "proprietary" in text_lower or "algorithm" in text_lower or "fine-tuned" in text_lower:
             inn_score += 2
 
-        inn_score = max(min(inn_score + seed_offset, 15), 2)
+        inn_score = max(min(inn_score, 15), 2)
 
         # 3. COMPETITION & MOAT (Max 15)
         comp_score = 10
-        if direct_competitor_count <= 2:
-            comp_score += 4
-            reasoning.append(f"Low direct competitor density ({direct_competitor_count} incumbents) offers first-mover space (+4 competition score).")
-        elif direct_competitor_count >= 6:
-            comp_score -= 4
-            reasoning.append(f"Saturated market with {direct_competitor_count}+ direct competitors (-4 competition score).")
+        if direct_competitor_count is None:
+            reasoning.append("Competitive landscape could not be verified from available research.")
+            limitations.append("Competitive landscape could not be verified from available research.")
+        else:
+            if direct_competitor_count <= 2:
+                comp_score += 4
+                reasoning.append(f"Low direct competitor density ({direct_competitor_count} incumbents) offers first-mover space (+4 competition score).")
+            elif direct_competitor_count >= 6:
+                comp_score -= 4
+                reasoning.append(f"Saturated market with {direct_competitor_count}+ direct competitors (-4 competition score).")
 
-        if moat_level.lower() in ["strong", "high", "defensible"]:
+        if moat_level and moat_level.lower() in ["strong", "high", "defensible"]:
             comp_score += 3
 
         comp_score = max(min(comp_score, 15), 2)
@@ -210,5 +216,6 @@ class DeterministicScoringEngine:
             startup_health_index=startup_health,
             overall_confidence_score=confidence,
             verdict=verdict,
-            reasoning_why=reasoning
+            reasoning_why=reasoning,
+            evidence_limitations=limitations
         )

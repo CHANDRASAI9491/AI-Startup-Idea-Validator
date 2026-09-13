@@ -130,7 +130,11 @@ class ConversationalAdvisor(BaseAgent):
             sections.append(f"Market Score: {report.market_score}/100")
             if state.market_analysis:
                 m = state.market_analysis
-                sections.append(f"Market Sizing: TAM=${m.tam_billions}B, SAM=${m.sam_billions}B, SOM=${m.som_billions}B, CAGR={m.cagr_percentage}%")
+                tam_str = f"${m.tam_billions}B" if m.tam_billions is not None else "Evidence unavailable"
+                sam_str = f"${m.sam_billions}B" if m.sam_billions is not None else "Evidence unavailable"
+                som_str = f"${m.som_billions}B" if m.som_billions is not None else "Evidence unavailable"
+                cagr_str = f"{m.cagr_percentage}%" if m.cagr_percentage is not None else "Evidence unavailable"
+                sections.append(f"Market Sizing: TAM={tam_str}, SAM={sam_str}, SOM={som_str}, CAGR={cagr_str}")
                 sections.append(f"Market Summary: {m.market_size_summary}")
                 if m.key_growth_drivers:
                     sections.append(f"Key Growth Drivers: {', '.join(m.key_growth_drivers)}")
@@ -250,6 +254,8 @@ class ConversationalAdvisor(BaseAgent):
                 sections.append(f"Recommended Next Steps: {', '.join(report.recommended_next_steps)}")
 
         return "\n".join(sections)
+
+    build_report_context = build_intent_context
 
     def should_search_web(
         self,
@@ -398,10 +404,16 @@ class ConversationalAdvisor(BaseAgent):
         elif intent == "market":
             if state.market_analysis:
                 m = state.market_analysis
-                direct_answer = f"The estimated Total Addressable Market (TAM) is **${m.tam_billions}B** with SAM of **${m.sam_billions}B** and SOM of **${m.som_billions}B** (CAGR: {m.cagr_percentage}%)."
-                why_it_matters = f"A robust market sizing validates long-term revenue potential for {idea.target_industry} investors."
-                recommended_action = "Target early-adopter SOM segments before scaling out to broader SAM audience."
-                evidence = f"TAM=${m.tam_billions}B, SAM=${m.sam_billions}B, SOM=${m.som_billions}B | Market Score: {report.market_score}/100"
+                if m.tam_billions is not None:
+                    direct_answer = f"The estimated Total Addressable Market (TAM) is **${m.tam_billions}B** with SAM of **${m.sam_billions}B** and SOM of **${m.som_billions}B** (CAGR: {m.cagr_percentage}%)."
+                    why_it_matters = f"A robust market sizing validates long-term revenue potential for {idea.target_industry} investors."
+                    recommended_action = "Target early-adopter SOM segments before scaling out to broader SAM audience."
+                    evidence = f"TAM=${m.tam_billions}B, SAM=${m.sam_billions}B, SOM=${m.som_billions}B | Market Score: {report.market_score}/100"
+                else:
+                    direct_answer = "Market sizing could not be established from available research."
+                    why_it_matters = f"Without empirical market sizing data, revenue ceiling and addressable market opportunity remain unweighted for {idea.target_industry}."
+                    recommended_action = "Conduct primary market research and customer discovery interviews to validate addressable demand."
+                    evidence = f"Market Evidence: Unavailable | Market Score: {report.market_score}/100"
             else:
                 return "The validation report does not contain enough evidence to provide detailed market metrics."
 

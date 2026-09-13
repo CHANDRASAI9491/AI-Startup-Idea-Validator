@@ -35,26 +35,16 @@ class MarketAnalysisAgent(BaseAgent):
                 except Exception as e:
                     logger.warning(f"MarketAnalysis parsing error: {e}")
 
-            # Fallback heuristic calculation if LLM output unavailable or invalid
+            # Honest unavailable representation if LLM output unavailable or invalid
             state.market_analysis = MarketAnalysis(
-                tam_billions=15.0,
-                sam_billions=3.5,
-                som_billions=0.2,
-                market_size_summary=f"The market for '{state.idea.idea_text}' spans an estimated $15.0B TAM with strong adoption across {state.idea.target_industry}.",
-                cagr_percentage=14.5,
-                key_growth_drivers=[
-                    "Accelerated digital workflow adoption",
-                    f"Rising demand for specialized {state.idea.target_industry} solutions",
-                    "Increasing willingness to pay for automation"
-                ],
-                target_personas=[
-                    TargetPersona(
-                        role=state.idea.target_audience or "Primary Users",
-                        pain_points=["Inefficient workflows", "High manual cost overhead"],
-                        willingness_to_pay="High ($49 - $199/month)"
-                    )
-                ],
-                market_readiness_score=78
+                tam_billions=None,
+                sam_billions=None,
+                som_billions=None,
+                market_size_summary="Market size could not be established from available research.",
+                cagr_percentage=None,
+                key_growth_drivers=[],
+                target_personas=[],
+                market_readiness_score=None
             )
         except Exception as e:
             logger.error(f"Error in MarketAnalysisAgent: {e}")

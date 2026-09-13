@@ -50,7 +50,12 @@ def _is_safe_url(url: str) -> bool:
         return False
     try:
         parsed = urlparse(url.strip())
-        return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            return False
+        # Disallow synthetic placeholder domains
+        if parsed.netloc.lower() in {"example.com", "example.org", "www.example.com", "www.example.org"}:
+            return False
+        return True
     except Exception:
         return False
 
@@ -208,15 +213,55 @@ class CardComponents:
 
         dim_list_html = "".join(rows)
 
+        # Score drivers from reasoning_why
+        drivers_html = ""
+        if scoring and getattr(scoring, "reasoning_why", None):
+            driver_items = "".join([
+                f'<li style="margin-bottom: 6px; color: #334155; font-size: 13px; line-height: 1.5;">{html.escape(r)}</li>'
+                for r in scoring.reasoning_why
+            ])
+            drivers_html = (
+                '<div style="margin-top: 1.25rem; border-top: 1px solid #F1F5F9; padding-top: 1rem;">'
+                '<div class="saas-card-label" style="margin-bottom: 0.5rem;">SCORE DRIVERS &amp; RATIONALE</div>'
+                f'<ul style="margin: 0; padding-left: 1.25rem;">{driver_items}</ul>'
+                '</div>'
+            )
+
+        # Evidence limitations
+        limitations_html = ""
+        if scoring:
+            limitations = getattr(scoring, "evidence_limitations", []) or []
+            if limitations:
+                lim_items = "".join([
+                    f'<li style="margin-bottom: 4px; color: #92400E; font-size: 12.5px; line-height: 1.5;">{html.escape(lim)}</li>'
+                    for lim in limitations
+                ])
+                warning_icon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2.5" style="vertical-align: -2px; margin-right: 5px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>'
+                limitations_html = (
+                    '<div style="margin-top: 1rem; padding: 10px 14px; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px;">'
+                    f'<div style="font-size: 11.5px; font-weight: 700; color: #92400E; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">{warning_icon}Evidence Limitations</div>'
+                    f'<ul style="margin: 0; padding-left: 1.25rem;">{lim_items}</ul>'
+                    '</div>'
+                )
+            else:
+                check_icon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" style="vertical-align: -2px; margin-right: 6px;"><polyline points="20 6 9 17 4 12"></polyline></svg>'
+                limitations_html = (
+                    '<div style="margin-top: 1rem; padding: 8px 12px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 6px; font-size: 12px; color: #64748B;">'
+                    f'{check_icon}No major evidence limitations identified.'
+                    '</div>'
+                )
+
         html_content = (
             '<div class="saas-card dimension-bars-card">'
             '<div class="saas-card-header" style="margin-bottom: 1rem;">'
             '<div>'
-            '<div class="saas-card-label">STRATEGIC WEIGHTED METRICS</div>'
+            '<div class="saas-card-label">WHY THIS SCORE? &bull; STRATEGIC WEIGHTED METRICS</div>'
             '<div class="saas-title" style="font-size: 1.15rem;">Deterministic Score Matrix Breakdown</div>'
             '</div>'
             '</div>'
             f'<div class="dimension-bars-list">{dim_list_html}</div>'
+            f'{drivers_html}'
+            f'{limitations_html}'
             '</div>'
         )
         st.markdown(html_content, unsafe_allow_html=True)
@@ -455,10 +500,16 @@ class CardComponents:
         next_steps_items = "".join([f"<li>{html.escape(step)}</li>" for step in next_steps]) if next_steps else "<li style='color: #94A3B8; font-style: italic;'>No recommended next steps provided.</li>"
 
         tam_val = getattr(market, "tam_billions", None) if market else None
-        tam_display = f"${tam_val:.1f}B" if tam_val is not None else "Not available"
+        tam_display = f"${tam_val:.1f}B" if tam_val is not None else "Evidence unavailable"
 
         direct_comps = getattr(comp, "direct_competitors", []) if comp else []
-        comp_count_str = str(len(direct_comps)) if direct_comps else "0 identified"
+        comp_pos = getattr(comp, "market_positioning_summary", "") if comp else ""
+        if direct_comps:
+            comp_count_str = str(len(direct_comps))
+        elif "No verified competitors" in comp_pos:
+            comp_count_str = "Evidence unavailable"
+        else:
+            comp_count_str = "0 identified"
 
         mvp_score_str = str(report.mvp_score) if getattr(report, "mvp_score", None) is not None else "Not available"
         funding_prob_str = f"{report.funding_probability}%" if getattr(report, "funding_probability", None) is not None else "Not available"
@@ -522,10 +573,10 @@ class CardComponents:
         drivers = getattr(market, "key_growth_drivers", []) or []
         personas = getattr(market, "target_personas", []) or []
 
-        tam_str = f"${tam:.1f}B" if tam is not None else "Not available"
-        sam_str = f"${sam:.1f}B" if sam is not None else "Not available"
-        som_str = f"${som:.2f}B" if som is not None else "Not available"
-        cagr_str = f"{cagr:.1f}%" if cagr is not None else "Not available"
+        tam_str = f"${tam:.1f}B" if tam is not None else "Evidence unavailable"
+        sam_str = f"${sam:.1f}B" if sam is not None else "Evidence unavailable"
+        som_str = f"${som:.2f}B" if som is not None else "Evidence unavailable"
+        cagr_str = f"{cagr:.1f}%" if cagr is not None else "Evidence unavailable"
 
         growth_html = "".join([f"<li>{html.escape(g)}</li>" for g in drivers]) if drivers else "<li style='color: #94A3B8; font-style: italic;'>No growth drivers identified.</li>"
 
@@ -543,7 +594,15 @@ class CardComponents:
         if not personas_html:
             personas_html = "<li style='color: #94A3B8; font-style: italic;'>No target personas recorded in analysis.</li>"
 
-        overview_html = f'<p class="body-text">{html.escape(overview)}</p>' if overview else ""
+        if not overview or "Market size could not be established" in overview or (tam is None and cagr is None):
+            overview_html = (
+                '<div style="text-align: center; padding: 1.25rem 1rem; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 8px; margin: 12px 0;">'
+                '<div style="font-size: 14px; font-weight: 600; color: #64748B; margin-bottom: 4px;">Market size could not be established from available research.</div>'
+                '<div style="font-size: 12px; color: #94A3B8;">Web intelligence did not identify verified market sizing figures for this concept.</div>'
+                '</div>'
+            )
+        else:
+            overview_html = f'<p class="body-text">{html.escape(overview)}</p>'
 
         html_content = (
             '<div class="saas-card">'
@@ -657,7 +716,15 @@ class CardComponents:
         for c in indirect:
             cards_html.append(_render_comp_item(c, "Indirect / Alternative"))
 
-        competitors_grid = "".join(cards_html) if cards_html else "<p class='body-text' style='color: #64748B;'>No competitor records identified in analysis.</p>"
+        if not cards_html:
+            competitors_grid = (
+                '<div style="text-align: center; padding: 2.5rem 1.5rem; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 8px; margin: 1rem 0;">'
+                '<div style="font-size: 15px; font-weight: 600; color: #64748B; margin-bottom: 4px;">No verified competitors identified from available research.</div>'
+                '<div style="font-size: 13px; color: #94A3B8;">Web intelligence did not identify verified direct or indirect competitors for this specific concept.</div>'
+                '</div>'
+            )
+        else:
+            competitors_grid = "".join(cards_html)
 
         pos_html = f'<div class="saas-card" style="margin-bottom: 0;"><div class="saas-card-label">MARKET POSITIONING</div><p class="body-text" style="margin-top: 6px;">{html.escape(pos_summary)}</p></div>' if pos_summary else ""
         moat_html = f'<div class="saas-card" style="margin-bottom: 0;"><div class="saas-card-label">DEFENSIBLE MOAT ASSESSMENT</div><p class="body-text" style="margin-top: 6px;">{html.escape(moat)}</p></div>' if moat else ""
@@ -813,6 +880,8 @@ class CardComponents:
                 title = getattr(itm, "title", "Web Intelligence Source")
                 url = getattr(itm, "url", "")
                 snippet = getattr(itm, "snippet", "")
+                query = getattr(itm, "query", "")
+                retrieved_at = getattr(itm, "retrieved_at", "")
                 domain = urlparse(url).netloc.replace("www.", "") if url else "web"
 
                 link_action = ""
@@ -825,6 +894,15 @@ class CardComponents:
                         f'</a>'
                     )
 
+                meta_parts = []
+                if query:
+                    meta_parts.append(f'<div style="font-size: 11px; color: #64748B; margin-top: 4px;"><strong>Query:</strong> {html.escape(query)}</div>')
+                if retrieved_at:
+                    clean_ts = str(retrieved_at).replace("T", " ")[:19]
+                    meta_parts.append(f'<div style="font-size: 10px; color: #94A3B8; margin-top: 2px;">Retrieved: {html.escape(clean_ts)} UTC</div>')
+
+                meta_html = f'<div style="margin-top: 6px; padding-top: 4px; border-top: 1px dashed #E2E8F0;">{"".join(meta_parts)}</div>' if meta_parts else ""
+
                 source_cards.append(
                     '<div class="tavily-source-card">'
                     '<div class="source-card-top">'
@@ -833,14 +911,16 @@ class CardComponents:
                     '</div>'
                     f'<div class="source-card-title">{html.escape(title)}</div>'
                     f'<div class="source-card-snippet">{html.escape(snippet)}</div>'
+                    f'{meta_html}'
                     f'<div class="source-card-footer">{link_action}</div>'
                     '</div>'
                 )
 
         if not source_cards:
             grid_html = (
-                '<div style="text-align: center; padding: 2rem; color: #64748B;">'
-                'No live web research records stored for this session.'
+                '<div style="text-align: center; padding: 2.5rem 1.5rem; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 8px; margin: 1rem 0;">'
+                '<div style="font-size: 15px; font-weight: 600; color: #64748B; margin-bottom: 4px;">Insufficient evidence / No live research available</div>'
+                '<div style="font-size: 13px; color: #94A3B8;">Live web research returned no external sources for this concept.</div>'
                 '</div>'
             )
         else:

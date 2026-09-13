@@ -35,27 +35,42 @@ def extract_json_from_text(text: str) -> Optional[Dict[str, Any]]:
 
 
 def format_search_results_summary(results: Optional[WebSearchResults], max_items: int = 5) -> str:
-    """Formats WebSearchResults into a clean text summary for agent prompts."""
+    """Formats WebSearchResults into a clean text summary for agent prompts, preserving real source URLs."""
     if not results:
-        return "No web search results available."
+        return "Insufficient evidence / No live research available."
 
     lines = []
     if results.market_trends:
         lines.append("Market Trends & Industry Insights:")
         for item in results.market_trends[:max_items]:
-            lines.append(f"- {item.title}: {item.snippet}")
+            url_part = f" (Source: {item.url})" if item.url else ""
+            lines.append(f"- {item.title}{url_part}: {item.snippet}")
 
     if results.competitors:
         lines.append("\nCompetitor Information:")
         for item in results.competitors[:max_items]:
-            lines.append(f"- {item.title}: {item.snippet}")
+            url_part = f" (Source: {item.url})" if item.url else ""
+            lines.append(f"- {item.title}{url_part}: {item.snippet}")
 
     if results.customer_pain_points:
         lines.append("\nCustomer Pain Points & Feedback:")
         for item in results.customer_pain_points[:max_items]:
-            lines.append(f"- {item.title}: {item.snippet}")
+            url_part = f" (Source: {item.url})" if item.url else ""
+            lines.append(f"- {item.title}{url_part}: {item.snippet}")
 
-    return "\n".join(lines) if lines else "No relevant search snippets found."
+    if results.industry_news:
+        lines.append("\nIndustry News:")
+        for item in results.industry_news[:max_items]:
+            url_part = f" (Source: {item.url})" if item.url else ""
+            lines.append(f"- {item.title}{url_part}: {item.snippet}")
+
+    if results.funding:
+        lines.append("\nFunding & Deals:")
+        for item in results.funding[:max_items]:
+            url_part = f" (Source: {item.url})" if item.url else ""
+            lines.append(f"- {item.title}{url_part}: {item.snippet}")
+
+    return "\n".join(lines) if lines else "Insufficient evidence / No live research available."
 
 
 class RetrievalUtils:

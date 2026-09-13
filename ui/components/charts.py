@@ -116,8 +116,13 @@ class ChartEngine:
         return fig
 
     @staticmethod
-    def render_market_growth_trajectory(tam: float, cagr: float) -> go.Figure:
-        """Renders 5-Year CAGR Market Sizing Growth Projection Line Chart."""
+    def render_market_growth_trajectory(tam: Optional[float], cagr: Optional[float]) -> Optional[go.Figure]:
+        """Renders 5-Year CAGR Market Sizing Growth Projection Line Chart.
+        Returns None when TAM or CAGR evidence is unavailable.
+        """
+        if tam is None or cagr is None:
+            return None
+
         years = [f"Year {i}" for i in range(1, 6)]
         values = [round(tam * ((1 + (cagr / 100.0)) ** i), 2) for i in range(5)]
 

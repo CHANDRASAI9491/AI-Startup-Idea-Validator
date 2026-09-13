@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class TavilySearchTool:
-    """Tavily Search Tool wrapper with Tavily Python SDK / REST API and structured evidence fallback."""
+    """Tavily Search Tool wrapper with Tavily Python SDK / REST API."""
 
     def __init__(self, api_key: str = None):
         self.api_key = api_key or config.TAVILY_API_KEY
@@ -55,26 +55,9 @@ class TavilySearchTool:
                 except Exception as e_api:
                     logger.warning(f"Tavily REST API search error for query '{query}': {e_api}")
 
-        # 3. Fallback structured evidence generator if Tavily unavailable or empty
         if not results:
-            logger.info(f"Tavily structured research fallback engaged for query '{query}'")
-            results = [
-                {
-                    "title": f"Market Research & Growth Analysis: {query}",
-                    "url": "https://tavily.com/research/market-trends",
-                    "snippet": f"Structured market trend analysis and CAGR growth projections for '{query}' showing positive market adoption and customer expansion."
-                },
-                {
-                    "title": f"Competitive Landscape & Incumbent Analysis: {query}",
-                    "url": "https://tavily.com/research/competitive-matrix",
-                    "snippet": f"Benchmarking direct incumbents, features, and pricing models in the '{query}' domain."
-                },
-                {
-                    "title": f"Customer Pain Points & Demand Signals: {query}",
-                    "url": "https://tavily.com/research/customer-demand",
-                    "snippet": f"Evaluating key customer friction points, willingness to pay, and target customer workflow needs for '{query}'."
-                }
-            ]
+            logger.info(f"No Tavily evidence returned for query '{query}'")
+            return []
 
         return results
 

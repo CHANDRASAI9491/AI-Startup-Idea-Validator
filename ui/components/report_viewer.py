@@ -127,7 +127,16 @@ def render_report_viewer(state: StartupState, session_id: str = None) -> None:
                 state.market_analysis.tam_billions,
                 state.market_analysis.cagr_percentage
             )
-            st.plotly_chart(fig_growth, use_container_width=True)
+            if fig_growth is not None:
+                st.plotly_chart(fig_growth, use_container_width=True)
+            else:
+                st.markdown(
+                    '<div style="text-align: center; padding: 1.5rem 1rem; color: #64748B;">'
+                    '<div style="font-size: 14px; font-weight: 600; margin-bottom: 4px; color: #475569;">Market Growth Trajectory Unavailable</div>'
+                    '<div style="font-size: 12.5px; color: #94A3B8;">5-year CAGR projection requires verified TAM and CAGR evidence. Market sizing metrics could not be established from available research.</div>'
+                    '</div>',
+                    unsafe_allow_html=True
+                )
             st.markdown('</div>', unsafe_allow_html=True)
 
     with tab_comp:

@@ -15,13 +15,21 @@ class ReportAgent(BaseAgent):
         logger.info(f"ReportAgent synthesizing executive report for idea: '{state.idea.idea_text}'")
         try:
             # 1. Extract quantitative inputs from state for Deterministic Scoring Engine
-            tam = state.market_analysis.tam_billions if state.market_analysis else 10.0
-            sam = state.market_analysis.sam_billions if state.market_analysis else 2.5
-            som = state.market_analysis.som_billions if state.market_analysis else 0.1
-            cagr = state.market_analysis.cagr_percentage if state.market_analysis else 12.5
+            tam = state.market_analysis.tam_billions if state.market_analysis else None
+            sam = state.market_analysis.sam_billions if state.market_analysis else None
+            som = state.market_analysis.som_billions if state.market_analysis else None
+            cagr = state.market_analysis.cagr_percentage if state.market_analysis else None
             
-            comp_count = len(state.competitor_analysis.direct_competitors) if state.competitor_analysis else 3
-            moat = state.competitor_analysis.moat_assessment if state.competitor_analysis else "Medium"
+            comp_count = None
+            if state.competitor_analysis:
+                if state.competitor_analysis.direct_competitors:
+                    comp_count = len(state.competitor_analysis.direct_competitors)
+                elif "No verified competitors" not in (state.competitor_analysis.market_positioning_summary or ""):
+                    comp_count = 0
+                else:
+                    comp_count = None
+
+            moat = state.competitor_analysis.moat_assessment if (state.competitor_analysis and state.competitor_analysis.moat_assessment) else "Medium"
             
             fin_risk = state.swot_analysis.financial_risk if state.swot_analysis else 5
             tech_risk = state.swot_analysis.technical_risk if state.swot_analysis else 5
@@ -60,9 +68,14 @@ class ReportAgent(BaseAgent):
             )
 
             exec_summary = f"Executive Strategic Evaluation for '{state.idea.idea_text}' ({state.idea.target_industry}). Overall Viability Index is {scoring_breakdown.total_viability_score}/100 with a strategic verdict of {scoring_breakdown.verdict}."
+            tam_takeaway = (
+                f"Target Market TAM of ${tam}B with projected CAGR of {cagr}%."
+                if tam is not None
+                else "Target Market sizing could not be established from available research."
+            )
             takeaways = [
                 f"Deterministically scored overall viability index of {scoring_breakdown.total_viability_score}/100 based on an 8-dimension weighted matrix.",
-                f"Target Market TAM of ${tam}B with projected CAGR of {cagr}%.",
+                tam_takeaway,
                 f"Strategic verdict classified as '{scoring_breakdown.verdict}'."
             ]
             next_steps = [

@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 from state.schema import SearchResultItem, WebSearchResults
 from tools.tavily_tool import TavilySearchTool
@@ -19,14 +20,24 @@ class SearchService:
         logger.info(f"SearchService executing query [{category}]: '{query}'")
         raw_results = self.tavily_tool.search(query, max_results=max_results)
         
-        items = [
-            SearchResultItem(
-                title=r.get("title", "Market Insight"),
-                url=r.get("url", "https://tavily.com"),
-                snippet=r.get("snippet", "")
+        retrieval_time = datetime.now(timezone.utc).isoformat()
+        items = []
+        for r in raw_results:
+            raw_url = str(r.get("url", "")).strip()
+            # Do NOT use https://tavily.com as fallback default.
+            # Results without a valid real URL should not be treated as sourced evidence.
+            if not raw_url or raw_url.lower() in ["https://tavily.com", "http://tavily.com", "none"]:
+                continue
+            items.append(
+                SearchResultItem(
+                    title=r.get("title", "Market Insight"),
+                    url=raw_url,
+                    snippet=r.get("snippet", ""),
+                    query=query,
+                    category=category,
+                    retrieved_at=retrieval_time
+                )
             )
-            for r in raw_results
-        ]
 
         # Deduplicate by URL and length
         unique_items = RetrievalUtils.deduplicate_results(items)
@@ -46,11 +57,11 @@ class SearchService:
         """Executes multi-query Tavily searches across market trends, competitors, customer pain points, news, and funding."""
         base_query = f"{idea_text[:70]} {industry}".strip()
 
-        market_trends = self.search_topic(f"{base_query} market size trends growth CAGR", category="trends", max_results=max_results)
-        competitors = self.search_topic(f"{base_query} top competitors alternatives market landscape", category="competitors", max_results=max_results)
-        pain_points = self.search_topic(f"{base_query} customer pain points complaints demand", category="pain_points", max_results=max_results)
-        industry_news = self.search_topic(f"{base_query} industry news tech innovation", category="news", max_results=max_results)
-        funding = self.search_topic(f"{base_query} startup funding venture capital investments", category="funding", max_results=max_results)
+        market_trends = self.search_topic(f"{base_query} market size trends growth CAGR", category="Market Trends", max_results=max_results)
+        competitors = self.search_topic(f"{base_query} top competitors alternatives market landscape", category="Competitors", max_results=max_results)
+        pain_points = self.search_topic(f"{base_query} customer pain points complaints demand", category="Customer Pain Points", max_results=max_results)
+        industry_news = self.search_topic(f"{base_query} industry news tech innovation", category="Industry News", max_results=max_results)
+        funding = self.search_topic(f"{base_query} startup funding venture capital investments", category="Funding Intel", max_results=max_results)
 
         return WebSearchResults(
             market_trends=market_trends,
@@ -59,3 +70,4 @@ class SearchService:
             industry_news=industry_news,
             funding=funding
         )
+
