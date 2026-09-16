@@ -341,3 +341,531 @@ def test_report_generation_with_missing_evidence(tmp_path):
     assert "Evidence unavailable" in md_content
     assert "No verified competitors identified" in md_content
     assert "$None" not in md_content
+
+
+# =====================================================================
+# Tests A through J: Deep Result State Mapping & Markdown Extraction
+# =====================================================================
+
+def test_mapping_priority_a_structured_json():
+    """Test A: Deep result with structured_response JSON takes Priority 1."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(idea_text="Fleet Logistics AI", target_industry="Logistics")
+    state = StartupState(idea=idea)
+
+    deep_result = {
+        "structured_response": {
+            "market_analysis": {
+                "tam_billions": 85.0,
+                "sam_billions": 25.0,
+                "som_billions": 2.5,
+                "market_size_summary": "Structured TAM $85B",
+                "cagr_percentage": 18.5,
+                "key_growth_drivers": ["Autonomous freight"],
+                "target_personas": []
+            }
+        },
+        "files": {
+            "/workspace/executive_validation_report.md": {
+                "content": "TAM: $10.0 Billion"  # Should NOT be used because structured_response takes priority
+            }
+        }
+    }
+    pipeline._map_deep_result_to_state(state, deep_result, lambda s, st: None)
+    assert state.market_analysis is not None
+    assert state.market_analysis.tam_billions == 85.0
+    assert state.market_analysis.market_size_summary == "Structured TAM $85B"
+
+
+def test_mapping_priority_b_json_in_ai_message_string():
+    """Test B: Deep result with JSON embedded in a normal string AIMessage takes Priority 1."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(idea_text="FinTech Reconciliation Engine", target_industry="FinTech")
+    state = StartupState(idea=idea)
+
+    payload = {
+        "market_analysis": {
+            "tam_billions": 60.0,
+            "sam_billions": 15.0,
+            "som_billions": 1.5,
+            "market_size_summary": "Reconciliation TAM $60B",
+            "cagr_percentage": 14.0,
+            "key_growth_drivers": ["Real-time settlement"],
+            "target_personas": []
+        }
+    }
+    deep_result = {
+        "messages": [
+            AIMessage(content=f"Here is the validation analysis: {json.dumps(payload)}")
+        ]
+    }
+    pipeline._map_deep_result_to_state(state, deep_result, lambda s, st: None)
+    assert state.market_analysis is not None
+    assert state.market_analysis.tam_billions == 60.0
+    assert state.market_analysis.sam_billions == 15.0
+
+
+def test_mapping_c_content_blocks_with_markdown():
+    """Test C: Deep result with list of content blocks [{'type': 'text', 'text': '...'}] containing Markdown."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(idea_text="Developer API Observability", target_industry="DevTools")
+    state = StartupState(idea=idea)
+
+    report_md = """# Executive Report
+### 1. Market Research
+* **TAM:** $14.0 Billion
+* **SAM:** $4.0 Billion
+* **SOM:** $400 Million
+* **CAGR:** 20.5% CAGR
+* **Growth Drivers:** Cloud migration, microservices
+### 2. Competitors
+* **Direct Competitors:** Datadog, Dynatrace, New Relic
+* **Indirect Competitors:** Prometheus, Grafana
+"""
+    deep_result = {
+        "messages": [
+            AIMessage(content=[{"type": "text", "text": report_md}])
+        ]
+    }
+    pipeline._map_deep_result_to_state(state, deep_result, lambda s, st: None)
+    assert state.market_analysis is not None
+    assert state.market_analysis.tam_billions == 14.0
+    assert state.market_analysis.som_billions == 0.4
+    assert state.market_analysis.cagr_percentage == 20.5
+    assert len(state.competitor_analysis.direct_competitors) == 3
+    assert state.competitor_analysis.direct_competitors[0].name == "Datadog"
+
+
+def test_mapping_d_markdown_containing_tam_sam_som_units():
+    """Test D: Markdown containing various TAM/SAM/SOM currency units (Billion, Million, M, B, Trillion)."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(idea_text="Genomics Platform", target_industry="HealthTech")
+    state = StartupState(idea=idea)
+
+    report_md = """# Validation Report
+### 1. Market Sizing
+* **TAM (Total Addressable Market):** ~$1.5 Trillion
+* **SAM:** $250.0 Billion
+* **SOM (Initial Obtainable Market):** $50.0 Million
+* **CAGR:** 16.2% CAGR
+"""
+    deep_result = {
+        "files": {
+            "/workspace/executive_validation_report.md": report_md
+        }
+    }
+    pipeline._map_deep_result_to_state(state, deep_result, lambda s, st: None)
+    assert state.market_analysis is not None
+    assert state.market_analysis.tam_billions == 1500.0
+    assert state.market_analysis.sam_billions == 250.0
+    assert state.market_analysis.som_billions == 0.05
+    assert state.market_analysis.cagr_percentage == 16.2
+
+
+def test_mapping_e_markdown_containing_competitors():
+    """Test E: Markdown report containing direct and indirect competitors."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(idea_text="Contract Review Tool", target_industry="LegalTech")
+    state = StartupState(idea=idea)
+
+    report_md = """# Executive Report
+### 2. Competitor Analysis
+* **Direct Competitors:** Ironclad, Robin AI, LawGeex
+* **Enterprise Incumbents:** LexisNexis (Legacy vendor)
+* **Indirect Competitors:** Manual Word redlining, generic ChatGPT
+* **Our Competitive Edge:** Automated playbooks with zero configuration.
+"""
+    deep_result = {
+        "files": {
+            "/workspace/executive_validation_report.md": {"content": report_md}
+        }
+    }
+    pipeline._map_deep_result_to_state(state, deep_result, lambda s, st: None)
+    assert state.competitor_analysis is not None
+    direct_names = [c.name for c in state.competitor_analysis.direct_competitors]
+    assert "Ironclad" in direct_names
+    assert "Robin AI" in direct_names
+    assert "LexisNexis" in direct_names
+    indirect_names = [c.name for c in state.competitor_analysis.indirect_competitors]
+    assert any("Manual Word redlining" in n for n in indirect_names)
+    assert "Automated playbooks" in state.competitor_analysis.market_positioning_summary
+
+
+def test_mapping_f_missing_tam_leaves_none():
+    """Test F: When TAM is missing from Markdown report, tam_billions is None without fabrication."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(idea_text="Niche Craft Platform", target_industry="Consumer")
+    state = StartupState(idea=idea)
+
+def test_mapping_reg_a_direct_competitor_extraction():
+    """Test A: Direct competitor extraction from inline lists and subsection items."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(idea_text="Review Analytics Platform", target_industry="SaaS")
+    state = StartupState(idea=idea)
+
+    report_md = """# Validation Report
+### 2. Competitor Landscape
+### A. Direct Incumbents
+* **AlphaReview:** Full suite review monitoring and alerting.
+* **BetaAnalytics (SMB Edition):** Sentiment analysis for shops.
+* **GammaAI / DeltaInsights:** Clustered feedback extraction.
+"""
+    deep_result = {
+        "files": {
+            "/workspace/executive_validation_report.md": report_md
+        }
+    }
+    pipeline._map_deep_result_to_state(state, deep_result, lambda s, st: None)
+    assert state.competitor_analysis is not None
+    direct_names = [c.name for c in state.competitor_analysis.direct_competitors]
+    assert "AlphaReview" in direct_names
+    assert "BetaAnalytics" in direct_names
+    assert "GammaAI" in direct_names
+    assert "DeltaInsights" in direct_names
+
+
+def test_mapping_reg_b_indirect_competitor_extraction():
+    """Test B: Indirect competitor extraction from inline lists and subsections."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(idea_text="Review Analytics Platform", target_industry="SaaS")
+    state = StartupState(idea=idea)
+
+    report_md = """# Validation Report
+### 2. Competitor Landscape
+* **Indirect Status Quo:** Manual CSV exports into ChatGPT or spreadsheets.
+### B. Indirect Substitutes & Alternatives
+* **Traditional Review Tools:** Birdeye and Podium SMS collection tools.
+* **DIY LLM Workflows (Custom Scripts):** Founder prompt engineering.
+"""
+    deep_result = {
+        "files": {
+            "/workspace/executive_validation_report.md": report_md
+        }
+    }
+    pipeline._map_deep_result_to_state(state, deep_result, lambda s, st: None)
+    assert state.competitor_analysis is not None
+    indirect_names = [c.name for c in state.competitor_analysis.indirect_competitors]
+    assert any("Manual CSV exports" in n for n in indirect_names)
+    assert any("Traditional Review Tools" in n for n in indirect_names)
+    assert any("DIY LLM Workflows" in n for n in indirect_names)
+
+
+def test_mapping_reg_c_competitor_section_boundaries():
+    """Test C: Competitor section boundaries ensure parser stops before adjacent sections."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(idea_text="Review Analytics Platform", target_industry="SaaS")
+    state = StartupState(idea=idea)
+
+    report_md = """# Validation Report
+### 2. Competitor Landscape
+* **Direct Competitors:** TrueCompA, TrueCompB
+### 3. SWOT & Risk Management
+* **Threats:** CompetitorZ might enter the market with lower pricing.
+### 4. MVP Scoping & Tech Stack
+* **Tech Stack:** Next.js, Supabase, Vercel, OpenAI
+"""
+    deep_result = {
+        "files": {
+            "/workspace/executive_validation_report.md": report_md
+        }
+    }
+    pipeline._map_deep_result_to_state(state, deep_result, lambda s, st: None)
+    assert state.competitor_analysis is not None
+    direct_names = [c.name for c in state.competitor_analysis.direct_competitors]
+    assert "TrueCompA" in direct_names
+    assert "TrueCompB" in direct_names
+    # CompetitorZ and tech stack companies from subsequent sections must NOT be direct competitors
+    assert "CompetitorZ" not in direct_names
+    assert "Next.js" not in direct_names
+    assert "Supabase" not in direct_names
+
+
+def test_mapping_reg_d_market_positioning_extraction():
+    """Test D: Market positioning extraction from explicit statements or gap descriptions."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(idea_text="Review Analytics Platform", target_industry="SaaS")
+    state = StartupState(idea=idea)
+
+    report_md = """# Validation Report
+### 2. Competitor Analysis
+* **Market Positioning:** "Turn customer complaints into your next best-selling product update—automatically."
+* **Direct Competitors:** IncumbentA
+"""
+    deep_result = {
+        "files": {
+            "/workspace/executive_validation_report.md": report_md
+        }
+    }
+    pipeline._map_deep_result_to_state(state, deep_result, lambda s, st: None)
+    assert state.competitor_analysis is not None
+    assert "Turn customer complaints" in state.competitor_analysis.market_positioning_summary
+
+
+def test_mapping_reg_e_moat_assessment_extraction():
+    """Test E: Moat assessment extraction captures actual moat without fragments like 'Research)'."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(idea_text="Review Analytics Platform", target_industry="SaaS")
+    state = StartupState(idea=idea)
+
+    report_md = """# Validation Report
+### 2. Competitive Landscape & Defensibility (Competitor Research)
+* **The Gap:** Enterprise tools are too complex.
+* **Defensibility Moat:** Moving beyond charts into an Action Engine—transforming clustered feedback into ready-to-use product/operational fix briefs.
+"""
+    deep_result = {
+        "files": {
+            "/workspace/executive_validation_report.md": report_md
+        }
+    }
+    pipeline._map_deep_result_to_state(state, deep_result, lambda s, st: None)
+    assert state.competitor_analysis is not None
+    # Must NOT be "Research)" or end with ")"
+    assert state.competitor_analysis.moat_assessment != "Research)"
+    assert not state.competitor_analysis.moat_assessment.endswith(")")
+    assert "Action Engine" in state.competitor_analysis.moat_assessment
+
+
+def test_mapping_reg_f_no_competitor_section_empty_lists():
+    """Test F: When no competitor section exists, competitor lists are empty without fabrication."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(idea_text="Novel Philosophy Theory", target_industry="Education")
+    state = StartupState(idea=idea)
+
+    report_md = """# Validation Report
+### 1. Market Sizing
+* **TAM:** $1.0 Billion
+"""
+    deep_result = {
+        "files": {
+            "/workspace/executive_validation_report.md": report_md
+        }
+    }
+    pipeline._map_deep_result_to_state(state, deep_result, lambda s, st: None)
+    assert state.competitor_analysis is not None
+    assert len(state.competitor_analysis.direct_competitors) == 0
+    assert len(state.competitor_analysis.indirect_competitors) == 0
+    assert "No verified competitors" in state.competitor_analysis.market_positioning_summary
+
+
+def test_mapping_reg_g_unrelated_company_names_not_competitors():
+    """Test G: Unrelated companies mentioned in MVP or GTM sections must not become competitors."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(idea_text="Tech Platform", target_industry="Developer Tools")
+    state = StartupState(idea=idea)
+
+    report_md = """# Validation Report
+### 1. Market Research
+* **TAM:** $10.0 Billion
+### 4. MVP Scoping & Architecture
+* Tech Stack: Next.js, Supabase (PostgreSQL), Vercel, Python FastAPI, OpenAI API
+### 5. Go-To-Market Strategy
+* Distribution channels: Shopify App Store, Product Hunt, Stripe billing, Google Ads
+"""
+    deep_result = {
+        "files": {
+            "/workspace/executive_validation_report.md": report_md
+        }
+    }
+    pipeline._map_deep_result_to_state(state, deep_result, lambda s, st: None)
+    assert state.competitor_analysis is not None
+    direct_names = [c.name.lower() for c in state.competitor_analysis.direct_competitors]
+    indirect_names = [c.name.lower() for c in state.competitor_analysis.indirect_competitors]
+    all_names = set(direct_names + indirect_names)
+    unrelated = ["next.js", "supabase", "vercel", "fastapi", "openai", "shopify", "product hunt", "stripe", "google"]
+    for u in unrelated:
+        assert u not in all_names, f"Unrelated company '{u}' was erroneously extracted as competitor."
+
+
+def test_mapping_reg_h_existing_tam_sam_som_unchanged():
+    """Test H: Existing TAM/SAM/SOM extraction with generic unit conversions remains intact."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(idea_text="Genomics Platform", target_industry="HealthTech")
+    state = StartupState(idea=idea)
+
+    report_md = """# Validation Report
+### 1. Market Sizing
+* **TAM (Total Addressable Market):** ~$1.5 Trillion
+* **SAM:** $250.0 Billion
+* **SOM (Initial Obtainable Market):** $50.0 Million
+* **CAGR:** 16.2% CAGR
+"""
+    deep_result = {
+        "files": {
+            "/workspace/executive_validation_report.md": report_md
+        }
+    }
+    pipeline._map_deep_result_to_state(state, deep_result, lambda s, st: None)
+    assert state.market_analysis is not None
+    assert state.market_analysis.tam_billions == 1500.0
+    assert state.market_analysis.sam_billions == 250.0
+    assert state.market_analysis.som_billions == 0.05
+    assert state.market_analysis.cagr_percentage == 16.2
+
+
+def test_mapping_reg_i_cagr_range_remains_none():
+    """Test I: For CAGR ranges like '12.6%–16.9% CAGR', cagr_percentage is strictly None."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(idea_text="AI Analytics", target_industry="SaaS")
+    state = StartupState(idea=idea)
+
+    report_md = """# Validation Report
+### 1. Market Research & Sizing
+* **TAM:** $8.5 Billion
+* Market is expanding at a 12.6%–16.9% CAGR over the next five years.
+"""
+    deep_result = {
+        "files": {
+            "/workspace/executive_validation_report.md": report_md
+        }
+    }
+    pipeline._map_deep_result_to_state(state, deep_result, lambda s, st: None)
+    assert state.market_analysis is not None
+    assert state.market_analysis.tam_billions == 8.5
+    assert state.market_analysis.cagr_percentage is None
+
+
+def test_mapping_reg_j_existing_structured_json_unchanged():
+    """Test J: Existing Priority 1 structured JSON path remains unmodified and honored directly."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(idea_text="B2B Supply Chain AI", target_industry="Logistics")
+    state = StartupState(idea=idea)
+
+    structured_json = {
+        "market_analysis": {
+            "tam_billions": 45.0,
+            "sam_billions": 12.0,
+            "som_billions": 1.5,
+            "cagr_percentage": 14.2,
+            "market_size_summary": "Verified from structured JSON response.",
+            "key_growth_drivers": ["Automation", "Labor shortages"]
+        },
+        "competitor_analysis": {
+            "direct_competitors": [
+                {"name": "Project44", "description": "Freight visibility platform"},
+                {"name": "FourKites", "description": "Supply chain tracking"}
+            ],
+            "indirect_competitors": [
+                {"name": "Legacy EDI", "description": "Traditional batch transfer"}
+            ],
+            "market_positioning_summary": "Predictive exception management for mid-market 3PLs.",
+            "moat_assessment": "Proprietary carrier integration graph."
+        }
+    }
+    deep_result = {"structured_response": structured_json}
+    pipeline._map_deep_result_to_state(state, deep_result, lambda s, st: None)
+    assert state.market_analysis.tam_billions == 45.0
+    assert state.market_analysis.sam_billions == 12.0
+    assert state.market_analysis.som_billions == 1.5
+    assert state.market_analysis.cagr_percentage == 14.2
+    assert len(state.competitor_analysis.direct_competitors) == 2
+    assert state.competitor_analysis.direct_competitors[0].name == "Project44"
+    assert len(state.competitor_analysis.indirect_competitors) == 1
+    assert state.competitor_analysis.moat_assessment == "Proprietary carrier integration graph."
+
+
+def test_mapping_reg_k_mvp_missing_evidence_no_fabrication():
+    """Test K: MVP section with missing evidence returns None, never fabricated features/tech stack/phases."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(idea_text="AI Analytics", target_industry="SaaS")
+    state = StartupState(idea=idea)
+
+    report_md = """# Validation Report
+### 1. Market Research
+* **TAM:** $5.0 Billion
+### 2. Competitor Analysis
+* **Direct Competitors:** CompA
+"""
+    deep_result = {
+        "files": {
+            "/workspace/executive_validation_report.md": report_md
+        }
+    }
+    pipeline._map_deep_result_to_state(state, deep_result, lambda s, st: None)
+    assert state.mvp_recommendation is None
+
+    # When MVP section is present but empty, no fabricated features, tech stack, or phases
+    report_md_sparse_mvp = """# Validation Report
+### 4. MVP Architecture
+* Only exploratory thoughts without concrete features or tech stack.
+"""
+    deep_result_sparse = {
+        "files": {
+            "/workspace/executive_validation_report.md": report_md_sparse_mvp
+        }
+    }
+    state_sparse = StartupState(idea=idea)
+    pipeline._map_deep_result_to_state(state_sparse, deep_result_sparse, lambda s, st: None)
+    assert state_sparse.mvp_recommendation is None
+
+
+def test_mapping_reg_l_gtm_missing_evidence_no_fabrication():
+    """Test L: GTM section with missing evidence returns None, never fabricated pricing or early-adopter data."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(idea_text="AI Analytics", target_industry="SaaS")
+    state = StartupState(idea=idea)
+
+    report_md = """# Validation Report
+### 1. Market Research
+* **TAM:** $5.0 Billion
+### 2. Competitor Analysis
+* **Direct Competitors:** CompA
+"""
+    deep_result = {
+        "files": {
+            "/workspace/executive_validation_report.md": report_md
+        }
+    }
+    pipeline._map_deep_result_to_state(state, deep_result, lambda s, st: None)
+    assert state.gtm_strategy is None
+
+    # When GTM section is present but empty, no fabricated pricing or early adopter profile
+    report_md_sparse_gtm = """# Validation Report
+### 5. Go-To-Market
+* High-level thoughts without concrete channels or pricing tiers.
+"""
+    deep_result_sparse = {
+        "files": {
+            "/workspace/executive_validation_report.md": report_md_sparse_gtm
+        }
+    }
+    state_sparse = StartupState(idea=idea)
+    pipeline._map_deep_result_to_state(state_sparse, deep_result_sparse, lambda s, st: None)
+    assert state_sparse.gtm_strategy is None
+
+
+def test_mapping_reg_m_market_summary_does_not_cross_into_competitors():
+    """Test M: Market size summary respects section boundaries and does not leak competitor text."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(idea_text="Review Analytics Platform", target_industry="SaaS")
+    state = StartupState(idea=idea)
+
+    report_md = """# Validation Report
+### 1. Market Research & Sizing
+* **TAM:** $16.7 Billion
+* **SAM:** $3.2 Billion
+* **SOM:** $2.5 Million
+* **CAGR:** 14.5% CAGR
+The customer feedback analysis market is experiencing rapid expansion driven by SMB digitization.
+
+### 2. Competitor Analysis
+* **Direct Competitors:** CompA, CompB, CompC
+* Enterprise Incumbents: Medallia and Qualtrics dominate large enterprises with high cost.
+"""
+    deep_result = {
+        "files": {
+            "/workspace/executive_validation_report.md": report_md
+        }
+    }
+    pipeline._map_deep_result_to_state(state, deep_result, lambda s, st: None)
+    assert state.market_analysis is not None
+    assert state.market_analysis.tam_billions == 16.7
+    assert state.market_analysis.sam_billions == 3.2
+    assert state.market_analysis.som_billions == 0.0025
+    assert state.market_analysis.cagr_percentage == 14.5
+    summary = state.market_analysis.market_size_summary
+    assert "customer feedback analysis market" in summary
+    # Must NOT cross over into the competitor section
+    assert "CompA" not in summary
+    assert "CompB" not in summary
+    assert "Medallia" not in summary
+    assert "Qualtrics" not in summary
