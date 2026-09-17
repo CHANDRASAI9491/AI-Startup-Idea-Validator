@@ -19,7 +19,9 @@ from state.schema import (
     TargetPersona,
     CompetitorItem,
     RiskItem,
-    MVPFeature
+    MVPFeature,
+    WebSearchResults,
+    SearchResultItem
 )
 from tools.planning_tool import DeepAgentsPlanner
 from tools.tavily_tool import tavily_search_tool, TavilySearchTool
@@ -66,7 +68,8 @@ def _parse_currency_to_billions(amount_str: str) -> Optional[float]:
     if not amount_str:
         return None
 
-    clean = re.sub(r'[\$,~≈]', '', amount_str).strip()
+    clean = re.sub(r'[\$,~≈]|(?:USD|EUR|GBP)\b', '', amount_str, flags=re.IGNORECASE).strip()
+    clean = clean.replace(',', '')
     match = re.search(r'([0-9]+(?:\.[0-9]+)?)\s*(trillion|billion|million|[tbm])\b', clean, re.IGNORECASE)
     if not match:
         return None
@@ -83,49 +86,129 @@ def _parse_currency_to_billions(amount_str: str) -> Optional[float]:
     return None
 
 
+METRIC_ALIASES: Dict[str, List[str]] = {
+    "TAM": ["Total Addressable Market", "TAM"],
+    "SAM": ["Serviceable Addressable Market", "SAM"],
+    "SOM": ["Serviceable Obtainable Market", "SOM"],
+}
+
+
 def _extract_market_metric(text: str, metric_name: str) -> Optional[float]:
-    """Finds a metric like TAM, SAM, or SOM in text and converts its value to billions."""
+    """Finds a metric like TAM, SAM, or SOM (accepting both acronyms and full names)
+    in text and converts its value to billions.
+    Only matches explicit labels. Never converts unrelated market numbers into TAM/SAM/SOM.
+    """
+    if not text:
+        return None
+
+    aliases = METRIC_ALIASES.get(metric_name.upper(), [metric_name])
     for line in text.splitlines():
         clean_line = _clean_markdown_line(line)
-        metric_match = re.search(rf'\b{metric_name}\b', clean_line, re.IGNORECASE)
-        if metric_match:
-            pattern = rf'\b{metric_name}\b[^\n\r:]*[:\s–—\-]+[~≈]?\s*(\$?\s*[0-9]+(?:\.[0-9]+)?\s*(?:trillion|billion|million|[tbm])\b)'
-            match = re.search(pattern, clean_line, re.IGNORECASE)
-            if match:
-                val = _parse_currency_to_billions(match.group(1))
-                if val is not None:
-                    return val
-            after_metric = clean_line[metric_match.end():]
-            curr_match = re.search(r'(\$?\s*[0-9]+(?:\.[0-9]+)?\s*(?:trillion|billion|million|[tbm])\b)', after_metric, re.IGNORECASE)
-            if curr_match:
-                val = _parse_currency_to_billions(curr_match.group(1))
-                if val is not None:
-                    return val
+        for alias in aliases:
+            metric_match = re.search(rf'\b{re.escape(alias)}\b', clean_line, re.IGNORECASE)
+            if metric_match:
+                pattern = rf'\b{re.escape(alias)}\b[^\n\r:]*[:\s–—\-]+[~≈]?\s*((?:USD|EUR|GBP|\$)?\s*[0-9]+(?:\.[0-9]+)?\s*(?:trillion|billion|million|[tbm])\b)'
+                match = re.search(pattern, clean_line, re.IGNORECASE)
+                if match:
+                    val = _parse_currency_to_billions(match.group(1))
+                    if val is not None:
+                        return val
+                after_metric = clean_line[metric_match.end():]
+                curr_match = re.search(r'((?:USD|EUR|GBP|\$)?\s*[0-9]+(?:\.[0-9]+)?\s*(?:trillion|billion|million|[tbm])\b)', after_metric, re.IGNORECASE)
+                if curr_match:
+                    val = _parse_currency_to_billions(curr_match.group(1))
+                    if val is not None:
+                        return val
     return None
 
 
 def _parse_cagr(text: str) -> Optional[float]:
     """Extracts CAGR percentage from text.
-    If CAGR is a range (e.g. '12.6%–16.9% CAGR'), returns None per requirement.
-    If CAGR is a single float (e.g. '14.5% CAGR'), returns that float.
+    1. First inspects individual metric lines for explicit projected/main CAGR.
+    2. If an explicit single CAGR is found, returns it.
+    3. If metric line specifies a range, returns None.
+    4. Only if no explicit main CAGR exists, inspects broader narrative evidence:
+       - Prefers market-associated CAGR (e.g. 'market ... at a 25.7% CAGR').
+       - Does not let an unrelated regional/segment range erase an explicit main CAGR.
+       - If the only available CAGR is a range, returns None.
+    5. Returns None if no valid CAGR is found.
     """
     if not text:
         return None
 
-    # 1. Check for range: e.g. "12.6%–16.9% CAGR", "12.6% - 16.9% CAGR", "CAGR of 12.6% to 16.9%"
-    range_pattern = r'([0-9]+(?:\.[0-9]+)?)\s*%\s*[-–—to]+\s*([0-9]+(?:\.[0-9]+)?)\s*%\s*(?:projected\s+)?CAGR\b|CAGR\b[^\n\r]*?([0-9]+(?:\.[0-9]+)?)\s*%\s*[-–—to]+\s*([0-9]+(?:\.[0-9]+)?)\s*%'
-    if re.search(range_pattern, text, re.IGNORECASE):
-        return None
+    # Step 1: Inspect individual metric lines for explicit projected/main CAGR
+    metric_line_re = re.compile(
+        r'^[*\s–—\-0-9.]*\**\s*(?:(?:Projected|Expected|Forecasted|Estimated)\s+)?(?:Compound\s+Annual\s+Growth\s+Rate|CAGR)\b[^*:\n\r–—\-]*\**\s*[:–—\-]\s*(.*)',
+        re.IGNORECASE
+    )
 
-    # 2. Check for single percentage CAGR: e.g. "14.5% CAGR", "CAGR of 15%", "CAGR: 13.6%"
-    single_pattern = r'([0-9]+(?:\.[0-9]+)?)\s*%\s*(?:projected\s+)?CAGR\b|CAGR\b[^\n\r:]*?[:\s–—\-]+([0-9]+(?:\.[0-9]+)?)\s*%'
-    match = re.search(single_pattern, text, re.IGNORECASE)
-    if match:
+    range_val_re = re.compile(
+        r'([0-9]+(?:\.[0-9]+)?)\s*%\s*[-–—to]+\s*([0-9]+(?:\.[0-9]+)?)\s*%',
+        re.IGNORECASE
+    )
+    single_val_re = re.compile(
+        r'([0-9]+(?:\.[0-9]+)?)\s*%',
+        re.IGNORECASE
+    )
+
+    for line in text.splitlines():
+        clean_l = _clean_markdown_line(line).strip()
+        m = metric_line_re.match(clean_l)
+        if m:
+            val_part = m.group(1).strip()
+            # If the metric line itself states a range, return None per requirement
+            if range_val_re.search(val_part):
+                return None
+            s_match = single_val_re.search(val_part)
+            if s_match:
+                try:
+                    return float(s_match.group(1))
+                except (ValueError, TypeError):
+                    return None
+
+    # Step 2 & 3: No explicit metric line exists, inspect broader narrative evidence.
+    # Check for market-associated CAGR first (e.g. "market ... at a 25.7% CAGR")
+    market_cagr_pattern = re.compile(
+        r'\bmarket\b[^\n\r.]*?\b(?:at\s+(?:a\s+)?)?([0-9]+(?:\.[0-9]+)?)\s*%\s*(?:projected\s+)?CAGR\b|\bmarket\b[^\n\r.]*?\bCAGR\b[^\n\r.]*?[:\s–—\-]+([0-9]+(?:\.[0-9]+)?)\s*%',
+        re.IGNORECASE
+    )
+    m_match = market_cagr_pattern.search(text)
+    if m_match:
+        match_start = max(0, m_match.start() - 30)
+        match_end = min(len(text), m_match.end() + 30)
+        surrounding = text[match_start:match_end]
+        if not range_val_re.search(surrounding):
+            val_str = m_match.group(1) or m_match.group(2)
+            try:
+                return float(val_str)
+            except (ValueError, TypeError):
+                pass
+
+    # Check for narrative single CAGR occurrences that are not part of a range
+    narrative_single_pattern = re.compile(
+        r'\b(?:at\s+a\s+|projected\s+)?([0-9]+(?:\.[0-9]+)?)\s*%\s*(?:projected\s+)?CAGR\b|\bCAGR\b[^\n\r:]*?[:\s–—\-]+([0-9]+(?:\.[0-9]+)?)\s*%',
+        re.IGNORECASE
+    )
+    all_singles = []
+    for match in narrative_single_pattern.finditer(text):
+        match_start = max(0, match.start() - 30)
+        match_end = min(len(text), match.end() + 30)
+        surrounding = text[match_start:match_end]
+        if range_val_re.search(surrounding):
+            continue
         val_str = match.group(1) or match.group(2)
         try:
-            return float(val_str)
+            all_singles.append(float(val_str))
         except (ValueError, TypeError):
-            return None
+            continue
+
+    if all_singles:
+        return all_singles[0]
+
+    # Step 4: If no single CAGR exists, but there's a range, return None
+    narrative_range_pattern = r'([0-9]+(?:\.[0-9]+)?)\s*%\s*[-–—to]+\s*([0-9]+(?:\.[0-9]+)?)\s*%\s*(?:projected\s+)?CAGR\b|CAGR\b[^\n\r]*?([0-9]+(?:\.[0-9]+)?)\s*%\s*[-–—to]+\s*([0-9]+(?:\.[0-9]+)?)\s*%'
+    if re.search(narrative_range_pattern, text, re.IGNORECASE):
+        return None
 
     return None
 
@@ -343,13 +426,41 @@ def _parse_competitor_analysis_from_markdown(markdown: str) -> Optional[Competit
                 current_mode = None
             continue
 
+        # Check for standalone bold subsection headers (e.g. **Direct Competitors:** or **Indirect Competitors:**)
+        bold_header_match = re.match(
+            r'^[*\s–—\-0-9.]*\**\s*(Direct\s+Competitors?|Direct\s+Incumbents?|Direct\s+Alternatives?|Enterprise\s+Incumbents?|Indirect\s+Competitors?|Indirect\s+Substitutes?|Indirect\s+Alternatives?|Substitutes?)\b[\s*–—\-:]*$',
+            clean_l,
+            re.IGNORECASE
+        )
+        if bold_header_match:
+            header_type = bold_header_match.group(1).lower()
+            if "indirect" in header_type or "substitute" in header_type:
+                current_mode = "indirect"
+            else:
+                current_mode = "direct"
+            continue
+
+        # Check for section break markers or other bold headers that end competitor lists
+        other_bold_header = re.match(
+            r'^[*\s–—\-0-9.]*\**\s*(Market\s+Positioning|Defensibility\s+Moat|Moat|SWOT|MVP|GTM|Overview|Summary)\b[\s*–—\-:]*[:–—\-]',
+            clean_l,
+            re.IGNORECASE
+        )
+        if other_bold_header:
+            current_mode = None
+
         if current_mode in ("direct", "indirect"):
-            item_match = re.match(r'^[*\s–—\-0-9.]*\**([^*:\n\r–—\-]+)\**\s*[:–—\-]\s*(.*)', clean_l)
+            # Matches bulleted items with or without colon/dash:
+            # - **DoctorConnect:** Automated patient recall...
+            # - **Innovaccer:** Healthcare data platform...
+            # - Company A
+            # - Company B
+            item_match = re.match(r'^[*\s–—\-0-9.]+\**([^*:\n\r–—\-]+)\**\s*(?:[:–—\-]\s*(.*))?$', clean_l)
             if item_match:
                 raw_name = item_match.group(1).strip()
-                desc = _clean_markdown_line(item_match.group(2)).strip()
+                desc = _clean_markdown_line(item_match.group(2) or "").strip()
 
-                if raw_name.lower() in ("direct competitors", "indirect competitors", "defensibility moat", "market positioning", "the gap", "pricing"):
+                if raw_name.lower() in ("direct competitors", "indirect competitors", "defensibility moat", "market positioning", "the gap", "pricing", "strengths", "weaknesses", "overview", "summary", "features"):
                     continue
 
                 # Handle / separated company names while preserving parentheticals like (Pulse AI / Signals)
@@ -617,6 +728,214 @@ def _extract_markdown_report(deep_result: Optional[Dict[str, Any]]) -> Optional[
                 return text
 
     return None
+
+
+_GENERIC_COMPETITOR_WORDS = {
+    "market", "overview", "summary", "pricing", "features", "strengths", "weaknesses",
+    "competitors", "competitor", "competition", "direct competitors", "indirect competitors",
+    "alternatives", "alternative", "incumbents", "incumbent", "the gap", "moat",
+    "software", "platform", "solution", "solutions", "tool", "tools", "products", "product",
+    "system", "systems", "app", "apps", "application", "applications", "services", "service",
+    "top", "best", "leading", "vs", "versus", "review", "reviews", "analysis", "report",
+    "healthcare", "health", "technology", "ai", "artificial intelligence", "saas", "b2b",
+    "patient", "patients", "doctor", "doctors", "hospital", "hospitals", "clinic", "clinics",
+    "industry", "global", "united states", "north america", "europe", "asia", "india",
+    "growth", "share", "size", "cagr", "tam", "sam", "som", "revenue", "trends", "trend",
+    "company", "companies", "vendor", "vendors", "provider", "providers"
+}
+
+
+def _is_valid_competitor_name(name: str) -> bool:
+    name = name.strip(" .-,;:\t*#'\"")
+    if not name or len(name) < 2 or len(name) > 60:
+        return False
+    # Must start with uppercase or alphanumeric
+    if not (name[0].isupper() or name[0].isdigit()):
+        return False
+    # Must not exceed 4 words
+    words = name.split()
+    if len(words) > 4:
+        return False
+    # Check against generic blacklist
+    lower = name.lower()
+    if lower in _GENERIC_COMPETITOR_WORDS:
+        return False
+    # If all words in name are generic words, reject
+    if all(w.lower() in _GENERIC_COMPETITOR_WORDS for w in words):
+        return False
+    return True
+
+
+def _extract_market_analysis_from_search_results(search_results: Optional[WebSearchResults]) -> Optional[MarketAnalysis]:
+    """Extracts explicit market metrics directly from search results when deep agent is unavailable.
+    Preserves None/empty when explicit evidence is not found.
+    Never invents, estimates, or infers TAM/SAM/SOM without explicit labels.
+    """
+    if not search_results:
+        return None
+
+    # Collect search evidence from market-relevant categories
+    market_items: List[SearchResultItem] = []
+    if search_results.market_trends:
+        market_items.extend(search_results.market_trends)
+    if search_results.industry_news:
+        market_items.extend(search_results.industry_news)
+    if search_results.funding:
+        market_items.extend(search_results.funding)
+    if search_results.customer_pain_points:
+        market_items.extend(search_results.customer_pain_points)
+
+    if not market_items:
+        return None
+
+    tam = None
+    sam = None
+    som = None
+    cagr = None
+    extracted_drivers: List[str] = []
+    evidence_summaries: List[str] = []
+
+    for item in market_items:
+        title = item.title or ""
+        snippet = item.snippet or ""
+        combined = f"{title}\n{snippet}"
+
+        # 1. Market metrics: ONLY explicit labels (TAM, Total Addressable Market, etc.)
+        if tam is None:
+            tam = _extract_market_metric(combined, "TAM")
+        if sam is None:
+            sam = _extract_market_metric(combined, "SAM")
+        if som is None:
+            som = _extract_market_metric(combined, "SOM")
+
+        # 2. CAGR: ONLY explicitly stated CAGR associated with market
+        if cagr is None:
+            cagr = _parse_cagr(combined)
+
+        # 3. Collect factual evidence snippet for summary if market-related
+        lower_snip = snippet.lower()
+        if any(kw in lower_snip for kw in ("market", "valued at", "projected", "cagr", "tam", "billion", "growth")):
+            clean_s = _clean_markdown_line(snippet).strip()
+            if clean_s and clean_s not in evidence_summaries:
+                evidence_summaries.append(clean_s)
+
+    # Growth drivers if explicitly stated in search results
+    for item in market_items:
+        combined = f"{item.title}\n{item.snippet}"
+        drivers_match = re.search(r'\b(?:Key\s+)?Growth\s+Drivers\b[^\n\r:]*[:\s–—\-]+([^\n\r]+)', _clean_markdown_line(combined), re.IGNORECASE)
+        if drivers_match:
+            raw_d = drivers_match.group(1).strip()
+            drivers = [d.strip(' .;') for d in re.split(r'[,;]|(?:\sand\s)', raw_d) if d.strip(' .;')]
+            for d in drivers:
+                if d and d not in extracted_drivers:
+                    extracted_drivers.append(d)
+
+    # Build market summary grounded in retrieved evidence
+    if evidence_summaries:
+        market_summary = " ".join(evidence_summaries)[:500].strip()
+    elif tam is not None:
+        market_summary = f"Target Market TAM of ${tam}B established from retrieved market research."
+    else:
+        market_summary = "Market size could not be established from available research."
+
+    # If no verifiable metrics, drivers, or market evidence was found, return None
+    if tam is None and sam is None and som is None and cagr is None and not extracted_drivers and market_summary == "Market size could not be established from available research.":
+        return None
+
+    return MarketAnalysis(
+        tam_billions=tam,
+        sam_billions=sam,
+        som_billions=som,
+        market_size_summary=market_summary,
+        cagr_percentage=cagr,
+        key_growth_drivers=extracted_drivers,
+        target_personas=[],
+        market_readiness_score=None
+    )
+
+
+def _extract_competitor_analysis_from_search_results(search_results: Optional[WebSearchResults]) -> Optional[CompetitorAnalysis]:
+    """Extracts explicit competitor names strictly from competitor-category search results.
+    Preserves empty competitors list if no identifiable competitors exist.
+    Never invents or fabricates competitors.
+    """
+    if not search_results or not search_results.competitors:
+        return None
+
+    direct_items: List[CompetitorItem] = []
+    seen = set()
+
+    def add_competitor(name: str, desc: str = ""):
+        name = name.strip(" .-,;:\t*#'\"")
+        if not _is_valid_competitor_name(name):
+            return
+        if name.lower() not in seen:
+            seen.add(name.lower())
+            direct_items.append(CompetitorItem(name=name, description=desc))
+
+    for item in search_results.competitors:
+        title = item.title or ""
+        snippet = item.snippet or ""
+
+        # Pattern 1a: Subject competes directly with targets
+        # e.g. "DoctorConnect competes directly with Innovaccer and Klara in automated patient engagement..."
+        compete_match = re.search(
+            r'([A-Z][A-Za-z0-9&.\'-]+(?:\s+[A-Z][A-Za-z0-9&.\'-]+)?)\s+(?:also\s+)?competes\s+(?:directly\s+)?with\s+([^\n\r.]+)',
+            snippet,
+            re.IGNORECASE
+        )
+        if compete_match:
+            subj = compete_match.group(1).strip()
+            add_competitor(subj)
+            raw_targets = compete_match.group(2).strip()
+            clean_targets = re.split(r'\b(?:in|for|across|within|providing|offering|to)\b', raw_targets, flags=re.IGNORECASE)[0].strip()
+            tokens = [t.strip() for t in re.split(r'[,;]|\band\b', clean_targets) if t.strip()]
+            for token in tokens:
+                token_clean = re.sub(r'^(?:and\s+|also\s+|other\s+)', '', token, flags=re.IGNORECASE).strip()
+                name, desc = _clean_competitor_name(token_clean)
+                add_competitor(name, desc)
+
+        # Pattern 1b: Competitor / alternative lists
+        # e.g. "Competitors include Innovaccer, Klara, and DoctorConnect" or "Top competitors: Innovaccer, Klara"
+        inc_match = re.search(
+            r'\b(?:competitors\s+(?:include|are)|alternatives\s+(?:include|are|to\s+[A-Za-z0-9\s]+:)|top\s+competitors\s*[:–—\-])\s+([^\n\r.]+)',
+            snippet,
+            re.IGNORECASE
+        )
+        if inc_match:
+            raw_targets = inc_match.group(1).strip()
+            clean_targets = re.split(r'\b(?:in|for|across|within|providing|offering)\b', raw_targets, flags=re.IGNORECASE)[0].strip()
+            tokens = [t.strip() for t in re.split(r'[,;]|\band\b', clean_targets) if t.strip()]
+            for token in tokens:
+                token_clean = re.sub(r'^(?:and\s+|also\s+|other\s+)', '', token, flags=re.IGNORECASE).strip()
+                name, desc = _clean_competitor_name(token_clean)
+                add_competitor(name, desc)
+
+        # Pattern 2: Bulleted or header entries in snippet
+        for line in snippet.splitlines():
+            line_clean = line.strip()
+            item_match = re.match(r'^[*\s–—\-0-9.]*\**([A-Z][A-Za-z0-9\s&.\'-]+)\**\s*[:–—\-]\s*(.*)', line_clean)
+            if item_match:
+                name, desc = _clean_competitor_name(item_match.group(1))
+                add_competitor(name, _clean_markdown_line(item_match.group(2)).strip())
+
+        # Pattern 3: Titles with "vs" comparison: e.g. "Klara vs OhMD vs Innovaccer"
+        if re.search(r'\bvs\.?\b', title, re.IGNORECASE):
+            clean_title = re.sub(r'[:–—\-].*$', '', title).strip()
+            parts = re.split(r'\bvs\.?\b', clean_title, flags=re.IGNORECASE)
+            for part in parts:
+                p_name, p_desc = _clean_competitor_name(part)
+                add_competitor(p_name, p_desc)
+
+    if not direct_items:
+        return None
+
+    return CompetitorAnalysis(
+        direct_competitors=direct_items,
+        indirect_competitors=[],
+        market_positioning_summary="Competitors identified from live research evidence.",
+        moat_assessment="Defensibility must be evaluated against identified market competitors."
+    )
 
 
 class StartupValidatorDeepAgentsPipeline:
@@ -891,6 +1210,10 @@ class StartupValidatorDeepAgentsPipeline:
         elif markdown_report:
             state.market_analysis = _parse_market_analysis_from_markdown(markdown_report)
 
+        # Direct search-evidence fallback when deep_result is unavailable or produced no market analysis
+        if not state.market_analysis and state.search_results:
+            state.market_analysis = _extract_market_analysis_from_search_results(state.search_results)
+
         if not state.market_analysis:
             state.market_analysis = MarketAnalysis(
                 tam_billions=None,
@@ -913,6 +1236,10 @@ class StartupValidatorDeepAgentsPipeline:
                 logger.warning(f"CompetitorAnalysis schema validation error: {ce}")
         elif markdown_report:
             state.competitor_analysis = _parse_competitor_analysis_from_markdown(markdown_report)
+
+        # Direct search-evidence fallback when deep_result is unavailable or produced no competitor analysis
+        if not state.competitor_analysis and state.search_results:
+            state.competitor_analysis = _extract_competitor_analysis_from_search_results(state.search_results)
 
         if not state.competitor_analysis:
             state.competitor_analysis = CompetitorAnalysis(

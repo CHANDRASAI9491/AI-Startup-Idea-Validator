@@ -1159,3 +1159,281 @@ def test_structured_json_priority_preserved_over_markdown():
     assert state.market_analysis is not None
     assert state.market_analysis.tam_billions == 77.7
     assert state.market_analysis.market_size_summary == "Structured JSON TAM $77.7B"
+
+
+# ============================================================================
+# PRODUCTION PIPELINE FIX TESTS (FIXES 1 - 6)
+# ============================================================================
+
+def test_extract_market_metric_aliases_and_rejection():
+    """FIX 2: Verify _extract_market_metric accepts both acronyms and full names,
+    preserves unit conversions, and rejects unrelated market numbers.
+    """
+    from pipeline.deep_agents_orchestrator import _extract_market_metric
+
+    # 1. TAM aliases
+    assert _extract_market_metric("Total Addressable Market: $17.2 Billion", "TAM") == 17.2
+    assert _extract_market_metric("TAM: $17.2B", "TAM") == 17.2
+    assert _extract_market_metric("- **Total Addressable Market (TAM):** $17.2 Billion", "TAM") == 17.2
+
+    # 2. SAM aliases
+    assert _extract_market_metric("Serviceable Addressable Market: $5.2B", "SAM") == 5.2
+    assert _extract_market_metric("SAM: $5.2B", "SAM") == 5.2
+
+    # 3. SOM aliases
+    assert _extract_market_metric("Serviceable Obtainable Market: $500M", "SOM") == 0.5
+    assert _extract_market_metric("SOM: $500M", "SOM") == 0.5
+
+    # 4. Reject unrelated market-size statements without explicit labels
+    assert _extract_market_metric("The conversational AI in healthcare market was valued at USD 17.2 billion in 2025", "TAM") is None
+    assert _extract_market_metric("market size was $17.2 billion", "TAM") is None
+    assert _extract_market_metric("The overall market is estimated to reach $50B by 2030", "TAM") is None
+
+
+def test_parse_cagr_priorities_and_ranges():
+    """FIX 3: Verify _parse_cagr prioritizes explicit metric lines, handles narrative market CAGR,
+    does not allow regional/segment ranges to erase explicit CAGR, and returns None for ranges only.
+    """
+    from pipeline.deep_agents_orchestrator import _parse_cagr
+
+    # 1. Explicit CAGR + unrelated regional range => returns explicit CAGR
+    text_with_regional_range = """
+- **Projected CAGR:** 25.7% CAGR
+Later:
+India will grow at 32.1% to 35.0% CAGR.
+"""
+    assert _parse_cagr(text_with_regional_range) == 25.7
+
+    # 2. Explicit single CAGR on metric line => returns value
+    assert _parse_cagr("Projected CAGR: 25.7%") == 25.7
+    assert _parse_cagr("- **CAGR:** 14.5%") == 14.5
+    assert _parse_cagr("Compound Annual Growth Rate (CAGR): 18.2%") == 18.2
+
+    # 3. Narrative market CAGR without explicit metric line
+    assert _parse_cagr("The conversational AI in healthcare market was valued at USD 17.2 billion in 2025 ... at a 25.7% CAGR.") == 25.7
+
+    # 4. Only CAGR range => returns None per requirement
+    assert _parse_cagr("- **CAGR:** 12.6% - 16.9%") is None
+    assert _parse_cagr("The market is expected to expand at a CAGR of 12.6% to 16.9%.") is None
+
+    # 5. No CAGR => None
+    assert _parse_cagr("The market is growing rapidly with strong enterprise interest.") is None
+
+
+def test_parse_competitor_analysis_bold_headers():
+    """FIX 4: Verify _parse_competitor_analysis_from_markdown recognizes bold-header sections
+    (**Direct Competitors:** and **Indirect Competitors:**) and bulleted competitors without colons.
+    """
+    from pipeline.deep_agents_orchestrator import _parse_competitor_analysis_from_markdown
+
+    markdown = """
+## 2. Competitor Landscape and Moat
+
+**Direct Competitors:**
+- **DoctorConnect:** Automated patient recall and appointment reminders
+- **Innovaccer:** Healthcare data platform and coordination
+
+**Indirect Competitors:**
+- Company A
+- Company B
+
+**Market Positioning:** Leading AI-driven recall solution for SMB clinics.
+**Defensibility Moat:** Proprietary EHR integration connectors.
+"""
+
+    result = _parse_competitor_analysis_from_markdown(markdown)
+    assert result is not None
+
+    direct_names = [c.name for c in result.direct_competitors]
+    assert "DoctorConnect" in direct_names
+    assert "Innovaccer" in direct_names
+    assert len(result.direct_competitors) == 2
+
+    indirect_names = [c.name for c in result.indirect_competitors]
+    assert "Company A" in indirect_names
+    assert "Company B" in indirect_names
+    assert len(result.indirect_competitors) == 2
+
+    # Verify section breaks didn't leak into competitors
+    assert "Market Positioning" not in direct_names
+    assert "Defensibility Moat" not in direct_names
+    assert result.market_positioning_summary == "Leading AI-driven recall solution for SMB clinics."
+    assert "Proprietary EHR integration" in result.moat_assessment
+
+
+def test_production_fallback_with_real_search_evidence():
+    """FIX 5: Construct a StartupState with real-looking Tavily SearchResultItem objects.
+    Invoke production mapping with deep_result = None.
+    Verify:
+    - real search evidence remains available on state
+    - explicit market metrics are extracted only when clearly labeled
+    - CAGR is extracted when explicitly supported
+    - competitors are extracted only when explicitly identified
+    - no fabricated values appear
+    - no demo constants appear
+    """
+    from state.schema import SearchResultItem, WebSearchResults
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(
+        idea_text="Conversational AI patient recall system for medical clinics",
+        target_industry="HealthTech / AI",
+        target_audience="Medical clinics & healthcare providers"
+    )
+
+    search_results = WebSearchResults(
+        market_trends=[
+            SearchResultItem(
+                title="Global Conversational AI in Healthcare Market 2026",
+                url="https://healthcaredataresearch.org/report-2026",
+                snippet="The conversational AI in healthcare market was valued at USD 17.2 billion in 2025 and is projected to expand at a 25.7% CAGR through 2032."
+            )
+        ],
+        competitors=[
+            SearchResultItem(
+                title="Top Healthcare Patient Recall Competitors and Alternatives",
+                url="https://g2.com/compare/healthcare-recall",
+                snippet="DoctorConnect competes directly with Innovaccer and Klara in automated patient engagement and recall systems."
+            )
+        ]
+    )
+
+    state = StartupState(idea=idea, search_results=search_results)
+
+    # Invoke production mapping path with deep_result = None
+    pipeline._map_deep_result_to_state(state, deep_result=None, notify=lambda s, st: None)
+
+    # 1. Search evidence remains available
+    assert state.search_results is not None
+    assert len(state.search_results.market_trends) == 1
+    assert len(state.search_results.competitors) == 1
+
+    # 2. Market metrics:
+    # "valued at USD 17.2 billion" is NOT explicitly labeled as TAM or Total Addressable Market!
+    # Therefore TAM must remain None (no fabrication or ungrounded inference).
+    assert state.market_analysis is not None
+    assert state.market_analysis.tam_billions is None
+    assert state.market_analysis.sam_billions is None
+    assert state.market_analysis.som_billions is None
+
+    # 3. CAGR is explicitly supported ("at a 25.7% CAGR")
+    assert state.market_analysis.cagr_percentage == 25.7
+
+    # 4. Competitors are extracted only when explicitly identified from competitor evidence
+    assert state.competitor_analysis is not None
+    comp_names = [c.name for c in state.competitor_analysis.direct_competitors]
+    assert "DoctorConnect" in comp_names
+    assert "Innovaccer" in comp_names
+    assert "Klara" in comp_names
+
+    # 5. No fabricated demo constants or unverified data
+    assert "Incumbent Core SaaS" not in comp_names
+    assert state.swot_analysis is None
+    assert state.mvp_recommendation is None
+    assert state.gtm_strategy is None
+
+
+def test_production_fallback_with_explicit_labeled_tam():
+    """FIX 5 (explicit TAM): When search results contain explicit Total Addressable Market label,
+    TAM is extracted and reaches state.market_analysis.
+    """
+    from state.schema import SearchResultItem, WebSearchResults
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(idea_text="AI Healthcare Recall", target_industry="HealthTech")
+
+    search_results = WebSearchResults(
+        market_trends=[
+            SearchResultItem(
+                title="Healthcare AI Market Sizing",
+                url="https://marketdata.org/sizing",
+                snippet="Total Addressable Market: $17.2 Billion with projected CAGR: 25.7%."
+            )
+        ],
+        competitors=[
+            SearchResultItem(
+                title="Direct Competitor List",
+                url="https://reviewflow.com/competitors",
+                snippet="Leading competitors include DoctorConnect and Innovaccer."
+            )
+        ]
+    )
+
+    state = StartupState(idea=idea, search_results=search_results)
+
+    pipeline._map_deep_result_to_state(state, deep_result=None, notify=lambda s, st: None)
+
+    assert state.market_analysis is not None
+    assert state.market_analysis.tam_billions == 17.2
+    assert state.market_analysis.cagr_percentage == 25.7
+
+    assert state.competitor_analysis is not None
+    comp_names = [c.name for c in state.competitor_analysis.direct_competitors]
+    assert "DoctorConnect" in comp_names
+    assert "Innovaccer" in comp_names
+
+
+def test_production_fallback_insufficient_evidence():
+    """FIX 5 (insufficient evidence): When deep_result is None and search_results contains
+    only generic market discussion without explicit metrics or competitor names:
+    TAM=None, SAM=None, SOM=None, CAGR=None, competitors=[], no fabricated values.
+    """
+    from state.schema import SearchResultItem, WebSearchResults
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(idea_text="Vague Concept Idea", target_industry="Technology")
+
+    search_results = WebSearchResults(
+        market_trends=[
+            SearchResultItem(
+                title="General Technology Industry Trends",
+                url="https://techdiscussion.org/news",
+                snippet="Industry participants met to discuss future innovations and ecosystem trends in general software development."
+            )
+        ],
+        competitors=[
+            SearchResultItem(
+                title="Competitive Overview",
+                url="https://techdiscussion.org/comp",
+                snippet="The competitive landscape features various companies operating across global enterprise markets."
+            )
+        ]
+    )
+
+    state = StartupState(idea=idea, search_results=search_results)
+
+    pipeline._map_deep_result_to_state(state, deep_result=None, notify=lambda s, st: None)
+
+    # Market analysis preserves None for missing metrics
+    assert state.market_analysis is not None
+    assert state.market_analysis.tam_billions is None
+    assert state.market_analysis.sam_billions is None
+    assert state.market_analysis.som_billions is None
+    assert state.market_analysis.cagr_percentage is None
+
+    # Competitor analysis preserves empty list
+    assert state.competitor_analysis is not None
+    assert len(state.competitor_analysis.direct_competitors) == 0
+    assert len(state.competitor_analysis.indirect_competitors) == 0
+
+    # No demo constants
+    assert state.market_analysis.tam_billions != 15.0
+    assert state.market_analysis.cagr_percentage != 15.0
+
+
+def test_market_growth_trajectory_chart_rendering():
+    """FIX 6: Verify ChartEngine.render_market_growth_trajectory(17.2, 25.7) returns
+    a valid Plotly Figure when valid TAM and CAGR are present, and returns None when missing.
+    Proves charts.py is untouched and functions correctly with verified evidence.
+    """
+    import plotly.graph_objects as go
+    from ui.components.charts import ChartEngine
+
+    # 1. Valid TAM and CAGR return Plotly Figure
+    fig = ChartEngine.render_market_growth_trajectory(17.2, 25.7)
+    assert fig is not None
+    assert isinstance(fig, go.Figure)
+    assert "TAM $17.2B" in fig.layout.title.text
+    assert "25.7% CAGR" in fig.layout.title.text
+
+    # 2. Missing TAM or CAGR returns None without error
+    assert ChartEngine.render_market_growth_trajectory(None, 25.7) is None
+    assert ChartEngine.render_market_growth_trajectory(17.2, None) is None
+    assert ChartEngine.render_market_growth_trajectory(None, None) is None
