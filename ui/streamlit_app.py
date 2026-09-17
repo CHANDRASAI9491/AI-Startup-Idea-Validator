@@ -211,6 +211,8 @@ elif selected_page in ["History", "Validation History"]:
         else:
             for conv in conversations:
                 conv_id = conv.get("id")
+                if not isinstance(conv_id, str) or not conv_id:
+                    continue
                 conv_title = conv.get("title", "Untitled Conversation")
                 conv_sess = conv.get("session_id") or "N/A"
                 conv_date = conv.get("updated_at", "")[:19] or conv.get("created_at", "")[:19]
@@ -279,6 +281,7 @@ elif selected_page == "Reports":
     curr_sess = st.session_state.get("session_id")
     saved_sessions = orchestrator.list_all_sessions(session_id=curr_sess) if curr_sess else []
 
+    chosen_sess_id = None
     if saved_sessions:
         st.markdown(
             '<div style="font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 8px;">'
@@ -332,7 +335,7 @@ elif selected_page == "Reports":
         st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
         render_report_viewer(
             state,
-            chosen_sess_id if saved_sessions else st.session_state.session_id
+            chosen_sess_id if (saved_sessions and chosen_sess_id) else st.session_state.session_id
         )
 
     st.markdown("</div>", unsafe_allow_html=True)
