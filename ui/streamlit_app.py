@@ -279,7 +279,7 @@ elif selected_page == "Reports":
     )
 
     curr_sess = st.session_state.get("session_id")
-    saved_sessions = orchestrator.list_all_sessions(session_id=curr_sess) if curr_sess else []
+    saved_sessions = orchestrator.list_all_sessions()
 
     chosen_sess_id = None
     if saved_sessions:

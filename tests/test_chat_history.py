@@ -883,9 +883,9 @@ def test_validation_history_and_reports_session_scoping(tmp_path):
     assert len(orch.list_all_sessions(session_id="session_B")) == 1
     assert orch.list_all_sessions(session_id="session_B")[0]["session_id"] == "session_B"
 
-    # 3. Verify no public Streamlit path calls list_all_sessions without session_id
+    # 3. Verify Validation History scopes to session_id while Reports repository lists all sessions
     streamlit_app_source = inspect.getsource(ui.streamlit_app)
     calls = re.findall(r"orchestrator\.list_all_sessions\((.*?)\)", streamlit_app_source)
     assert len(calls) == 2
-    for call_args in calls:
-        assert "session_id=curr_sess" in call_args
+    assert "session_id=curr_sess" in calls[0]
+    assert calls[1].strip() == ""

@@ -55,6 +55,7 @@ The automated test suite comprises **177 comprehensive automated unit and integr
    - SQLite conversation creation, message saving, retrieval, session isolation, and cascade deletion.
 
 **Latest Test Execution Summary**:
+
 - **Result**: `177 passed, 0 failed, 1 warning`
 - **Pass Rate**: `100%`
 
@@ -75,5 +76,6 @@ Get-ChildItem ui\components\*.py | ForEach-Object {
 ## 4. Known Non-Blocking Warnings
 
 During test runs or application startup, you may observe the following harmless deprecation notice:
+
 - **Python 3.14 / google.genai `_UnionGenericAlias` Warning**: Under Python 3.14 environments, `google/genai/types.py` produces a non-fatal `DeprecationWarning: '_UnionGenericAlias' is deprecated and slated for removal in Python 3.17`. This is an upstream SDK typing notification that does not affect runtime execution, deterministic scoring, or test results.
 - **Tavily / Gemini Fallback in Local Mode**: If `GEMINI_API_KEY` or `TAVILY_API_KEY` are not set in the local `.env` file, the pipeline automatically operates in resilient fallback state mapping mode with informative warnings logged to `logs/`.
