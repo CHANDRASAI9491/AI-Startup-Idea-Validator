@@ -1437,3 +1437,248 @@ def test_market_growth_trajectory_chart_rendering():
     assert ChartEngine.render_market_growth_trajectory(None, 25.7) is None
     assert ChartEngine.render_market_growth_trajectory(17.2, None) is None
     assert ChartEngine.render_market_growth_trajectory(None, None) is None
+
+
+# ==============================================================================
+# PHASE: FREE-TIER GEMINI OPTIMIZATION TESTS
+# ==============================================================================
+
+
+def test_free_tier_model_configuration():
+    """Verify configured model is gemini-3.1-flash-lite in config and env files."""
+    from app.config import config
+    assert config.DEFAULT_MODEL == "gemini-3.1-flash-lite"
+
+    # Verify .env.example contains gemini-3.1-flash-lite
+    import os
+    env_example_path = os.path.join(os.path.dirname(__file__), "..", ".env.example")
+    with open(env_example_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    assert "MODEL_NAME=gemini-3.1-flash-lite" in content
+
+    env_path = os.path.join(os.path.dirname(__file__), "..", ".env")
+    if os.path.exists(env_path):
+        with open(env_path, "r", encoding="utf-8") as f:
+            env_content = f.read()
+        assert "MODEL_NAME=gemini-3.1-flash-lite" in env_content
+
+
+def test_production_chat_google_generative_ai_retry_protection():
+    """Verify production ChatGoogleGenerativeAI is constructed with max_retries=0."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    if pipeline.model is not None:
+        assert hasattr(pipeline.model, "max_retries")
+        assert pipeline.model.max_retries == 0
+
+
+def test_production_deep_agent_recursion_limit():
+    """Verify production Deep Agent is configured with recursion_limit=10."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    if pipeline.deep_agent is not None:
+        # Check config bound to runnable
+        bound_config = getattr(pipeline.deep_agent, "config", {}) or {}
+        assert bound_config.get("recursion_limit") == 10
+
+
+def test_production_subagents_have_no_redundant_search_tools():
+    """Verify production inline subagents have no redundant Tavily search tools attached."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    assert pipeline.subagents is not None
+    assert len(pipeline.subagents) == 6
+
+    for subagent in pipeline.subagents:
+        tools = subagent.get("tools", [])
+        # No inline subagent in production should have tools attached that invoke Tavily
+        assert len(tools) == 0, f"Subagent {subagent.get('name')} has tools attached: {tools}"
+
+
+def test_production_planner_is_deterministic_with_zero_llm_calls():
+    """Verify production planner uses deterministic plan generation with 0 LLM calls."""
+    from tools.planning_tool import DeepAgentsPlanner
+    planner = DeepAgentsPlanner()
+    idea = StartupIdea(idea_text="Free Tier Optimization Startup", target_industry="Technology")
+
+    # Production default call uses use_llm=False
+    plan = planner.plan_validation(idea, use_llm=False)
+    assert plan is not None
+    assert len(plan.agent_allocations) >= 6
+    assert len(plan.research_questions) > 0
+    assert len(plan.strategic_objective) > 0
+
+
+def test_production_direct_synthesis_prompt_contains_required_sections(monkeypatch):
+    """Verify prompt instructs direct synthesis of all 5 required sections without redundant subagent research."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(idea_text="AI Direct Synthesis Test", target_industry="FinTech")
+
+    captured_prompt = None
+
+    class MockAgent:
+        def invoke(self, graph_input, **kwargs):
+            nonlocal captured_prompt
+            captured_prompt = graph_input["messages"][0]["content"]
+            return {"messages": [AIMessage(content="Report")]}
+
+    monkeypatch.setattr(pipeline.tavily, "perform_validation_search", lambda *args, **kwargs: None)
+    pipeline.deep_agent = MockAgent()
+
+    pipeline.run(idea)
+
+    assert captured_prompt is not None
+    # 5 required sections
+    assert "## 1. Market Sizing and Growth Analysis" in captured_prompt
+    assert "## 2. Competitor Landscape and Moat" in captured_prompt
+    assert "## 3. SWOT Analysis and Risk Evaluation" in captured_prompt
+    assert "## 4. Minimum Viable Product (MVP) Specifications" in captured_prompt
+    assert "## 5. Go-To-Market (GTM) Strategy" in captured_prompt
+    # Instructions against redundant delegation / searches
+    assert "Directly synthesize the complete Executive Validation Report in a single pass" in captured_prompt
+    assert "Do NOT delegate to subagents" in captured_prompt
+
+
+def test_direct_synthesis_path_execution_and_mapping(monkeypatch):
+    """Verify direct synthesis output maps cleanly into state models."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(idea_text="Autonomous AI Accounting Agent", target_industry="FinTech")
+
+    direct_synthesis_report = (
+        "# Executive Validation Report\n\n"
+        "## 1. Market Sizing and Growth Analysis\n"
+        "- **Total Addressable Market (TAM):** $14.5B\n"
+        "- **Serviceable Addressable Market (SAM):** $3.2B\n"
+        "- **Serviceable Obtainable Market (SOM):** $0.4B\n"
+        "- **Projected CAGR:** 21.5%\n"
+        "- **Market Drivers:** Automation demand, SME expansion\n"
+        "- **Market Risks:** Regulatory compliance, Data privacy\n\n"
+        "## 2. Competitor Landscape and Moat\n"
+        "- **Direct Competitors:**\n"
+        "1. QuickBooks AI: Legacy incumbent with add-on automation ($50/mo) [https://quickbooks.intuit.com]\n"
+        "2. Pilot.com: Tech-enabled bookkeeping service [https://pilot.com]\n"
+        "- **Indirect Competitors:**\n"
+        "1. Excel Spreadsheets: Manual incumbent workflows\n"
+        "- **Differentiation:** Fully autonomous reconciliation engine\n"
+        "- **Moat Analysis:** Proprietary GAAP fine-tuned model\n\n"
+        "## 3. SWOT Analysis and Risk Evaluation\n"
+        "- **Overall Risk Score:** 4/10\n"
+        "- **Strengths:** High accuracy, Fast processing\n"
+        "- **Weaknesses:** Early brand recognition\n"
+        "- **Opportunities:** Underserved SME market\n"
+        "- **Threats:** Incumbent feature replication\n\n"
+        "## 4. Minimum Viable Product (MVP) Specifications\n"
+        "- **Core Value Proposition:** Zero-touch bank reconciliation\n"
+        "- **Tech Stack:** Python, FastAPI, React, PostgreSQL\n"
+        "Core MVP Features:\n"
+        "1. Bank Feed Sync: Plaid integration\n"
+        "2. Auto Categorizer: ML matching engine\n"
+        "- **Build Timeline:**\n"
+        "- Week 1 (Foundation): Data models and OAuth\n"
+        "- Week 2 (Core Logic): Matching engine\n"
+        "- Week 3 (Integration): Accounting API exports\n"
+        "- Week 4 (Launch & QA): Beta onboarding\n\n"
+        "## 5. Go-To-Market (GTM) Strategy\n"
+        "- **Positioning Statement:** The fastest AI accountant for modern tech startups\n"
+        "- **Pricing Tiers:** $49/mo Starter, $149/mo Pro\n"
+        "- **Acquisition Channels:** Product Hunt, Founder Communities, SEO\n"
+        "- **Launch Tactics:**\n"
+        "1. Free bookkeeping audit tool\n"
+        "2. Founder community beta access\n"
+    )
+
+    class DirectMockDeepAgent:
+        def invoke(self, graph_input, **kwargs):
+            return {"messages": [AIMessage(content=direct_synthesis_report)]}
+
+    monkeypatch.setattr(pipeline.tavily, "perform_validation_search", lambda *args, **kwargs: None)
+    pipeline.deep_agent = DirectMockDeepAgent()
+
+    state = pipeline.run(idea)
+
+    assert state.status == "completed"
+    assert state.market_analysis is not None
+    assert state.market_analysis.tam_billions == 14.5
+    assert state.market_analysis.sam_billions == 3.2
+    assert state.market_analysis.som_billions == 0.4
+    assert state.market_analysis.cagr_percentage == 21.5
+
+    assert state.competitor_analysis is not None
+    assert len(state.competitor_analysis.direct_competitors) >= 2
+    assert state.competitor_analysis.direct_competitors[0].name == "QuickBooks AI"
+
+    assert state.swot_analysis is not None
+    assert state.swot_analysis.overall_risk_score == 5
+    assert "High accuracy" in state.swot_analysis.strengths
+
+    assert state.mvp_recommendation is not None
+    assert len(state.mvp_recommendation.features) >= 2
+    assert "Python" in state.mvp_recommendation.tech_stack_frontend
+
+    assert state.gtm_strategy is not None
+    assert "Starter" in state.gtm_strategy.pricing_strategy
+    assert len(state.gtm_strategy.primary_acquisition_channels) >= 2
+
+    assert state.final_report is not None
+    assert state.final_report.overall_viability_score > 0
+
+
+def test_gemini_failure_preserves_tavily_evidence_and_deterministic_scoring(monkeypatch):
+    """Verify that when Gemini raises a 429 quota exception, Tavily evidence is preserved,
+    deterministic market/competitor fallback is populated, and SWOT/MVP/GTM remain None."""
+    from state.schema import WebSearchResults, SearchResultItem
+
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(idea_text="AI Dental Diagnostics", target_industry="HealthTech")
+
+    tavily_results = WebSearchResults(
+        market_trends=[
+            SearchResultItem(
+                title="Global Dental Imaging AI Market Report 2026",
+                url="https://dentaltech.org/market-size",
+                snippet="The global dental AI diagnostics Total Addressable Market (TAM) is projected to reach $3.8 Billion with a 24.5% CAGR."
+            )
+        ],
+        competitors=[
+            SearchResultItem(
+                title="Leading Dental AI Competitors",
+                url="https://dentaltech.org/competitors",
+                snippet="Top competitors include Overjet and Pearl AI in automated dental diagnostics."
+            )
+        ]
+    )
+
+    class FailingDeepAgent:
+        def invoke(self, graph_input, **kwargs):
+            raise RuntimeError("429 ResourceExhausted: Quota exceeded for model gemini-3.1-flash-lite")
+
+    monkeypatch.setattr(pipeline.tavily, "perform_validation_search", lambda *args, **kwargs: tavily_results)
+    pipeline.deep_agent = FailingDeepAgent()
+
+    state = pipeline.run(idea)
+
+    # 1. State completes without crashing
+    assert state.status == "completed"
+
+    # 2. Tavily search results preserved
+    assert state.search_results is not None
+    assert len(state.search_results.market_trends) == 1
+    assert "3.8 Billion" in state.search_results.market_trends[0].snippet
+
+    # 3. Market & competitor deterministic fallback extracted from Tavily evidence
+    assert state.market_analysis is not None
+    assert state.market_analysis.tam_billions == 3.8
+    assert state.market_analysis.cagr_percentage == 24.5
+
+    assert state.competitor_analysis is not None
+    assert len(state.competitor_analysis.direct_competitors) >= 2
+    comp_names = [c.name for c in state.competitor_analysis.direct_competitors]
+    assert "Overjet" in comp_names
+    assert "Pearl AI" in comp_names
+
+    # 4. SWOT, MVP, GTM remain None (no fake data invented)
+    assert state.swot_analysis is None
+    assert state.mvp_recommendation is None
+    assert state.gtm_strategy is None
+
+    # 5. Deterministic scoring still executes
+    assert state.final_report is not None
+    assert 0 <= state.final_report.overall_viability_score <= 100
+    assert state.final_report.verdict in ["PROCEED", "PIVOT", "CAUTION", "STOP"]

@@ -14,27 +14,28 @@ class DeepAgentsPlanner:
     def __init__(self, model_name: Optional[str] = None):
         self.llm_service = LLMService(model_name=model_name)
 
-    def plan_validation(self, idea: StartupIdea) -> DeepAgentsPlan:
+    def plan_validation(self, idea: StartupIdea, use_llm: bool = False) -> DeepAgentsPlan:
         logger.info(f"DeepAgentsPlanner generating execution plan for idea: {idea.idea_text}")
 
-        prompt = PromptLoader.load_prompt(
-            "deep_agents_planner",
-            idea_text=idea.idea_text,
-            target_industry=idea.target_industry or "Technology / SaaS",
-            target_audience=idea.target_audience or "General Users / Businesses",
-            business_model=idea.business_model or "B2B SaaS / Subscription"
-        )
+        if use_llm:
+            prompt = PromptLoader.load_prompt(
+                "deep_agents_planner",
+                idea_text=idea.idea_text,
+                target_industry=idea.target_industry or "Technology / SaaS",
+                target_audience=idea.target_audience or "General Users / Businesses",
+                business_model=idea.business_model or "B2B SaaS / Subscription"
+            )
 
-        json_data = self.llm_service.generate_json(
-            prompt,
-            system_instruction="You are a Chief AI Architect and Strategic Planner."
-        )
+            json_data = self.llm_service.generate_json(
+                prompt,
+                system_instruction="You are a Chief AI Architect and Strategic Planner."
+            )
 
-        if json_data:
-            try:
-                return DeepAgentsPlan.model_validate(json_data)
-            except Exception as e:
-                logger.warning(f"DeepAgentsPlan parsing error: {e}")
+            if json_data:
+                try:
+                    return DeepAgentsPlan.model_validate(json_data)
+                except Exception as e:
+                    logger.warning(f"DeepAgentsPlan parsing error: {e}")
 
         # Fallback deterministic execution plan
         return DeepAgentsPlan(

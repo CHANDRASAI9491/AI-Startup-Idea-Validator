@@ -14,7 +14,7 @@ class Config:
     TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 
     # Model
-    DEFAULT_MODEL = os.getenv("MODEL_NAME", "gemini-2.5-flash")
+    DEFAULT_MODEL = os.getenv("MODEL_NAME", "gemini-3.1-flash-lite")
 
     # Search
     MAX_SEARCH_RESULTS = int(os.getenv("MAX_SEARCH_RESULTS", "5"))

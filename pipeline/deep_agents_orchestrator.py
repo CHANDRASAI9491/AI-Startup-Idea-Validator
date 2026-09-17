@@ -964,13 +964,13 @@ class StartupValidatorDeepAgentsPipeline:
                 "name": "market-research",
                 "description": "Researches market size (TAM, SAM, SOM), CAGR, market trends, and growth drivers.",
                 "system_prompt": "You are a Market Research Subagent. Evaluate market size, CAGR, growth drivers, and target customer personas based strictly on supplied research evidence. Never invent missing figures.",
-                "tools": [tavily_search_tool],
+                "tools": [],
             },
             {
                 "name": "competitor-research",
                 "description": "Finds direct and indirect competitors, feature comparisons, pricing models, and defensibility moats.",
                 "system_prompt": "You are a Competitor Research Subagent. Map the competitive landscape, direct incumbents, indirect alternatives, and defensibility moats based strictly on supplied research evidence. Never invent competitors.",
-                "tools": [tavily_search_tool],
+                "tools": [],
             },
             {
                 "name": "swot-risk",
@@ -1002,19 +1002,23 @@ class StartupValidatorDeepAgentsPipeline:
         try:
             self.model = ChatGoogleGenerativeAI(
                 model=self.model_name,
-                google_api_key=config.GEMINI_API_KEY or "not_configured"
+                google_api_key=config.GEMINI_API_KEY or "not_configured",
+                max_retries=0
             )
             self.deep_agent = create_deep_agent(
                 model=self.model,
                 subagents=self.subagents,
                 system_prompt=(
-                    "You are the Main Startup Validator Deep Agent orchestrating comprehensive startup idea validation. "
-                    "You synthesize evidence across market-research, competitor-research, swot-risk, mvp, gtm, and report subagents. "
+                    "You are the Main Startup Validator Deep Agent synthesizing comprehensive startup idea validation. "
+                    "DIRECT SYNTHESIS INSTRUCTION: You must directly synthesize the final Executive Validation Report "
+                    "from the supplied web research evidence and context in a single pass. Do NOT delegate to subagents "
+                    "for ordinary validation, do NOT execute additional web searches, and do NOT repeat research already present. "
+                    "Produce the required five report sections directly adhering to the output contract. "
                     "CRITICAL GROUNDING: Base all assessments strictly on the provided web research evidence and planning context. "
                     "Never hallucinate or invent quantitative metrics (TAM/SAM/SOM/CAGR), competitor names, or pricing. "
                     "If evidence is insufficient, explicitly state 'Evidence unavailable'."
                 )
-            )
+            ).with_config({"recursion_limit": 10})
             logger.info("Official Deep Agents Main Validator Agent initialized successfully.")
         except Exception as e:
             logger.warning(f"Deep Agents Graph compilation warning: {e}. Pipeline operating in state mapping mode.")
@@ -1029,9 +1033,9 @@ class StartupValidatorDeepAgentsPipeline:
             logger.info(f"Deep Agents Pipeline Step [{step}] -> {status}")
 
         try:
-            # Step 0: Strategic Research Planning
+            # Step 0: Strategic Research Planning (deterministic plan to conserve Gemini API request budget)
             notify("planner", "in_progress")
-            state.planning_output = self.planner.plan_validation(idea)
+            state.planning_output = self.planner.plan_validation(idea, use_llm=False)
             notify("planner", "completed")
 
             # Perform live web search for market and competitor subagent intelligence
@@ -1084,6 +1088,10 @@ class StartupValidatorDeepAgentsPipeline:
                         f"=== WEB RESEARCH EVIDENCE SUMMARY ===\n"
                         f"{search_summary}\n"
                         f"=== END RESEARCH EVIDENCE ===\n\n"
+                        f"DIRECT SYNTHESIS INSTRUCTIONS:\n"
+                        f"1. Directly synthesize the complete Executive Validation Report in a single pass from the evidence provided above.\n"
+                        f"2. Do NOT delegate to subagents and do NOT execute external web searches.\n"
+                        f"3. Produce all five required report sections directly in your response.\n\n"
                         f"CRITICAL GROUNDING RULES:\n"
                         f"1. Use the supplied research evidence as the primary source of truth.\n"
                         f"2. Synthesize market sizing, competitive landscape, SWOT/risk, MVP, and GTM findings strictly from the evidence.\n"
@@ -1135,7 +1143,10 @@ class StartupValidatorDeepAgentsPipeline:
                         f"Produce the full report directly in your final response. If write_file is available, also write this report to /workspace/executive_validation_report.md."
                     )
                     graph_input = {"messages": [{"role": "user", "content": prompt_content}]}
-                    deep_result = self.deep_agent.invoke(graph_input)
+                    try:
+                        deep_result = self.deep_agent.invoke(graph_input, config={"recursion_limit": 10})
+                    except TypeError:
+                        deep_result = self.deep_agent.invoke(graph_input)
                     logger.info("Official Deep Agent graph invoked and executed successfully.")
                 except Exception as ge:
                     logger.warning(f"Deep Agent graph execution note: {ge}. Using state mapping.")

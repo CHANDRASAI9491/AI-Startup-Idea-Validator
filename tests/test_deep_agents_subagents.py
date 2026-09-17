@@ -25,23 +25,34 @@ def test_deep_agents_subagent_registration():
 
 
 def test_deep_agents_subagent_tool_binding():
-    """Verify tool assignment for market-research and competitor-research subagents."""
+    """Verify Free-Tier tool assignment for market-research and competitor-research subagents.
+
+    Production design (Free-Tier optimisation): Tavily search is performed exactly
+    once by the orchestrator before the Deep Agent is invoked.  The pre-fetched
+    evidence is injected directly into the synthesis prompt, so the inline subagents
+    do NOT need their own Tavily tool bindings.  Keeping tools=[] on these subagents
+    prevents redundant Gemini + Tavily API calls during a single validation run.
+    """
     pipeline = StartupValidatorDeepAgentsPipeline()
     subagent_map = {sub["name"]: sub for sub in pipeline.subagents}
 
-    # Verify market-research has tavily_search_tool
+    # market-research subagent exists but carries no tools (evidence pre-injected)
     market_sub = subagent_map.get("market-research")
     assert market_sub is not None
     assert "tools" in market_sub
-    assert len(market_sub["tools"]) > 0
-    assert tavily_search_tool in market_sub["tools"]
+    assert len(market_sub["tools"]) == 0, (
+        "market-research subagent must have no tools under the Free-Tier design; "
+        "Tavily is called once by the orchestrator, not by subagents."
+    )
 
-    # Verify competitor-research has tavily_search_tool
+    # competitor-research subagent exists but carries no tools (evidence pre-injected)
     competitor_sub = subagent_map.get("competitor-research")
     assert competitor_sub is not None
     assert "tools" in competitor_sub
-    assert len(competitor_sub["tools"]) > 0
-    assert tavily_search_tool in competitor_sub["tools"]
+    assert len(competitor_sub["tools"]) == 0, (
+        "competitor-research subagent must have no tools under the Free-Tier design; "
+        "Tavily is called once by the orchestrator, not by subagents."
+    )
 
 
 def test_deep_agent_instance_creation():
