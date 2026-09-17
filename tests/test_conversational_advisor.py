@@ -12,7 +12,9 @@ from state.schema import (
     GTMStrategy,
     TargetPersona,
     RiskItem,
-    MVPFeature
+    MVPFeature,
+    WebSearchResults,
+    SearchResultItem,
 )
 from services.scoring_engine import ScoringBreakdown
 from agents.conversational_advisor import ConversationalAdvisor
@@ -109,6 +111,14 @@ def sample_startup_state():
         launch_tactics=["Free 14-day trial", "Direct demo calls"],
         estimated_cac_summary="$1,200 per enterprise account"
     )
+    search_results = WebSearchResults(
+        market_trends=[
+            SearchResultItem(title="Legal AI Tech Report 2025", url="https://example.com/legal-ai-2025", snippet="The legal AI market is projected to reach $25B by 2030.")
+        ],
+        competitors=[
+            SearchResultItem(title="LegalFly Overview", url="https://legalfly.com", snippet="LegalFly provides automated contract review for legal teams.")
+        ]
+    )
 
     return StartupState(
         idea=idea,
@@ -117,7 +127,8 @@ def sample_startup_state():
         competitor_analysis=competitor,
         swot_analysis=swot,
         mvp_recommendation=mvp,
-        gtm_strategy=gtm
+        gtm_strategy=gtm,
+        search_results=search_results
     )
 
 
@@ -569,3 +580,117 @@ def test_conversational_advisor_build_context_real_market_evidence(sample_startu
     assert "$0.5B" in context
     assert "18.5%" in context
 
+
+# 29. Test A & B: Advisor receives state.search_results, and real source title/URL/snippet reaches advisor context
+def test_conversational_advisor_build_context_injects_search_results(sample_startup_state):
+    advisor = ConversationalAdvisor()
+    context = advisor.build_intent_context("general", sample_startup_state)
+    assert "VALIDATION RESEARCH SOURCES:" in context
+    assert "Legal AI Tech Report 2025" in context
+    assert "https://example.com/legal-ai-2025" in context
+    assert "The legal AI market is projected to reach $25B by 2030." in context
+
+
+# 30. Test B (intent == sources): Real source title/URL/snippet reaches advisor context for sources intent
+def test_conversational_advisor_build_context_sources_intent(sample_startup_state):
+    advisor = ConversationalAdvisor()
+    context = advisor.build_intent_context("sources", sample_startup_state)
+    assert "Validation Research Sources:" in context
+    assert "Legal AI Tech Report 2025" in context
+    assert "https://example.com/legal-ai-2025" in context
+
+
+# 31. Test C: No network search is triggered by context injection or sources queries
+def test_conversational_advisor_no_network_search_for_sources(sample_startup_state):
+    advisor = ConversationalAdvisor()
+    context = advisor.build_intent_context("sources", sample_startup_state)
+    assert advisor.should_search_web("What sources support this validation?", "sources", context) is False
+    assert advisor.should_search_web("Show me the sources.", "sources", context) is False
+    assert advisor.should_search_web("Where did this information come from?", "sources", context) is False
+    assert advisor.should_search_web("What evidence supports the market opportunity?", "market", context) is False
+
+
+# 32. Test D: "What are the biggest strengths?" routes to SWOT/risk context
+def test_conversational_advisor_strengths_routes_to_swot_context(sample_startup_state):
+    advisor = ConversationalAdvisor()
+    intent = advisor.classify_intent("What are the biggest strengths?")
+    assert intent == "risk"
+    intent2 = advisor.classify_intent("What are our strengths?")
+    assert intent2 == "risk"
+    intent3 = advisor.classify_intent("What strengths does the report identify?")
+    assert intent3 == "risk"
+
+    context = advisor.build_intent_context(intent, sample_startup_state)
+    assert "Strengths:" in context
+    assert "Specialized models" in context
+
+    fallback = advisor.generate_grounded_fallback("What are the biggest strengths?", intent, sample_startup_state)
+    assert "Specialized models" in fallback
+
+
+# 33. Test E: "What sources support this validation?" routes to source/evidence context
+def test_conversational_advisor_sources_intent_classification(sample_startup_state):
+    advisor = ConversationalAdvisor()
+    assert advisor.classify_intent("What sources support this validation?") == "sources"
+    assert advisor.classify_intent("Show me the sources.") == "sources"
+    assert advisor.classify_intent("Where did this information come from?") == "sources"
+    assert advisor.classify_intent("What citations are available?") == "sources"
+
+
+# 34. Test F: Missing sources produces honest unavailable behavior
+def test_conversational_advisor_missing_sources_honest_unavailable(sample_startup_state):
+    advisor = ConversationalAdvisor()
+    state_no_sources = StartupState(
+        idea=sample_startup_state.idea,
+        final_report=sample_startup_state.final_report,
+        search_results=None
+    )
+    context = advisor.build_intent_context("sources", state_no_sources)
+    assert "No research sources or citations available in report state." in context
+
+    fallback = advisor.generate_grounded_fallback("What sources support this validation?", "sources", state_no_sources)
+    assert "The validation report does not contain enough evidence to identify specific research sources or citations." in fallback
+
+
+# 35. Test G: "What are the biggest risks?" gets the risk/weakness refusal when SWOT is missing
+def test_conversational_advisor_missing_swot_factual_risk_refusal(sample_startup_state):
+    advisor = ConversationalAdvisor()
+    state_no_swot = StartupState(
+        idea=sample_startup_state.idea,
+        final_report=sample_startup_state.final_report,
+        swot_analysis=None
+    )
+    fallback = advisor.generate_grounded_fallback("What are the biggest risks?", "risk", state_no_swot)
+    assert fallback == "The validation report does not contain enough evidence to identify specific risks or weaknesses."
+
+    fallback_weakness = advisor.generate_grounded_fallback("What are the biggest weaknesses?", "risk", state_no_swot)
+    assert fallback_weakness == "The validation report does not contain enough evidence to identify specific risks or weaknesses."
+
+
+# 36. Test H: "Give me specific risk mitigations." retains the mitigation refusal when SWOT is missing
+def test_conversational_advisor_missing_swot_mitigation_refusal(sample_startup_state):
+    advisor = ConversationalAdvisor()
+    state_no_swot = StartupState(
+        idea=sample_startup_state.idea,
+        final_report=sample_startup_state.final_report,
+        swot_analysis=None
+    )
+    fallback = advisor.generate_grounded_fallback("Give me specific risk mitigations.", "risk", state_no_swot)
+    assert fallback == "The validation report does not contain enough evidence to detail specific risk mitigations."
+
+    fallback_how = advisor.generate_grounded_fallback("How can I mitigate the risks?", "risk", state_no_swot)
+    assert fallback_how == "The validation report does not contain enough evidence to detail specific risk mitigations."
+
+
+# 37. Test I: "Can you summarize the validation?" is handled as summary
+def test_conversational_advisor_summarize_stem_handling(sample_startup_state):
+    advisor = ConversationalAdvisor()
+    for q in [
+        "Can you summarize the validation?",
+        "Please summarise the report",
+        "Give me a summary",
+        "Summarizing the findings"
+    ]:
+        fallback = advisor.generate_grounded_fallback(q, "general", sample_startup_state)
+        assert "Based on the validation report for" in fallback
+        assert "The validation report does not contain enough evidence to answer this question." not in fallback

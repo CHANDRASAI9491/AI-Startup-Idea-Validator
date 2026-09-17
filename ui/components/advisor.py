@@ -121,15 +121,13 @@ def render_advisor_chat(
             active_conv_id = None
 
     if not active_conv_id:
-        if conv_list:
-            active_conv_id = conv_list[0]["id"]
-        else:
-            active_conv_id = create_conversation(
-                title="New Conversation",
-                session_id=current_session_id
-            )
-            conv_list = list_conversations(session_id=current_session_id)
+        active_conv_id = create_conversation(
+            title="New Conversation",
+            session_id=current_session_id
+        )
         st.session_state.active_conversation_id = active_conv_id
+        conv_list = list_conversations(session_id=current_session_id)
+
 
     # Load messages from SQLite strictly for the current session's active conversation
     if active_conv_id:

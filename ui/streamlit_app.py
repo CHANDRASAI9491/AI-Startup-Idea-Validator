@@ -102,6 +102,7 @@ def handle_validation_submission(form_data: dict):
 
         st.session_state.current_state = new_state
         st.session_state.session_id = sess_id
+        st.session_state.active_conversation_id = None
         st.session_state.chat_history = []
         st.session_state.current_page = "Validation"
 
@@ -161,7 +162,8 @@ elif selected_page in ["History", "Validation History"]:
     ])
 
     with tab_val_hist:
-        saved_sessions = orchestrator.list_all_sessions()
+        curr_sess = st.session_state.get("session_id")
+        saved_sessions = orchestrator.list_all_sessions(session_id=curr_sess) if curr_sess else []
         if not saved_sessions:
             st.info("No saved validation reports found. Run a validation on the Validation page to generate your first due diligence report.")
         else:
@@ -196,7 +198,6 @@ elif selected_page in ["History", "Validation History"]:
                         restored = orchestrator.get_session_history(s_id)
                         if restored:
                             st.session_state.current_state = restored
-                            st.session_state.session_id = s_id
                             st.session_state.current_page = "Validation"
                             st.rerun()
 
@@ -248,7 +249,6 @@ elif selected_page in ["History", "Validation History"]:
                                 restored = orchestrator.get_session_history(conv_sess)
                                 if restored:
                                     st.session_state.current_state = restored
-                                    st.session_state.session_id = conv_sess
                                     st.session_state.active_conversation_id = conv_id
                                     st.session_state.current_page = "Validation"
                                     st.rerun()
@@ -276,7 +276,8 @@ elif selected_page == "Reports":
         unsafe_allow_html=True
     )
 
-    saved_sessions = orchestrator.list_all_sessions()
+    curr_sess = st.session_state.get("session_id")
+    saved_sessions = orchestrator.list_all_sessions(session_id=curr_sess) if curr_sess else []
 
     if saved_sessions:
         st.markdown(
@@ -294,11 +295,11 @@ elif selected_page == "Reports":
             label_text = f"{s_id} — {s_idea[:45]}... ({s_score}/100)" if s_score is not None else f"{s_id} — {s_idea[:45]}..."
             session_map[label_text] = s_id
 
-        current_sess = st.session_state.get("session_id")
+        selected_sess = st.session_state.get("selected_report_session_id") or st.session_state.get("session_id")
         session_keys = list(session_map.keys())
         default_idx = 0
         for idx, k in enumerate(session_keys):
-            if session_map[k] == current_sess:
+            if session_map[k] == selected_sess:
                 default_idx = idx
                 break
 
@@ -311,11 +312,11 @@ elif selected_page == "Reports":
         )
         chosen_sess_id = session_map[selected_label]
 
-        if chosen_sess_id != st.session_state.get("session_id"):
+        if chosen_sess_id != st.session_state.get("selected_report_session_id"):
             restored = orchestrator.get_session_history(chosen_sess_id)
             if restored:
                 st.session_state.current_state = restored
-                st.session_state.session_id = chosen_sess_id
+                st.session_state.selected_report_session_id = chosen_sess_id
                 state = restored
                 st.rerun()
 
@@ -331,7 +332,7 @@ elif selected_page == "Reports":
         st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
         render_report_viewer(
             state,
-            st.session_state.session_id
+            chosen_sess_id if saved_sessions else st.session_state.session_id
         )
 
     st.markdown("</div>", unsafe_allow_html=True)

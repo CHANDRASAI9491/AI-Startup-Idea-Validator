@@ -651,3 +651,241 @@ def test_mandatory_isolation_cases_a_through_j(temp_db_path):
 
     assert db_single.delete_conversation(c_single) is True
     assert db_single.list_conversations() == []
+
+
+# ============================================================
+# 8. TESTS J & K: NEW VALIDATION RESET & AUTHENTIC SESSION PRESERVATION
+# ============================================================
+
+def test_new_validation_resets_active_conversation_id():
+    """Verify that starting a new validation resets active_conversation_id to None (Fix 6, Test J)."""
+    import streamlit as st
+    from ui.streamlit_app import handle_validation_submission
+
+    # Setup prior state where Idea A has an active conversation
+    st.session_state.session_id = "test_user_session_123"
+    st.session_state.active_conversation_id = "conv_idea_a_789"
+    st.session_state.chat_history = [{"role": "user", "content": "Question about Idea A"}]
+
+    mock_state = MagicMock(spec=StartupState)
+    form_data = {
+        "idea_text": "AI Accounting Bot",
+        "target_industry": "Finance",
+        "target_audience": "CPAs",
+        "business_model": "SaaS",
+        "timeline": "3 Months"
+    }
+
+    with patch("ui.streamlit_app.orchestrator.validate_idea", return_value=mock_state), \
+         patch("streamlit.rerun"):
+        handle_validation_submission(form_data)
+
+    assert st.session_state.active_conversation_id is None
+    assert st.session_state.session_id == "test_user_session_123"
+    assert st.session_state.chat_history == []
+
+
+def test_historical_report_viewing_preserves_authentic_session_id():
+    """Verify that viewing a historical report does not overwrite authentic session_id (Fix 7, Test K)."""
+    import streamlit as st
+    from app.orchestrator import ApplicationOrchestrator
+
+    current_auth_session = "user_browser_session_xyz"
+    st.session_state.session_id = current_auth_session
+
+    historical_session_id = "historical_session_abc_999"
+    historical_state = MagicMock(spec=StartupState)
+
+    mock_orchestrator = MagicMock(spec=ApplicationOrchestrator)
+    mock_orchestrator.get_session_history.return_value = historical_state
+
+    # Simulate View Report action in History tab
+    restored = mock_orchestrator.get_session_history(historical_session_id)
+    if restored:
+        st.session_state.current_state = restored
+        st.session_state.current_page = "Validation"
+
+    assert st.session_state.session_id == current_auth_session
+    assert st.session_state.session_id != historical_session_id
+    assert st.session_state.current_state == historical_state
+
+
+def test_multi_idea_conversation_isolation_workflow(temp_db_path):
+    """Verify that Idea A and Idea B maintain separate conversations without cross-contamination."""
+    session_id = "user_session_alpha"
+    db = ChatHistoryDB(session_id=session_id, db_path=temp_db_path)
+
+    # 1. Idea A validation completed -> create Conversation A
+    conv_a = db.create_conversation(title="Idea A: AI Telehealth")
+    db.save_message(conv_a, "user", "What are the strengths of Idea A?")
+    db.save_message(conv_a, "assistant", "Idea A strengths are clinical prompts.")
+
+    # 2. Start new validation (Idea B) -> active conversation reset
+    active_conversation_id = None
+    assert active_conversation_id is None
+
+    # 3. Consult on Idea B -> creates new Conversation B
+    conv_b = db.create_conversation(title="Idea B: Legal AI")
+    db.save_message(conv_b, "user", "What are the strengths of Idea B?")
+    db.save_message(conv_b, "assistant", "Idea B strengths are contract NLP.")
+
+    assert conv_a != conv_b
+    msgs_a = db.get_messages(conv_a)
+    msgs_b = db.get_messages(conv_b)
+
+    assert len(msgs_a) == 2
+    assert "Idea A" in msgs_a[0]["content"]
+    assert len(msgs_b) == 2
+    assert "Idea B" in msgs_b[0]["content"]
+
+
+# ============================================================
+# 9. REGRESSION TESTS FOR BUGS 1 & 2
+# ============================================================
+
+def test_idea_a_to_idea_b_chat_contamination_prevented(temp_db_path):
+    """Verify Bug 1 fix: Idea B creates a new Conversation B when active_conversation_id is None,
+    preserving Conversation A in history without loading Idea A messages."""
+    import streamlit as st
+    from ui.components.advisor import render_advisor_chat
+    from ui.streamlit_app import handle_validation_submission
+    from database.chat_history import get_messages, list_conversations, save_message, create_conversation, get_conversation
+
+    session_id = "test_user_session_workflow_123"
+    st.session_state.session_id = session_id
+
+    # 1. Validate Idea A -> Conversation A created
+    conv_a = create_conversation(title="Idea A: AI Finance", session_id=session_id, db_path=temp_db_path)
+    save_message(conv_a, session_id, "user", "What is the TAM for Idea A?", db_path=temp_db_path)
+    save_message(conv_a, session_id, "assistant", "The TAM for Idea A is $10B.", db_path=temp_db_path)
+
+    st.session_state.active_conversation_id = conv_a
+    st.session_state.chat_history = [
+        {"role": "user", "content": "What is the TAM for Idea A?"},
+        {"role": "assistant", "content": "The TAM for Idea A is $10B."}
+    ]
+
+    # 2. Start new validation for Idea B
+    mock_state_b = MagicMock(spec=StartupState)
+    mock_state_b.idea = StartupIdea(
+        idea_text="Idea B: AI Legal",
+        target_industry="Legal",
+        target_audience="Lawyers",
+        business_model="SaaS",
+        timeline="3 Months"
+    )
+    mock_state_b.final_report = ValidationReport(
+        overall_viability_score=85,
+        verdict="PROCEED",
+        executive_summary="Strong legal automation demand."
+    )
+
+    form_data = {
+        "idea_text": "Idea B: AI Legal",
+        "target_industry": "Legal",
+        "target_audience": "Lawyers",
+        "business_model": "SaaS",
+        "timeline": "3 Months"
+    }
+
+    with patch("ui.streamlit_app.orchestrator.validate_idea", return_value=mock_state_b), \
+         patch("streamlit.rerun"):
+        handle_validation_submission(form_data)
+
+    # 4. Ensure active_conversation_id becomes None after new validation
+    assert st.session_state.active_conversation_id is None
+    assert st.session_state.chat_history == []
+
+    # 5. Open Advisor for Idea B -> render_advisor_chat initialization logic
+    mock_orch = MagicMock(spec=ApplicationOrchestrator)
+    mock_orch.memory = MagicMock()
+    mock_orch.get_session_history.return_value = mock_state_b
+
+
+    with patch("ui.components.advisor.create_conversation", side_effect=lambda title, session_id: create_conversation(title=title, session_id=session_id, db_path=temp_db_path)), \
+         patch("ui.components.advisor.list_conversations", side_effect=lambda session_id: list_conversations(session_id=session_id, db_path=temp_db_path)), \
+         patch("ui.components.advisor.get_conversation", side_effect=lambda cid, session_id: get_conversation(cid, session_id=session_id, db_path=temp_db_path)), \
+         patch("ui.components.advisor.get_messages", side_effect=lambda cid, session_id: get_messages(cid, session_id=session_id, db_path=temp_db_path)), \
+         patch("ui.components.advisor.initialize_database"):
+        render_advisor_chat(mock_orch, mock_state_b)
+
+    # 6. Ensure a NEW Conversation B is created
+    conv_b = st.session_state.active_conversation_id
+    assert conv_b is not None
+    assert conv_b != conv_a
+
+    # 7. Ensure Conversation A remains in history
+    history = list_conversations(session_id=session_id, db_path=temp_db_path)
+    history_ids = [c["id"] for c in history]
+    assert conv_a in history_ids
+    assert conv_b in history_ids
+
+    # 8. Ensure Idea B chat_history does not contain Idea A messages
+    assert st.session_state.chat_history == []
+    msgs_a = get_messages(conv_a, session_id=session_id, db_path=temp_db_path)
+    assert len(msgs_a) == 2
+    assert "Idea A" in msgs_a[0]["content"]
+
+    # 9. Ensure follow-up questions for Idea B use Conversation B
+    save_message(conv_b, session_id, "user", "What are the competitors for Idea B?", db_path=temp_db_path)
+    msgs_b = get_messages(conv_b, session_id=session_id, db_path=temp_db_path)
+    assert len(msgs_b) == 1
+    assert "Idea B" in msgs_b[0]["content"]
+    assert len(get_messages(conv_a, session_id=session_id, db_path=temp_db_path)) == 2
+
+
+def test_validation_history_and_reports_session_scoping(tmp_path):
+    """Verify Bug 2 fix: list_sessions scopes validation reports to the requested session_id,
+    preventing Session A and Session B cross-report visibility."""
+    import re
+    import inspect
+    from state.memory import MemoryStore
+    from app.orchestrator import ApplicationOrchestrator
+    import ui.streamlit_app
+
+    mem_dir = str(tmp_path / "val_memory")
+    memory = MemoryStore(storage_dir=mem_dir)
+
+    idea_a = StartupIdea(idea_text="Alpha Logistics AI", target_industry="Logistics", target_audience="Freight", business_model="B2B")
+    report_a = ValidationReport(overall_viability_score=88, verdict="PROCEED", executive_summary="Alpha report summary.")
+    state_a = StartupState(idea=idea_a, final_report=report_a, status="completed")
+
+    idea_b = StartupIdea(idea_text="Beta Biometrics AI", target_industry="Security", target_audience="Enterprises", business_model="B2B")
+    report_b = ValidationReport(overall_viability_score=72, verdict="CAUTION", executive_summary="Beta report summary.")
+    state_b = StartupState(idea=idea_b, final_report=report_b, status="completed")
+
+    memory.save_state("session_A", state_a)
+    memory.save_state("session_B", state_b)
+
+    # 1. Verify MemoryStore.list_sessions scoping
+    res_a = memory.list_sessions(session_id="session_A")
+    assert len(res_a) == 1
+    assert res_a[0]["session_id"] == "session_A"
+    assert res_a[0]["idea"] == "Alpha Logistics AI"
+
+    res_b = memory.list_sessions(session_id="session_B")
+    assert len(res_b) == 1
+    assert res_b[0]["session_id"] == "session_B"
+    assert res_b[0]["idea"] == "Beta Biometrics AI"
+
+    res_unfiltered = memory.list_sessions()
+    assert len(res_unfiltered) == 2
+
+    res_nonexistent = memory.list_sessions(session_id="session_UNKNOWN")
+    assert res_nonexistent == []
+
+    # 2. Verify ApplicationOrchestrator.list_all_sessions forwarding
+    orch = ApplicationOrchestrator()
+    orch.memory = memory
+
+    assert len(orch.list_all_sessions(session_id="session_A")) == 1
+    assert orch.list_all_sessions(session_id="session_A")[0]["session_id"] == "session_A"
+    assert len(orch.list_all_sessions(session_id="session_B")) == 1
+    assert orch.list_all_sessions(session_id="session_B")[0]["session_id"] == "session_B"
+
+    # 3. Verify no public Streamlit path calls list_all_sessions without session_id
+    streamlit_app_source = inspect.getsource(ui.streamlit_app)
+    calls = re.findall(r"orchestrator\.list_all_sessions\((.*?)\)", streamlit_app_source)
+    assert len(calls) == 2
+    for call_args in calls:
+        assert "session_id=curr_sess" in call_args

@@ -40,18 +40,20 @@ class MemoryStore:
                 logger.error(f"Failed to load state from disk for session {session_id}: {e}")
         return None
 
-    def list_sessions(self) -> List[Dict[str, Any]]:
+    def list_sessions(self, session_id: Optional[str] = None) -> List[Dict[str, Any]]:
         sessions = []
         if not os.path.exists(self.storage_dir):
             return sessions
 
         for fname in os.listdir(self.storage_dir):
             if fname.endswith(".json"):
-                session_id = fname[:-5]
-                state = self.get_state(session_id)
+                s_id = fname[:-5]
+                if session_id is not None and s_id != session_id:
+                    continue
+                state = self.get_state(s_id)
                 if state:
                     sessions.append({
-                        "session_id": session_id,
+                        "session_id": s_id,
                         "idea": state.idea.idea_text,
                         "status": state.status,
                         "score": state.final_report.overall_viability_score if state.final_report else None,

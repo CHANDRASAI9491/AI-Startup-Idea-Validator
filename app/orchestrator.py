@@ -69,5 +69,5 @@ class ApplicationOrchestrator:
     def get_session_history(self, session_id: str) -> Optional[StartupState]:
         return self.memory.get_state(session_id)
 
-    def list_all_sessions(self) -> List[Dict[str, Any]]:
-        return self.memory.list_sessions()
+    def list_all_sessions(self, session_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        return self.memory.list_sessions(session_id=session_id)

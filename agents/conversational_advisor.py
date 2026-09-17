@@ -4,6 +4,7 @@ from agents.base_agent import BaseAgent
 from state.schema import StartupState
 from services.logger import get_logger
 from tools.tavily_tool import TavilySearchTool
+from tools.retrieval_utils import format_search_results_summary
 
 logger = get_logger(__name__)
 
@@ -12,11 +13,17 @@ class ConversationalAdvisor(BaseAgent):
     """Grounded Strategic AI Venture Advisor supporting report-first evidence and Tavily web research fallback."""
 
     INTENT_KEYWORDS: Dict[str, List[str]] = {
+        "sources": [
+            "source", "sources", "citation", "citations", "evidence",
+            "where did this come from", "where did this information come from",
+            "reference", "references"
+        ],
         "risk": [
-            "risk", "swot", "threat", "weakness", "mitigat", "vulnerability",
-            "hazard", "pitfall", "downside", "fail", "financial risk",
-            "technical risk", "regulatory risk", "severity", "danger", "obstacle",
-            "reduce this risk", "reduce risk", "mitigate risk", "how to reduce"
+            "risk", "swot", "threat", "weakness", "strength", "strengths",
+            "mitigat", "vulnerability", "hazard", "pitfall", "downside", "fail",
+            "financial risk", "technical risk", "regulatory risk", "severity",
+            "danger", "obstacle", "reduce this risk", "reduce risk", "mitigate risk",
+            "how to reduce"
         ],
         "competition": [
             "competitor", "competition", "moat", "differentiate", "positioning",
@@ -244,6 +251,20 @@ class ConversationalAdvisor(BaseAgent):
                 if risks:
                     sections.append(f"Top Risk Considerations: {', '.join(risks)}")
 
+        elif intent == "sources":
+            has_sources = False
+            if state.search_results:
+                for cat in ["market_trends", "competitors", "customer_pain_points", "industry_news", "funding"]:
+                    if getattr(state.search_results, cat, None):
+                        has_sources = True
+                        break
+
+            if has_sources:
+                sections.append("Validation Research Sources:")
+                sections.append(format_search_results_summary(state.search_results, max_items=3))
+            else:
+                sections.append("Research Sources: No research sources or citations available in report state.")
+
         else:  # general
             sections.append(f"Executive Summary: {report.executive_summary}")
             sections.append(f"Sub-Scores: Market={report.market_score}, Competitor={report.competitor_score}, Risk={report.risk_score}, MVP={report.mvp_score}, GTM={report.gtm_score}")
@@ -252,6 +273,20 @@ class ConversationalAdvisor(BaseAgent):
                 sections.append(f"Key Takeaways: {', '.join(report.key_takeaways)}")
             if getattr(report, "recommended_next_steps", None):
                 sections.append(f"Recommended Next Steps: {', '.join(report.recommended_next_steps)}")
+
+        # Append bounded summary of validation research sources if present and not already added
+        if intent != "sources" and state.search_results:
+            has_sources = any([
+                getattr(state.search_results, "market_trends", None),
+                getattr(state.search_results, "competitors", None),
+                getattr(state.search_results, "customer_pain_points", None),
+                getattr(state.search_results, "industry_news", None),
+                getattr(state.search_results, "funding", None),
+            ])
+            if has_sources:
+                sources_text = format_search_results_summary(state.search_results, max_items=2)
+                if sources_text and "Insufficient evidence" not in sources_text:
+                    sections.append(f"\nVALIDATION RESEARCH SOURCES:\n{sources_text}")
 
         return "\n".join(sections)
 
@@ -266,14 +301,19 @@ class ConversationalAdvisor(BaseAgent):
         """Determines whether web research is required for the user's question."""
         q_lower = user_question.lower().strip()
 
-        # 1. Direct questions about report metrics NEVER trigger web search
+        # 1. Direct questions about report metrics or existing evidence NEVER trigger web search
         report_internal_questions = [
             "viability score", "overall score", "my score", "investor readiness",
-            "biggest risk", "weakness", "strengths", "swot", "mvp tech stack",
+            "biggest risk", "weakness", "strength", "strengths", "swot", "mvp tech stack",
             "mvp features", "tam", "sam", "som", "gtm channel", "acquisition channel",
-            "verdict", "next steps", "key takeaways", "confidence score", "pmf score"
+            "verdict", "next steps", "key takeaways", "confidence score", "pmf score",
+            "source", "sources", "citation", "citations", "evidence",
+            "where did this come from", "where did this information come from", "summar"
         ]
         if any(term in q_lower for term in report_internal_questions):
+            return False
+
+        if intent == "sources":
             return False
 
         # 2. Short follow-up questions inherit domain intent and do not require web search
@@ -352,16 +392,18 @@ class ConversationalAdvisor(BaseAgent):
 
         # Detect action vs fact questions
         is_action_question = any(kw in q_lower for kw in [
-            "how", "reduce", "mitigate", "action", "decrease", "address", "solve",
+            "how", "reduce", "mitigate", "mitigat", "action", "decrease", "address", "solve",
             "overcome", "tackle", "lower", "minimize", "prevent", "avoid", "improve",
             "fix", "step", "strategy", "plan", "execute", "build", "acquire", "cut"
         ])
+        is_strengths_question = any(kw in q_lower for kw in ["strength", "strengths"])
 
         # Handle unanswerable / unrelated questions when report evidence is not present
         report_related_keywords = [
-            "summary", "report", "overview", "startup", "idea", "verdict",
+            "summar", "report", "overview", "startup", "idea", "verdict",
             "score", "takeaway", "next step", "recommendation", "viability",
-            "overall", "market", "risk", "competitor", "mvp", "gtm", "funding", "investor"
+            "overall", "market", "risk", "competitor", "mvp", "gtm", "funding", "investor",
+            "source", "sources", "citation", "citations", "evidence"
         ]
         if intent == "general" and not any(kw in q_lower for kw in report_related_keywords) and not web_results:
             return "The validation report does not contain enough evidence to answer this question."
@@ -372,7 +414,16 @@ class ConversationalAdvisor(BaseAgent):
         evidence = ""
 
         if intent == "risk":
-            if state.swot_analysis and (state.swot_analysis.weaknesses or state.swot_analysis.risk_matrix):
+            if is_strengths_question:
+                if state.swot_analysis and state.swot_analysis.strengths:
+                    strengths_str = ", ".join(state.swot_analysis.strengths)
+                    direct_answer = f"The primary identified strengths for **'{idea.idea_text}'** are: **{strengths_str}**."
+                    why_it_matters = f"Capitalizing on these defensible strengths protects your market positioning and elevates your Viability Score ({report.overall_viability_score}/100)."
+                    recommended_action = f"Reinforce '{state.swot_analysis.strengths[0]}' as your core value proposition in initial product messaging."
+                    evidence = f"Identified Strengths: {strengths_str} | Risk Score: {report.risk_score}/100"
+                else:
+                    return "The validation report does not contain enough evidence to identify specific strengths."
+            elif state.swot_analysis and (state.swot_analysis.weaknesses or state.swot_analysis.risk_matrix):
                 top_risk = state.swot_analysis.weaknesses[0] if state.swot_analysis.weaknesses else "Execution and budget risk"
                 overall_lvl = state.swot_analysis.overall_risk_score
 
@@ -399,7 +450,10 @@ class ConversationalAdvisor(BaseAgent):
                     recommended_action = f"De-risk '{top_risk}' in your initial MVP milestone before investing in broad customer acquisition."
                     evidence = f"Overall Risk Score: {report.risk_score}/100 | Risk Level: {overall_lvl}/10 | Weaknesses: {', '.join(state.swot_analysis.weaknesses)}"
             else:
-                return "The validation report does not contain enough evidence to detail specific risk mitigations."
+                if is_action_question:
+                    return "The validation report does not contain enough evidence to detail specific risk mitigations."
+                else:
+                    return "The validation report does not contain enough evidence to identify specific risks or weaknesses."
 
         elif intent == "market":
             if state.market_analysis:
@@ -507,6 +561,36 @@ class ConversationalAdvisor(BaseAgent):
             next_step = report.recommended_next_steps[0] if report.recommended_next_steps else 'Prepare pitch deck'
             recommended_action = f"Next Step: {next_step}"
             evidence = f"PMF Score: {report.pmf_score}/100 | Overall Viability Score: {report.overall_viability_score}/100 ({report.verdict})"
+
+        elif intent == "sources":
+            has_sources = False
+            if state.search_results:
+                for cat in ["market_trends", "competitors", "customer_pain_points", "industry_news", "funding"]:
+                    items = getattr(state.search_results, cat, [])
+                    if items:
+                        has_sources = True
+                        break
+
+            if has_sources:
+                sources_list = []
+                for cat in ["market_trends", "competitors", "customer_pain_points", "industry_news", "funding"]:
+                    items = getattr(state.search_results, cat, [])
+                    for item in items:
+                        title = getattr(item, "title", "Research Source")
+                        url = getattr(item, "url", "")
+                        snippet = getattr(item, "snippet", "")
+                        if url:
+                            sources_list.append(f"- **{title}** ({url}): {snippet[:120]}..." if len(snippet) > 120 else f"- **{title}** ({url}): {snippet}")
+                        else:
+                            sources_list.append(f"- **{title}**: {snippet[:120]}..." if len(snippet) > 120 else f"- **{title}**: {snippet}")
+
+                sources_text = "\n".join(sources_list[:5])
+                direct_answer = f"The validation report is supported by the following retrieved research sources:\n\n{sources_text}"
+                why_it_matters = "Grounding validation findings in empirical research sources ensures strategic decisions are backed by market evidence."
+                recommended_action = "Review the primary research citations in Section 6 of your report to cross-reference market data."
+                evidence = f"Verified Research Citations: {len(sources_list[:5])} citations | Overall Viability Score: {report.overall_viability_score}/100"
+            else:
+                return "The validation report does not contain enough evidence to identify specific research sources or citations."
 
         else:
             direct_answer = f"Based on the validation report for **'{idea.idea_text}'** (Overall Viability: **{report.overall_viability_score}/100**, Verdict: **{report.verdict}**): {report.executive_summary}"

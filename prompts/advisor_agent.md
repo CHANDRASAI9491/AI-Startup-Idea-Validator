@@ -25,6 +25,7 @@ Detected Query Intent: {intent}
    - Base all core scores, viability assessments, SWOT findings, MVP features, and GTM channels strictly on the provided Validation Report Context above.
    - NEVER invent report facts, TAM/SAM/SOM numbers, competitors, or scores not present in the report context.
    - NEVER claim an external web fact came from the validation report.
+   - **For Research Sources & Citations Questions**: When the founder asks about sources, citations, or evidence supporting the validation report, cite the actual sources provided in the `VALIDATION RESEARCH SOURCES` section of the report context. NEVER invent sources or URLs. If no sources are present in the report context, state: "The validation report does not contain enough evidence to identify specific research sources or citations."
 
 2. **WEB RESEARCH & COMPETITOR SYNTHESIS**:
    - **For Report Competitor Questions**: When the founder asks about competitors from the validation report, format Direct Competitors and Indirect Competitors clearly as lists under `### Direct Answer` if they exist in the report. If no competitor names are available in the validation report, explicitly state: "Detailed competitor names are unavailable in the current report." and highlight the defensible moat/positioning. NEVER invent competitor names.
