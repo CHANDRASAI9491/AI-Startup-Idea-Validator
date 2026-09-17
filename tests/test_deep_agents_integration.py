@@ -869,3 +869,293 @@ The customer feedback analysis market is experiencing rapid expansion driven by 
     assert "CompB" not in summary
     assert "Medallia" not in summary
     assert "Qualtrics" not in summary
+
+
+# =====================================================================
+# Tests N through T: Production Path Evidence Injection & Output Contract
+# =====================================================================
+
+def test_production_path_search_results_injected_into_deep_agent_context(monkeypatch):
+    """Test N (Req A): Proves state.search_results is included in the Deep Agent invocation context."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(
+        idea_text="AI-powered personal finance assistant that analyzes spending patterns",
+        target_industry="FinTech / Personal Finance"
+    )
+
+    from state.schema import WebSearchResults, SearchResultItem
+    sample_search = WebSearchResults(
+        market_trends=[
+            SearchResultItem(
+                title="AI in Personal Finance Market Size Report",
+                url="https://example.com/market-report",
+                snippet="The global AI in Personal Finance market is projected to reach $14.5 Billion by 2030 with a 15.2% CAGR."
+            )
+        ],
+        competitors=[
+            SearchResultItem(
+                title="Top Personal Finance AI Apps: Cleo and Rocket Money",
+                url="https://example.com/competitors",
+                snippet="Key market players include Cleo ($5.99/mo chat budgeting) and Rocket Money ($3-12/mo subscription cancellation)."
+            )
+        ]
+    )
+
+    captured_prompt = None
+
+    class MockDeepAgent:
+        def invoke(self, graph_input):
+            nonlocal captured_prompt
+            messages = graph_input.get("messages", [])
+            if messages:
+                captured_prompt = messages[0].get("content", "")
+            return {"messages": [AIMessage(content="Validation complete")]}
+
+    monkeypatch.setattr(pipeline.tavily, "perform_validation_search", lambda *args, **kwargs: sample_search)
+    pipeline.deep_agent = MockDeepAgent()
+
+    state = pipeline.run(idea)
+
+    assert captured_prompt is not None
+    assert "WEB RESEARCH EVIDENCE SUMMARY" in captured_prompt
+    assert "The global AI in Personal Finance market is projected to reach $14.5 Billion" in captured_prompt
+    assert "Cleo" in captured_prompt
+    assert "Rocket Money" in captured_prompt
+
+
+def test_production_path_receives_formatted_research_evidence(monkeypatch):
+    """Test O (Req B): Proves Deep Agent receives the formatted research evidence with real URLs and snippets."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(
+        idea_text="AI-powered medical documentation generator",
+        target_industry="HealthTech"
+    )
+
+    from state.schema import WebSearchResults, SearchResultItem
+    sample_search = WebSearchResults(
+        market_trends=[
+            SearchResultItem(
+                title="Clinical Documentation Market Trends 2026",
+                url="https://healthtech.org/report",
+                snippet="Clinical documentation market estimated at $8.2 Billion with 18.0% CAGR."
+            )
+        ],
+        competitors=[
+            SearchResultItem(
+                title="DAX Copilot and Ambience Healthcare",
+                url="https://healthtech.org/competitors",
+                snippet="Major incumbents include DAX Copilot ($199/mo) and Ambience Healthcare enterprise EHR."
+            )
+        ]
+    )
+
+    captured_input = None
+
+    class MockDeepAgent:
+        def invoke(self, graph_input):
+            nonlocal captured_input
+            captured_input = graph_input
+            return {"messages": [AIMessage(content="Report generated")]}
+
+    monkeypatch.setattr(pipeline.tavily, "perform_validation_search", lambda *args, **kwargs: sample_search)
+    pipeline.deep_agent = MockDeepAgent()
+
+    state = pipeline.run(idea)
+
+    assert captured_input is not None
+    user_content = captured_input["messages"][0]["content"]
+    assert "https://healthtech.org/report" in user_content
+    assert "DAX Copilot" in user_content
+    assert "$8.2 Billion" in user_content
+
+
+def test_production_path_output_contract_requests_expected_report_structure(monkeypatch):
+    """Test P (Req C): Proves the invocation prompt requests the exact markdown headings and required contract."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(idea_text="Contract Analysis AI", target_industry="LegalTech")
+
+    captured_prompt = None
+
+    class MockDeepAgent:
+        def invoke(self, graph_input):
+            nonlocal captured_prompt
+            captured_prompt = graph_input["messages"][0]["content"]
+            return {"messages": [AIMessage(content="Done")]}
+
+    monkeypatch.setattr(pipeline.tavily, "perform_validation_search", lambda *args, **kwargs: None)
+    pipeline.deep_agent = MockDeepAgent()
+
+    pipeline.run(idea)
+
+    assert captured_prompt is not None
+    assert "## 1. Market Sizing and Growth Analysis" in captured_prompt
+    assert "Total Addressable Market (TAM)" in captured_prompt
+    assert "Projected CAGR" in captured_prompt
+    assert "## 2. Competitor Landscape and Moat" in captured_prompt
+    assert "Direct Competitors" in captured_prompt
+    assert "## 3. SWOT Analysis and Risk Evaluation" in captured_prompt
+    assert "## 4. Minimum Viable Product (MVP) Specifications" in captured_prompt
+    assert "## 5. Go-To-Market (GTM) Strategy" in captured_prompt
+    assert "CRITICAL GROUNDING RULES" in captured_prompt
+    assert "/workspace/executive_validation_report.md" in captured_prompt
+
+
+def test_realistic_markdown_with_tam_sam_som_cagr_mapping():
+    """Test Q (Req D): Proves realistic Markdown containing TAM/SAM/SOM/CAGR maps correctly into state."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(
+        idea_text="AI-powered personal finance assistant",
+        target_industry="FinTech / Personal Finance"
+    )
+    state = StartupState(idea=idea)
+
+    realistic_markdown = """# Executive Startup Validation Report
+
+## 1. Market Sizing and Growth Analysis
+- **Total Addressable Market (TAM):** $14.5 Billion
+- **Serviceable Addressable Market (SAM):** $3.8 Billion
+- **Serviceable Obtainable Market (SOM):** $350 Million
+- **Projected CAGR:** 15.2% CAGR
+- **Growth Drivers:** AI mobile banking adoption, automated micro-savings demand, Gen Z budgeting habits
+The personal finance management software market is experiencing rapid expansion driven by mobile banking integration.
+
+## 2. Competitor Landscape and Moat
+- **Market Positioning:** Positions as the premier proactive AI personal finance copilot.
+- **Defensibility Moat:** Proprietary spending categorization and behavioral habit-building loops.
+### Direct Competitors:
+- **Cleo (Freemium ($5.99/mo)):** AI chat-based conversational budgeting assistant.
+- **Rocket Money (Freemium ($3-12/mo)):** Subscription management and automated cancellation.
+- **Copilot Money (Subscription ($13/mo)):** High-end Mac/iOS native personal finance tracker.
+### Indirect Competitors / Alternatives:
+- **Manual Excel / Google Sheets:** Free manual spreadsheet tracking templates.
+"""
+
+    deep_result = {
+        "messages": [
+            AIMessage(content=realistic_markdown)
+        ]
+    }
+
+    pipeline._map_deep_result_to_state(state, deep_result, lambda s, st: None)
+
+    assert state.market_analysis is not None
+    assert state.market_analysis.tam_billions == 14.5
+    assert state.market_analysis.sam_billions == 3.8
+    assert state.market_analysis.som_billions == 0.35
+    assert state.market_analysis.cagr_percentage == 15.2
+    assert "AI mobile banking adoption" in state.market_analysis.key_growth_drivers
+
+
+def test_realistic_markdown_with_competitors_mapping():
+    """Test R (Req E): Proves realistic Markdown containing direct/indirect competitors maps correctly into state."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(
+        idea_text="AI-powered personal finance assistant",
+        target_industry="FinTech"
+    )
+    state = StartupState(idea=idea)
+
+    realistic_markdown = """## 2. Competitor Landscape and Moat
+- **Market Positioning:** Positions as an automated cashflow forecast engine for young professionals.
+- **Defensibility Moat:** Proprietary banking data parsing models and low-friction workflow integration.
+### Direct Competitors:
+- **Cleo (Freemium ($5.99/mo)):** AI chatbot companion for budgeting.
+- **Rocket Money (Subscription):** Bill negotiation and subscription cancellation tool.
+- **Copilot Money ($99/year):** Smart budgeting and investment tracker.
+- **Origin (Enterprise B2B2C):** Comprehensive financial wellness platform.
+### Indirect Competitors / Alternatives:
+- **Monarch Money:** Traditional budgeting software.
+- **YNAB (You Need A Budget):** Zero-based manual budgeting.
+"""
+
+    deep_result = {
+        "messages": [
+            AIMessage(content=realistic_markdown)
+        ]
+    }
+
+    pipeline._map_deep_result_to_state(state, deep_result, lambda s, st: None)
+
+    assert state.competitor_analysis is not None
+    direct_names = [c.name for c in state.competitor_analysis.direct_competitors]
+    assert "Cleo" in direct_names
+    assert "Rocket Money" in direct_names
+    assert "Copilot Money" in direct_names
+    assert "Origin" in direct_names
+    assert "automated cashflow forecast" in state.competitor_analysis.market_positioning_summary
+    assert "banking data parsing" in state.competitor_analysis.moat_assessment
+
+
+def test_missing_evidence_remains_none_without_fabrication():
+    """Test S (Req F): Proves missing evidence remains None/empty and does not fabricate values."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(idea_text="Obscure Niche Platform", target_industry="Niche")
+    state = StartupState(idea=idea)
+
+    sparse_markdown = """## 1. Market Sizing and Growth Analysis
+- **Total Addressable Market (TAM):** Evidence unavailable
+- **Serviceable Addressable Market (SAM):** Evidence unavailable
+- **Serviceable Obtainable Market (SOM):** Evidence unavailable
+- **Projected CAGR:** Evidence unavailable
+Market size could not be established from available research.
+
+## 2. Competitor Landscape and Moat
+- **Market Positioning:** No verified competitors identified from available research.
+- **Defensibility Moat:** Defensibility cannot be evaluated without verified competitor evidence.
+### Direct Competitors:
+No verified competitors identified from available research.
+"""
+
+    deep_result = {
+        "messages": [
+            AIMessage(content=sparse_markdown)
+        ]
+    }
+
+    pipeline._map_deep_result_to_state(state, deep_result, lambda s, st: None)
+
+    assert state.market_analysis is not None
+    assert state.market_analysis.tam_billions is None
+    assert state.market_analysis.sam_billions is None
+    assert state.market_analysis.som_billions is None
+    assert state.market_analysis.cagr_percentage is None
+    assert "could not be established" in state.market_analysis.market_size_summary
+
+    assert state.competitor_analysis is not None
+    assert len(state.competitor_analysis.direct_competitors) == 0
+    assert "No verified competitors" in state.competitor_analysis.market_positioning_summary
+
+
+def test_structured_json_priority_preserved_over_markdown():
+    """Test T (Req G): Proves existing structured JSON priority in _map_deep_result_to_state() remains unchanged."""
+    pipeline = StartupValidatorDeepAgentsPipeline()
+    idea = StartupIdea(idea_text="Priority Test Startup", target_industry="FinTech")
+    state = StartupState(idea=idea)
+
+    json_payload = {
+        "market_analysis": {
+            "tam_billions": 77.7,
+            "sam_billions": 20.0,
+            "som_billions": 2.0,
+            "market_size_summary": "Structured JSON TAM $77.7B",
+            "cagr_percentage": 25.0,
+            "key_growth_drivers": ["Driver from JSON"],
+            "target_personas": []
+        }
+    }
+
+    deep_result = {
+        "structured_response": json_payload,
+        "messages": [
+            AIMessage(content="""## 1. Market Sizing and Growth Analysis
+- **Total Addressable Market (TAM):** $10.0 Billion
+""")
+        ]
+    }
+
+    pipeline._map_deep_result_to_state(state, deep_result, lambda s, st: None)
+
+    # Structured response (77.7) MUST take priority over Markdown (10.0)
+    assert state.market_analysis is not None
+    assert state.market_analysis.tam_billions == 77.7
+    assert state.market_analysis.market_size_summary == "Structured JSON TAM $77.7B"

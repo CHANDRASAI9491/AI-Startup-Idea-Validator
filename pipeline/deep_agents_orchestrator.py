@@ -23,6 +23,7 @@ from state.schema import (
 )
 from tools.planning_tool import DeepAgentsPlanner
 from tools.tavily_tool import tavily_search_tool, TavilySearchTool
+from tools.retrieval_utils import format_search_results_summary
 from agents.market_analysis_agent import MarketAnalysisAgent
 from agents.competitor_agent import CompetitorAgent
 from agents.swot_risk_agent import SWOTRiskAgent
@@ -643,37 +644,37 @@ class StartupValidatorDeepAgentsPipeline:
             {
                 "name": "market-research",
                 "description": "Researches market size (TAM, SAM, SOM), CAGR, market trends, and growth drivers.",
-                "system_prompt": "You are a Market Research Subagent. Evaluate market size, CAGR, growth drivers, and target customer personas.",
+                "system_prompt": "You are a Market Research Subagent. Evaluate market size, CAGR, growth drivers, and target customer personas based strictly on supplied research evidence. Never invent missing figures.",
                 "tools": [tavily_search_tool],
             },
             {
                 "name": "competitor-research",
                 "description": "Finds direct and indirect competitors, feature comparisons, pricing models, and defensibility moats.",
-                "system_prompt": "You are a Competitor Research Subagent. Map the competitive landscape, direct incumbents, and defensibility moats.",
+                "system_prompt": "You are a Competitor Research Subagent. Map the competitive landscape, direct incumbents, indirect alternatives, and defensibility moats based strictly on supplied research evidence. Never invent competitors.",
                 "tools": [tavily_search_tool],
             },
             {
                 "name": "swot-risk",
                 "description": "Evaluates strengths, weaknesses, opportunities, threats, and severity risk matrix.",
-                "system_prompt": "You are a SWOT & Risk Subagent. Formulate a SWOT analysis and severity risk matrix with mitigations.",
+                "system_prompt": "You are a SWOT & Risk Subagent. Formulate a SWOT analysis and severity risk matrix with mitigations grounded in available research.",
                 "tools": [],
             },
             {
                 "name": "mvp",
                 "description": "Scopes core MVP features, technology stack, 4-week roadmap, and key metrics/KPIs.",
-                "system_prompt": "You are an MVP Scoping Subagent. Define core value proposition, tech architecture, feature breakdown, and roadmap.",
+                "system_prompt": "You are an MVP Scoping Subagent. Define core value proposition, tech architecture, feature breakdown, and roadmap grounded in available research.",
                 "tools": [],
             },
             {
                 "name": "gtm",
                 "description": "Formulates customer acquisition channels, positioning statement, pricing strategy, and launch tactics.",
-                "system_prompt": "You are a Go-To-Market Strategy Subagent. Recommend primary acquisition channels, positioning, and launch strategy.",
+                "system_prompt": "You are a Go-To-Market Strategy Subagent. Recommend primary acquisition channels, positioning, and launch strategy grounded in available research.",
                 "tools": [],
             },
             {
                 "name": "report",
                 "description": "Synthesizes comprehensive validation report, overall viability index, and strategic verdict.",
-                "system_prompt": "You are a Lead Executive Report Subagent. Compile all validation findings, calculate viability score, and output executive summary.",
+                "system_prompt": "You are a Lead Executive Report Subagent. Compile all validation findings into the structured executive validation report adhering to the required markdown output contract.",
                 "tools": [],
             }
         ]
@@ -687,7 +688,13 @@ class StartupValidatorDeepAgentsPipeline:
             self.deep_agent = create_deep_agent(
                 model=self.model,
                 subagents=self.subagents,
-                system_prompt="You are the Main Startup Validator Deep Agent responsible for orchestrating multi-agent startup idea validation across market-research, competitor-research, swot-risk, mvp, gtm, and report subagents."
+                system_prompt=(
+                    "You are the Main Startup Validator Deep Agent orchestrating comprehensive startup idea validation. "
+                    "You synthesize evidence across market-research, competitor-research, swot-risk, mvp, gtm, and report subagents. "
+                    "CRITICAL GROUNDING: Base all assessments strictly on the provided web research evidence and planning context. "
+                    "Never hallucinate or invent quantitative metrics (TAM/SAM/SOM/CAGR), competitor names, or pricing. "
+                    "If evidence is insufficient, explicitly state 'Evidence unavailable'."
+                )
             )
             logger.info("Official Deep Agents Main Validator Agent initialized successfully.")
         except Exception as e:
@@ -740,10 +747,73 @@ class StartupValidatorDeepAgentsPipeline:
             if self.deep_agent:
                 try:
                     logger.info("Invoking official Deep Agent Graph with subagents...")
+                    search_summary = format_search_results_summary(state.search_results)
+                    planning_summary = ""
+                    if state.planning_output:
+                        plan = state.planning_output
+                        questions = "\n".join(f"- {q}" for q in plan.research_questions)
+                        planning_summary = (
+                            f"\nStrategic Objective: {plan.strategic_objective}\n"
+                            f"Key Research Questions:\n{questions}\n"
+                        )
+
                     prompt_content = (
-                        f"Perform complete startup idea validation for idea: '{idea.idea_text}'. "
-                        f"Target Industry: {idea.target_industry}. Target Audience: {idea.target_audience}. "
-                        f"Business Model: {idea.business_model}. Budget: {idea.budget}. Timeline: {idea.timeline}."
+                        f"Perform complete startup idea validation for idea: '{idea.idea_text}'.\n"
+                        f"Target Industry: {idea.target_industry}. Target Audience: {idea.target_audience}.\n"
+                        f"Business Model: {idea.business_model}. Budget: {idea.budget}. Timeline: {idea.timeline}.\n"
+                        f"{planning_summary}\n"
+                        f"=== WEB RESEARCH EVIDENCE SUMMARY ===\n"
+                        f"{search_summary}\n"
+                        f"=== END RESEARCH EVIDENCE ===\n\n"
+                        f"CRITICAL GROUNDING RULES:\n"
+                        f"1. Use the supplied research evidence as the primary source of truth.\n"
+                        f"2. Synthesize market sizing, competitive landscape, SWOT/risk, MVP, and GTM findings strictly from the evidence.\n"
+                        f"3. Never invent missing quantitative metrics (TAM, SAM, SOM, CAGR), competitor names, URLs, pricing, or defensibility moats.\n"
+                        f"4. If specific evidence is unavailable or insufficient, state 'Evidence unavailable' or 'No verified competitors identified from available research.'\n\n"
+                        f"OUTPUT CONTRACT:\n"
+                        f"Generate the comprehensive Executive Validation Report using these exact Markdown headings and formatting:\n\n"
+                        f"## 1. Market Sizing and Growth Analysis\n"
+                        f"- **Total Addressable Market (TAM):** [e.g. $14.5 Billion, or Evidence unavailable]\n"
+                        f"- **Serviceable Addressable Market (SAM):** [e.g. $4.0 Billion, or Evidence unavailable]\n"
+                        f"- **Serviceable Obtainable Market (SOM):** [e.g. $400 Million, or Evidence unavailable]\n"
+                        f"- **Projected CAGR:** [e.g. 15.2% CAGR, or Evidence unavailable]\n"
+                        f"- **Growth Drivers:** [comma-separated drivers from evidence]\n"
+                        f"[Market size scope summary grounded in evidence]\n\n"
+                        f"## 2. Competitor Landscape and Moat\n"
+                        f"- **Market Positioning:** [Positioning summary grounded in evidence]\n"
+                        f"- **Defensibility Moat:** [Moat assessment grounded in evidence]\n"
+                        f"### Direct Competitors:\n"
+                        f"- **[Competitor Name] ([Pricing]):** [Description from evidence]\n"
+                        f"### Indirect Competitors / Alternatives:\n"
+                        f"- **[Alternative/Substitute]:** [Description]\n\n"
+                        f"## 3. SWOT Analysis and Risk Evaluation\n"
+                        f"- **Financial Risk Index:** [1-10]\n"
+                        f"- **Technical Risk Index:** [1-10]\n"
+                        f"- **Regulatory Risk Index:** [1-10]\n"
+                        f"- **Overall Risk Score:** [1-10]\n"
+                        f"- **Strengths:** [Evidence-backed strengths separated by comma]\n"
+                        f"- **Weaknesses:** [Evidence-backed weaknesses separated by comma]\n"
+                        f"- **Opportunities:** [Evidence-backed opportunities separated by comma]\n"
+                        f"- **Threats:** [Evidence-backed threats separated by comma]\n\n"
+                        f"## 4. Minimum Viable Product (MVP) Specifications\n"
+                        f"- **Core Value Proposition:** [Value proposition]\n"
+                        f"- **Tech Stack:** [Recommended technology stack]\n"
+                        f"Core MVP Features:\n"
+                        f"1. [Feature 1]: [Description]\n"
+                        f"2. [Feature 2]: [Description]\n"
+                        f"- **Build Timeline:**\n"
+                        f"- Week 1 (Foundation): [Scope]\n"
+                        f"- Week 2 (Core Logic): [Scope]\n"
+                        f"- Week 3 (Integration): [Scope]\n"
+                        f"- Week 4 (Launch & QA): [Scope]\n\n"
+                        f"## 5. Go-To-Market (GTM) Strategy\n"
+                        f"- **Positioning Statement:** [Positioning statement]\n"
+                        f"- **Pricing Tiers:** [Pricing structure]\n"
+                        f"- **Acquisition Channels:** [Primary channels separated by comma]\n"
+                        f"- **Launch Tactics:**\n"
+                        f"1. [Tactic 1]\n"
+                        f"2. [Tactic 2]\n\n"
+                        f"Produce the full report directly in your final response. If write_file is available, also write this report to /workspace/executive_validation_report.md."
                     )
                     graph_input = {"messages": [{"role": "user", "content": prompt_content}]}
                     deep_result = self.deep_agent.invoke(graph_input)
