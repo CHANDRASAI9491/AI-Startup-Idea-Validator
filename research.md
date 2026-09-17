@@ -1,5 +1,8 @@
 # Development of AI Based Startup Idea Validator with Market Analysis Assistance - Research Document
 
+> [!NOTE]
+> **Historical Research & Architectural Foundation Document**: This document records foundational research, early design explorations, and architectural evolution conducted during project development. For the current production release implementation, specifications, and instructions, refer directly to [README.md](README.md).
+
 ---
 
 # 1. Problem Statement
@@ -282,7 +285,7 @@ GOOGLE_API_KEY=YOUR_GEMINI_API_KEY
 
 TAVILY_API_KEY=YOUR_TAVILY_API_KEY
 
-MODEL_NAME=gemini-2.5-flash-lite
+MODEL_NAME=gemini-3.1-flash-lite
 
 MAX_SEARCH_RESULTS=5
 
@@ -291,15 +294,15 @@ EXPORT_DIR=reports
 
 ## Data Storage
 
-The current implementation **does not use a relational database**.
+In the finalized production implementation, data storage is handled across two tiers:
 
-Generated reports are stored as:
+1. **SQLite Database (`database/chat_history.db`)**: Persists session-isolated conversational history, conversation threads, and founder Q&A messages.
+2. **File & State Storage**: Serialized session state is stored in `.validation_memory/`, and exported dossiers are generated in `reports/` as:
+   - PDF (ReportLab)
+   - JSON
+   - Markdown
 
-- PDF
-- JSON
-- Markdown
-
-Future versions may integrate PostgreSQL or MongoDB for startup history and user management.
+Future enterprise enhancements may evaluate hosted cloud database options (such as PostgreSQL or MongoDB) for team-based multi-tenant workspaces.
 
 ---
 

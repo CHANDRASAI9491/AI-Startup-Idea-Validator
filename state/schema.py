@@ -64,7 +64,7 @@ class CompetitorItem(BaseModel):
     url: str = ""
     description: str = ""
     key_features: List[str] = Field(default_factory=list)
-    pricing_model: str = "Freemium / Subscription"
+    pricing_model: str = ""
     strengths: List[str] = Field(default_factory=list)
     weaknesses: List[str] = Field(default_factory=list)
 

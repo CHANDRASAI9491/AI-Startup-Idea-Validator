@@ -15,8 +15,8 @@ Respond ONLY with a JSON object matching this schema:
   "core_value_proposition": "Streamlined automated workflow eliminating manual effort.",
   "tech_stack_frontend": "Streamlit / Modern CSS",
   "tech_stack_backend": "Python 3.11+ / LangGraph",
-  "tech_stack_database": "PostgreSQL / SQLite",
-  "tech_stack_ai": "Google Gemini 2.5 Flash / Tavily Search API",
+  "tech_stack_database": "SQLite",
+  "tech_stack_ai": "Google Gemini / Tavily Search API",
   "features": [
     {
       "feature_name": "User Idea Input & Configuration",

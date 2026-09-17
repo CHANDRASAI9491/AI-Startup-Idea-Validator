@@ -60,6 +60,6 @@ When a founder inquires about information not present in the generated report (e
 
 ## 4. Conversation Persistence & Storage
 
-- **SQLite Database (`database/chat_history.db`)**: Stores conversation threads (`conversations` table) and individual chat exchanges (`messages` table).
-- **Session Memory Store (`storage/memory_store.py`)**: Persists the serialised `StartupState` JSON linked to the active `session_id`.
-- **Conversation Threading**: Founders can create multiple independent chat threads per validation session, switch between past conversations, or delete obsolete threads.
+- **SQLite Database (`database/chat_history.db`)**: Stores conversation threads (`conversations` table) and individual chat exchanges (`messages` table) with strict `session_id` ownership isolation.
+- **Session Memory Store (`state/memory.py`)**: Persists the serialised `StartupState` JSON linked to the active `session_id` under `.validation_memory/`.
+- **Conversation Threading & Session Isolation**: Founders can create multiple independent chat threads per validation session, switch between past conversations, or delete obsolete threads with guaranteed cross-session boundary isolation.

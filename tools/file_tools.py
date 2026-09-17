@@ -107,7 +107,8 @@ class FileTools:
             ])
             if getattr(comp, "direct_competitors", None):
                 for c in comp.direct_competitors:
-                    lines.append(f"- **{c.name}** ({c.pricing_model}): {c.description}")
+                    pricing_str = f" ({c.pricing_model})" if getattr(c, "pricing_model", "").strip() else ""
+                    lines.append(f"- **{c.name}**{pricing_str}: {c.description}")
             else:
                 lines.append("- No verified competitors identified from available research.")
 
@@ -772,7 +773,7 @@ class FileTools:
                     for c_obj, c_type in competitors_list:
                         c_name = getattr(c_obj, "name", "Competitor")
                         c_desc = getattr(c_obj, "description", "Not available")
-                        c_pricing = getattr(c_obj, "pricing_model", "Not available")
+                        c_pricing = (getattr(c_obj, "pricing_model", None) or "").strip() or "Not available"
                         c_str_list = getattr(c_obj, "strengths", [])
                         c_wk_list = getattr(c_obj, "weaknesses", [])
 

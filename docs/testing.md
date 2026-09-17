@@ -29,7 +29,7 @@ To run a specific module or test file:
 
 ## 2. Test Suite Coverage & Verification Results
 
-The automated test suite comprises **100 comprehensive unit and integration tests** validating:
+The automated test suite comprises **177 comprehensive automated unit and integration tests** validating:
 
 1. **Deterministic Scoring Engine (`tests/test_scoring_engine.py`)**:
    - Boundary checks for all 8 dimensions (0 to max points).
@@ -48,13 +48,14 @@ The automated test suite comprises **100 comprehensive unit and integration test
    - Deep Agents orchestrator flow, callback propagation, and Pydantic state population.
    - Unsupported-value prevention (no invented TAM, SAM, SOM, CAGR, or placeholder competitors).
    - Grounded report generation with missing-evidence handling.
+   - Free-Tier optimizations: deterministic planning (`use_llm=False`), `max_retries=0`, `recursion_limit=10`, no redundant subagent tools.
 4. **Conversational Advisory & Storage (`tests/test_conversational_advisor.py`, `tests/test_chat_history.py`)**:
    - Intent classification heuristics, multi-turn follow-up inheritance, and grounded report context.
    - Advisor missing-value handling (avoidance of `$NoneB` or `None%`).
    - SQLite conversation creation, message saving, retrieval, session isolation, and cascade deletion.
 
 **Latest Test Execution Summary**:
-- **Result**: `100 passed`
+- **Result**: `177 passed, 0 failed, 1 warning`
 - **Pass Rate**: `100%`
 
 ---
@@ -73,6 +74,6 @@ Get-ChildItem ui\components\*.py | ForEach-Object {
 
 ## 4. Known Non-Blocking Warnings
 
-During test runs or application startup, you may observe the following harmless deprecation notices:
-- **Pydantic V2 Config Deprecation**: Third-party dependencies (such as certain LangChain or Google GenAI integration packages) may reference `Config` or `dict()` instead of `model_config` and `model_dump()`. These warnings are upstream in external packages and do not impact project execution or scoring accuracy.
+During test runs or application startup, you may observe the following harmless deprecation notice:
+- **Python 3.14 / google.genai `_UnionGenericAlias` Warning**: Under Python 3.14 environments, `google/genai/types.py` produces a non-fatal `DeprecationWarning: '_UnionGenericAlias' is deprecated and slated for removal in Python 3.17`. This is an upstream SDK typing notification that does not affect runtime execution, deterministic scoring, or test results.
 - **Tavily / Gemini Fallback in Local Mode**: If `GEMINI_API_KEY` or `TAVILY_API_KEY` are not set in the local `.env` file, the pipeline automatically operates in resilient fallback state mapping mode with informative warnings logged to `logs/`.
